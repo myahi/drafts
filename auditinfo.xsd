@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd"
+	 targetNamespace="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="auditInfo">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="timestamp" minOccurs="0"/>
+				<xs:element ref="reference" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="metadatas" minOccurs="0"/>
+				<xs:element ref="description"/>
+				<xs:element ref="data"/>
+				<xs:element ref="statut" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="timestamp" type="xs:string"/>
+	<xs:element name="reference">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="code"/>
+				<xs:element ref="codifier"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="data" type="xs:string"/>
+	<xs:element name="code" type="xs:string"/>
+	<xs:element name="codifier" type="xs:string"/>
+	<xs:element name="description" type="xs:string"/>
+	<xs:element name="statut" type="xs:string"/>
+	<xs:element name="metadata" type="Metadata"/>
+	<xs:complexType name="Metadata">
+		<xs:sequence>
+			<xs:element ref="key"/>
+			<xs:element ref="value"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="key" type="xs:string"/>
+	<xs:element name="value" type="xs:string"/>
+	<xs:complexType name="Metadatas">
+		<xs:sequence>
+			<xs:element ref="metadata" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="metadatas" type="Metadatas"/>
+</xs:schema>
