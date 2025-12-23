@@ -1,0 +1,337 @@
+
+Voici un set complet de classes Java (Camel 4.x + Spring Boot) pour avoir :
+
+routes inchangées (jms: partout)
+
+swap EMS ↔ ActiveMQ via spring.profiles.active=ems ou activemq
+
+direct:error qui log puis marshal JSON puis push vers la queue
+
+
+> ⚠️ J’utilise ActiveMQ Classic dans l’exemple (org.apache.activemq.ActiveMQConnectionFactory).
+Si tu es sur Artemis, dis-le et je te donne la variante.
+
+
+
+
+---
+
+1) MessagingProperties.java
+
+package com.example.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "messaging")
+public class MessagingProperties {
+
+  private final Queue queue = new Queue();
+
+  public Queue getQueue() {
+    return queue;
+  }
+
+  public static class Queue {
+    /**
+     * Nom logique de la queue d'erreurs (ex: APP.ERRORS)
+     */
+    private String error;
+
+    public String getError() {
+      return error;
+    }
+
+    public void setError(String error) {
+      this.error = error;
+    }
+  }
+}
+
+
+---
+
+2) EmsProperties.java
+
+package com.example.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "ems")
+public class EmsProperties {
+
+  private String url;
+  private String user;
+  private String password;
+
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public String getUser() {
+    return user;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+}
+
+
+---
+
+3) ActiveMqProperties.java
+
+package com.example.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "activemq")
+public class ActiveMqProperties {
+
+  private String url;
+  private String user;
+  private String password;
+
+  public String getUrl() {
+    return url;
+  }
+
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public String getUser() {
+    return user;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+}
+
+
+---
+
+4) JmsProviderConfig.java (le swap EMS / ActiveMQ)
+
+package com.example.config;
+
+import com.tibco.tibjms.TibjmsConnectionFactory;
+import jakarta.jms.ConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.camel.component.jms.JmsComponent;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.*;
+
+@Configuration
+@EnableConfigurationProperties({
+    MessagingProperties.class,
+    EmsProperties.class,
+    ActiveMqProperties.class
+})
+public class JmsProviderConfig {
+
+  /**
+   * Le composant Camel "jms:" utilise la ConnectionFactory active (EMS ou ActiveMQ)
+   */
+  @Bean
+  public JmsComponent jms(ConnectionFactory connectionFactory) {
+    JmsComponent c = new JmsComponent();
+    c.setConnectionFactory(connectionFactory);
+
+    // Mets true si tu veux gérer les transactions JMS
+    c.setTransacted(false);
+
+    return c;
+  }
+
+  /**
+   * EMS (TIBCO)
+   */
+  @Bean
+  @Profile("ems")
+  public ConnectionFactory emsConnectionFactory(EmsProperties props) {
+    TibjmsConnectionFactory cf = new TibjmsConnectionFactory();
+    cf.setServerUrl(props.getUrl());
+    cf.setUserName(props.getUser());
+    cf.setUserPassword(props.getPassword());
+    return cf;
+  }
+
+  /**
+   * ActiveMQ Classic
+   */
+  @Bean
+  @Profile("activemq")
+  public ConnectionFactory activeMqConnectionFactory(ActiveMqProperties props) {
+    ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory(props.getUrl());
+    cf.setUserName(props.getUser());
+    cf.setPassword(props.getPassword());
+    return cf;
+  }
+}
+
+
+---
+
+5) ErrorRoute.java (direct:error = log + json + queue)
+
+package com.example.routes;
+
+import com.example.config.MessagingProperties;
+import org.apache.camel.Exchange;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ErrorRoute extends RouteBuilder {
+
+  /**
+   * Nom de la property Exchange qui contient ton objet d'erreur (déjà construit en route métier)
+   */
+  public static final String ERROR_PROPERTY = "errorEvent";
+
+  private final MessagingProperties messagingProperties;
+
+  public ErrorRoute(MessagingProperties messagingProperties) {
+    this.messagingProperties = messagingProperties;
+  }
+
+  @Override
+  public void configure() {
+
+    from("direct:error")
+      .routeId("direct-error-handler")
+
+      // important pour éviter les boucles si l'envoi JMS échoue
+      .errorHandler(noErrorHandler())
+
+      // met dans le body l'objet d'erreur déjà stocké dans l'exchange
+      .process(e -> {
+        Object err = e.getProperty(ERROR_PROPERTY);
+        if (err == null) {
+          err = e.getProperty(Exchange.EXCEPTION_CAUGHT);
+        }
+        e.getIn().setBody(err);
+      })
+
+      // log applicatif
+      .log(LoggingLevel.ERROR,
+          "ERROR EVENT | exchangeId=${exchangeId} fromRoute=${fromRouteId} body=${body}")
+
+      // marshal JSON (Jackson via camel-jackson)
+      .marshal().json()
+
+      .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
+
+      // push vers la queue configurée
+      .toD("jms:queue:" + messagingProperties.getQueue().getError() + "?deliveryPersistent=true");
+  }
+}
+
+
+---
+
+6) (optionnel) GlobalOnExceptionRoute.java
+
+Si tu veux un onException global plutôt que de le répéter :
+
+package com.example.routes;
+
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class GlobalOnExceptionRoute extends RouteBuilder {
+
+  @Override
+  public void configure() {
+    onException(Exception.class)
+      .handled(true)
+      .useOriginalMessage()
+      .maximumRedeliveries(0)
+      .to("direct:error");
+  }
+}
+
+
+---
+
+Config à ajouter
+
+application-ems.yml
+
+spring:
+  profiles: ems
+
+messaging:
+  queue:
+    error: APP.ERRORS
+
+ems:
+  url: tcp://ems-host:7222
+  user: ems_user
+  password: ems_password
+
+application-activemq.yml
+
+spring:
+  profiles: activemq
+
+messaging:
+  queue:
+    error: APP.ERRORS
+
+activemq:
+  url: tcp://amq-host:61616
+  user: amq_user
+  password: amq_password
+
+Lancement :
+
+EMS : -Dspring.profiles.active=ems
+
+ActiveMQ : -Dspring.profiles.active=activemq
+
+
+
+---
+
+Dépendances Maven (rappel)
+
+camel-spring-boot-starter
+
+camel-jms-starter
+
+camel-jackson-starter
+
+EMS client (TIBCO) : jar tibjms (selon ton repo)
+
+ActiveMQ Classic : org.apache.activemq:activemq-client
+
+
+
+---
+
+Si tu me confirmes ActiveMQ Classic vs Artemis et si tu veux JMS transacted, je te donne la version exacte (transactions + redelivery + DLQ) sans changer tes routes.
