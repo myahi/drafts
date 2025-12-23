@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/logProperties.xsd"
+	 targetNamespace="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/logProperties.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="logProperties">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="logProperty" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="logProperty">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="code"/>
+				<xs:element ref="role"/>
+				<xs:element ref="category"/>
+				<xs:element ref="description"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="code" type="xs:string"/>
+	<xs:element name="role" type="xs:string"/>
+	<xs:element name="description" type="xs:string"/>
+	<xs:element name="category" type="xs:string"/>
+</xs:schema>
