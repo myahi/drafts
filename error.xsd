@@ -1,0 +1,24 @@
+<?xml version='1.0'?>
+
+<xsd:schema xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:pfx="http://www.tibco.com/pe/EngineTypes" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:ns="http://www.tibco.com/pe/DeployedVarsType" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/logProperties.xsd" xmlns:ns3="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" elementFormDefault="unqualified" attributeFormDefault="unqualified">
+    <xsd:import namespace="http://www.tibco.com/pe/EngineTypes"/>
+    <xsd:import namespace="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd"/>
+    <xsd:element name="error">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="processContext" type="pfx:ProcessContext"/>
+                <xsd:element name="errorReport" type="pfx:ErrorReport"/>
+                <xsd:element name="data" type="pfx:anydata" minOccurs="0"/>
+                <xsd:element name="reference" minOccurs="0" maxOccurs="unbounded">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element name="code" type="xsd:string"/>
+                            <xsd:element name="codifier" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element ref="ns2:metadatas" minOccurs="0"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>
