@@ -1,0 +1,11 @@
+./domainutilitycmd.sh \
+  -cmd join \
+  -domain MON_DOMAINE \
+  -user admin \
+  -pw admin_password \
+  -adminhost admin-server-host \
+  -adminport 8080 \
+  -emsurl tcp://ems-host:7222 \
+  -emsuser ems_admin \
+  -emspw ems_password \
+  -machine NOM_MACHINE
