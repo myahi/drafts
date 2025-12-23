@@ -1,0 +1,21 @@
+onException(Exception.class)
+  .handled(true)
+  .process(e -> {
+      Exception ex = e.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+
+      Error err = new Error();
+      err.setProcessContext(buildProcessContext(e));
+      err.setErrorReport(buildErrorReport(e, ex));
+      err.getReference().add(new Reference("APP-001", "MY_APP"));
+
+      Metadatas metas = new Metadatas();
+      metas.getMetadata().add(new Metadata("exchangeId", e.getExchangeId()));
+      err.setMetadatas(metas);
+
+      e.setProperty("errorObj", err);
+
+      e.getMessage().setBody(new SoapFault(
+          "Erreur technique", SoapFault.FAULT_CODE_SERVER
+      ));
+  })
+  .to("direct:publishErrorJms");
