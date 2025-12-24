@@ -1,5 +1,6 @@
 package com.mycompany.transco.service;
 
+
 import com.mycompany.transco.model.Transcos;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
