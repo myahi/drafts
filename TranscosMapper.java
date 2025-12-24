@@ -1,38 +1,24 @@
-package com.mycompany.transco.service;
+public static Map<String, Transcos> fromRowsGroupedByCategory(
+        List<Map<String, Object>> rows) {
 
-import com.mycompany.transco.model.*;
-import java.util.*;
+  Map<String, Transcos> result = new HashMap<>();
 
-public final class TranscosMapper {
+  for (Map<String, Object> r : rows) {
+    String category = String.valueOf(r.get("CATEGORY"));
+    String src = String.valueOf(r.get("SRC"));
+    String tgt = String.valueOf(r.get("TGT"));
 
-    private TranscosMapper() {}
+    Transcos transcos = result.computeIfAbsent(
+        category,
+        c -> new Transcos(src, tgt)
+    );
 
-    public static Transcos fromRows(List<Map<String, Object>> rows) {
-        if (rows == null || rows.isEmpty()) {
-            // tu peux choisir: retourner null, ou un Transcos vide
-            return new Transcos("", "");
-        }
+    Transco t = new Transco(category);
+    t.getInput().add(new Input(src, str(r.get("SRC_VL"))));
+    t.getOutput().add(new Output(tgt, str(r.get("TGT_VL"))));
 
-        String src = String.valueOf(rows.get(0).get("SRC"));
-        String tgt = String.valueOf(rows.get(0).get("TGT"));
+    transcos.getTransco().add(t);
+  }
 
-        Transcos root = new Transcos(src, tgt);
-
-        for (Map<String, Object> r : rows) {
-            String category = str(r.get("CATEGORY"));
-            String srcVl = str(r.get("SRC_VL"));
-            String tgtVl = str(r.get("TGT_VL"));
-
-            Transco t = new Transco(category);
-            t.getInput().add(new Input(src, srcVl));
-            t.getOutput().add(new Output(tgt, tgtVl));
-
-            root.getTransco().add(t);
-        }
-        return root;
-    }
-
-    private static String str(Object o) {
-        return o == null ? null : String.valueOf(o);
-    }
+  return result;
 }
