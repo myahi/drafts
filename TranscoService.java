@@ -1,6 +1,5 @@
 package com.mycompany.transco.service;
 
-
 import com.mycompany.transco.model.Transcos;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -100,4 +99,34 @@ public class TranscoService {
 
             // Merge: si une catégorie existe déjà (batchs multiples), on concatène les <transco>
             for (Map.Entry<String, Transcos> entry : partial.entrySet()) {
-                aggregated.merge(entry.getKey()
+                aggregated.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    // a et b ont même category; on ajoute les transco de b dans a
+                    a.getTransco().addAll(b.getTransco());
+                    return a;
+                });
+            }
+        }
+        return aggregated;
+    }
+
+    // ---------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------
+
+    private static List<String> normalize(List<String> categories) {
+        if (categories == null) return List.of();
+
+        // - trim
+        // - enlève null/blank
+        // - dédoublonne (LinkedHashSet pour préserver l'ordre)
+        LinkedHashSet<String> set = new LinkedHashSet<>();
+        for (String c : categories) {
+            if (c == null) continue;
+            String v = c.trim();
+            if (!v.isEmpty()) {
+                set.add(v);
+            }
+        }
+        return new ArrayList<>(set);
+    }
+}
