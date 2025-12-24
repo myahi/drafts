@@ -1,0 +1,1 @@
+No body available of type: java.lang.String but has type: org.apache.cxf.message.MessageContentsList on: Message. Caused by: No type converter available to convert from type: org.apache.cxf.message.MessageContentsList
