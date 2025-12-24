@@ -1,3 +1,6 @@
+
+org.apache.camel.dataformat.bindy.fixed.BindyFixedLengthDataFormat.unmarshal
+    
 from("cxf:bean:myEndpoint")
     .routeId("soap-fixed-length-service")
     .streamCaching()  // Important pour relire le body
