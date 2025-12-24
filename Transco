@@ -1,0 +1,31 @@
+package com.mycompany.transco.model;
+
+import jakarta.xml.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(propOrder = { "input", "output" })
+public class Transco {
+
+    @XmlElement(name = "input")
+    private List<Input> input = new ArrayList<>();
+
+    @XmlElement(name = "output")
+    private List<Output> output = new ArrayList<>();
+
+    @XmlAttribute(name = "category")
+    private String category;
+
+    public Transco() {}
+
+    public Transco(String category) {
+        this.category = category;
+    }
+
+    public List<Input> getInput() { return input; }
+    public List<Output> getOutput() { return output; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+}
