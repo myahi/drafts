@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.tibco.com/schemas/BW2/Schema.xsd"
+	 targetNamespace="http://www.tibco.com/schemas/BW2/Schema.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="transcos">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="source"/>
+				<xs:element ref="target"/>
+				<xs:element ref="transco" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="source" type="xs:string"/>
+	<xs:element name="input">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="name"/>
+				<xs:element ref="value"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="target" type="xs:string"/>
+	<xs:element name="name" type="xs:string"/>
+	<xs:element name="value" type="xs:string"/>
+	<xs:element name="transco">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="input" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="output" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="category" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="output">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="name"/>
+				<xs:element ref="value" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="GenericXcoType">
+		<xs:annotation>
+			<xs:documentation>Modélisation d'une transco génrique (tables TBL_TRANS_GLOBAL_SOURCE et TBL_TRANS_GLOBAL_TARGET)</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="project">
+				<xs:annotation>
+					<xs:documentation>Projet (ensembles de transcos, valeurs possible BOFI, MAESTRO,REF et REPORT)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="BOFI">
+							<xs:annotation>
+								<xs:documentation>Ensembles des transcos en liaison avec les flux traités par le BOFI.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="REF">
+							<xs:annotation>
+								<xs:documentation>Ensembles des transcos en liaison avec les flux traités par les modules REF et MARKET DATA.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="MAESTRO">
+							<xs:annotation>
+								<xs:documentation>Ensembles des transcos en liaison avec les flux traités par le module MAESTRO.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="REPORT">
+							<xs:annotation>
+								<xs:documentation>Ensembles des transcos en liaison avec les flux traités par le module REPORT.</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="cat" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Catégorie de transco</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="srcApp" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Application source</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="srcVl" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Valeur à transcoder</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="targetXcos" type="TargetXcos" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Valeurs transcodées</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TargetXco">
+		<xs:annotation>
+			<xs:documentation>Valeur transcodée pour une application cible</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="tgtApp" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Application cible</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="tgtVl" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Valeur transcodée</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TargetXcos">
+		<xs:annotation>
+			<xs:documentation>Valeurs transcodées</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="targetXco" type="TargetXco" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
