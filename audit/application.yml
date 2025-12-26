@@ -1,0 +1,19 @@
+# Configuration de l'audit automatique des erreurs
+error:
+  auto-audit:
+    # Active/désactive l'audit automatique des erreurs
+    enabled: true
+    
+# Autres configurations possibles
+camel:
+  springboot:
+    name: TibcoIntegration
+
+# SEDA queues
+seda:
+  audit:
+    concurrent-consumers: 5
+    queue-size: 1000
+  error:
+    concurrent-consumers: 3
+    queue-size: 500
