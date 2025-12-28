@@ -1,3 +1,135 @@
 com.tibco.tibjms.TibjmsConnectionFactory cannot be converted to jakarta.jms.ConnectionFactory
 jakarta.jms-api-2.0.3.jar
 jakarta.jms-tibjms.jar
+
+
+
+Parfait ✅ — **`jakarta.jms-tibjms.jar` est exactement ce qu’il te faut** pour Spring Boot 3 / Camel 4.
+
+Ça veut dire : tu as **l’implémentation EMS compilée contre `jakarta.jms.*`**, donc plus de conflit `javax`/`jakarta`.
+
+Voici la marche à suivre (simple et sûre).
+
+---
+
+## 1) Nettoyage de ton `pom.xml` (obligatoire)
+
+### ✅ Supprime ces dépendances (elles te recréent le mélange)
+
+* **EMS 8.2 (javax)** :
+
+```xml
+<dependency>
+  <groupId>com.tibco.ems</groupId>
+  <artifactId>tibjms</artifactId>
+  <version>8.2</version>
+</dependency>
+```
+
+* **API javax JMS** :
+
+```xml
+<dependency>
+  <groupId>javax.jms</groupId>
+  <artifactId>javax.jms-api</artifactId>
+  <version>2.0.1</version>
+</dependency>
+```
+
+### ✅ Garde uniquement (en Spring Boot)
+
+Tu peux garder **juste** le starter JMS Camel (pas besoin du non-starter en plus) :
+
+```xml
+<dependency>
+  <groupId>org.apache.camel.springboot</groupId>
+  <artifactId>camel-jms-starter</artifactId>
+  <version>${camel.version}</version>
+</dependency>
+
+<dependency>
+  <groupId>org.messaginghub</groupId>
+  <artifactId>pooled-jms</artifactId>
+</dependency>
+```
+
+> Tu as actuellement `camel-jms` **et** `camel-jms-starter` : enlève `camel-jms` (redondant en Boot).
+
+---
+
+## 2) Ajouter `jakarta.jms-tibjms.jar` dans Maven (2 options)
+
+### Option A — Recommandée : l’installer dans ton repo local Maven
+
+```bash
+mvn install:install-file \
+  -Dfile=/chemin/vers/jakarta.jms-tibjms.jar \
+  -DgroupId=com.tibco.ems \
+  -DartifactId=tibjms-jakarta \
+  -Dversion=10.0.0 \
+  -Dpackaging=jar
+```
+
+Puis ajoute dans ton `pom.xml` :
+
+```xml
+<dependency>
+  <groupId>com.tibco.ems</groupId>
+  <artifactId>tibjms-jakarta</artifactId>
+  <version>10.0.0</version>
+</dependency>
+```
+
+*(mets la vraie version EMS si tu la connais ; sinon 10.0.0 “interne” marche tant que c’est cohérent dans ton org)*
+
+### Option B — Mieux en entreprise : publier dans Nexus/Artifactory
+
+Même principe, mais via ton pipeline/repo interne (meilleure pratique).
+
+---
+
+## 3) Côté code : tout en **Jakarta**
+
+Dans ton `EMSConfiguration`, tes imports JMS doivent être :
+
+```java
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+```
+
+Et ta factory EMS doit venir du jar Jakarta (souvent même package `com.tibco.tibjms.*`, mais “jakarta-compatible”).
+
+---
+
+## 4) Vérifier que tu n’as PLUS de `javax.jms` dans le classpath
+
+L’erreur que tu avais disparaît seulement si tu n’as pas **les deux mondes**.
+
+Commande utile :
+
+```bash
+mvn -q dependency:tree | grep -E "javax\.jms|jakarta\.jms|tibjms"
+```
+
+Objectif :
+
+* ✅ `jakarta.jms:jakarta.jms-api` présent
+* ❌ `javax.jms:javax.jms-api` absent
+* ✅ `tibjms-jakarta` (ton jar) présent
+* ❌ `tibjms:8.2` absent
+
+---
+
+## 5) Pourquoi `jakarta.jms-api-2.0.3.jar` seul ne suffisait pas
+
+Parce que c’est juste l’API (interfaces).
+**`jakarta.jms-tibjms.jar` est l’implémentation EMS**, donc c’est lui qui “fait marcher” la connexion.
+
+---
+
+Si tu veux, colle-moi :
+
+* le **nom exact du package** des classes dans `jakarta.jms-tibjms.jar` (ex: `com.tibco.tibjms.TibjmsConnectionFactory` existe toujours ?)
+* et ton `EMSConfiguration` actuelle
+
+…et je te renvoie une version **compilable Boot 3 + Camel 4 + EMS** avec pooling + composant Camel (`ems:`).
