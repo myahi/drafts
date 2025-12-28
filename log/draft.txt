@@ -133,3 +133,6 @@ Si tu veux, colle-moi :
 * et ton `EMSConfiguration` actuelle
 
 …et je te renvoie une version **compilable Boot 3 + Camel 4 + EMS** avec pooling + composant Camel (`ems:`).
+
+
+ javax.jms.QueueConnectionFactory cannot be resolved. It is indirectly referenced from required type com.tibco.tibjms.TibjmsQueueConnectionFactory
