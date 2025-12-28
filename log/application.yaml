@@ -3,7 +3,7 @@
 # ============================================================
 spring:
   application:
-    name: tibco-integration
+    name: eai-bofi-rgv
 
 # ============================================================
 # AUDIT & ERROR CONFIGURATION
@@ -27,9 +27,9 @@ error:
 # ============================================================
 tibco:
   ems:
-    server-url: tcp://localhost:7222
-    username: admin
-    password: admin
+    server-url: tcp://src4ems01.marches.intra.laposte.fr:7222
+    username: USR_SVC_EMS_APP_QLF
+    password: yo0ng80l7a
     
     pool:
       enabled: true
@@ -54,7 +54,7 @@ logging:
   
   # Fichiers de log
   file:
-    name: logs/tibco-integration.log
+    name: logs/eai-bofi-rgv.log
     max-size: 50MB
     max-history: 30
     total-size-cap: 1GB
@@ -76,6 +76,8 @@ logging:
     org.springframework: WARN
     org.hibernate: WARN
     com.zaxxer.hikari: WARN
+    org.apache.camel: INFO
+    org.apache.cxf: INFO
     
   # Logback specific (utilisé par Spring Boot par défaut)
   logback:
@@ -84,19 +86,50 @@ logging:
       max-history: 30
       total-size-cap: 1GB
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,camel
+  metrics:
+    enable:
+      all: 'true'
+  endpoint:
+    camel:
+      enabled: 'true'
+      show-extended-info: 'true'
+
+rgv:
+  soap:
+    routeId: rgv-soap-route
+    route:
+      id: "rgv-soap-service"
+    url: "http://127.0.0.1:1120/RGV/formatter-service"
+spring:
+  jmx:
+    enabled: 'true'
+  datasource:
+    password: MPW0d-veAdK_42zKtC36
+    driver:
+      class-name: oracle.jdbc.OracleDriver
+    username: maestro
+    url: jdbc:oracle:thin:@src4eai01.f1nom0a.local:1521/rc1maes1
+project:
+  name: RGV
+
 # ============================================================
 # CAMEL CONFIGURATION
 # ============================================================
 camel:
   springboot:
-    name: TibcoIntegration
-    main-run-controller: true
-  
-  component:
-    seda:
-      queue-size: 1000
-      concurrent-consumers: 5
+    name:'eai-bofi-rgv'
+    main-run-controller: 'true'
+    micrometer:
+      enabled: 'true'
+server:
+  port: '8080'
 
+  
 # ============================================================
 # PROFILES CONFIGURATION
 # ============================================================
