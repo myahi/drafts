@@ -1,2 +1,3 @@
 com.tibco.tibjms.TibjmsConnectionFactory cannot be converted to jakarta.jms.ConnectionFactory
 jakarta.jms-api-2.0.3.jar
+jakarta.jms-tibjms.jar
