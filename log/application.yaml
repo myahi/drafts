@@ -1,0 +1,172 @@
+# ============================================================
+# APPLICATION CONFIGURATION
+# ============================================================
+spring:
+  application:
+    name: tibco-integration
+
+# ============================================================
+# AUDIT & ERROR CONFIGURATION
+# ============================================================
+audit:
+  destination: ems  # "seda" ou "ems"
+  logging:
+    enabled: false  # Ne pas logger les audits (déjà dans EMS)
+  
+error:
+  destination: ems  # "seda" ou "ems"
+  auto-audit:
+    enabled: true
+  logging:
+    enabled: true
+    level: ERROR
+    include-stacktrace: true
+
+# ============================================================
+# TIBCO EMS CONFIGURATION
+# ============================================================
+tibco:
+  ems:
+    server-url: tcp://localhost:7222
+    username: admin
+    password: admin
+    
+    pool:
+      enabled: true
+      max-connections: 10
+    
+    queues:
+      audit: AUDIT.QUEUE
+      error: ERROR.QUEUE
+    
+    reconnect:
+      attempts: 3
+      delay: 5000
+
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+logging:
+  # Pattern pour console et fichier
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %highlight{%-5level}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=cyan} [%thread] %logger{36} - %X{correlationId} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"
+  
+  # Fichiers de log
+  file:
+    name: logs/tibco-integration.log
+    max-size: 50MB
+    max-history: 30
+    total-size-cap: 1GB
+  
+  # Niveaux de log par package
+  level:
+    root: INFO
+    
+    # Application
+    fr.lbp: INFO
+    fr.lbp.lib.audit: INFO
+    fr.lbp.lib.error: ERROR
+    fr.lbp.lib.ems: INFO
+    fr.lbp.routes: INFO
+    
+    # Frameworks
+    org.apache.camel: WARN
+    org.apache.cxf: WARN
+    org.springframework: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    
+  # Logback specific (utilisé par Spring Boot par défaut)
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30
+      total-size-cap: 1GB
+
+# ============================================================
+# CAMEL CONFIGURATION
+# ============================================================
+camel:
+  springboot:
+    name: TibcoIntegration
+    main-run-controller: true
+  
+  component:
+    seda:
+      queue-size: 1000
+      concurrent-consumers: 5
+
+# ============================================================
+# PROFILES CONFIGURATION
+# ============================================================
+---
+# ========== PROFILE: dev ==========
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+audit:
+  destination: seda  # Local en DEV
+  logging:
+    enabled: true    # Logger en DEV
+
+error:
+  destination: seda  # Local en DEV
+  logging:
+    level: ERROR
+    include-stacktrace: true
+
+tibco:
+  ems:
+    server-url: tcp://localhost:7222
+    username: admin
+    password: admin
+
+logging:
+  level:
+    root: DEBUG
+    fr.lbp: DEBUG
+    org.apache.camel: INFO
+  
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %X{correlationId} - %m%n"
+
+---
+# ========== PROFILE: prod ==========
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+audit:
+  destination: ems  # EMS en PROD
+  logging:
+    enabled: false  # Pas de log audit en PROD
+
+error:
+  destination: ems  # EMS en PROD
+  logging:
+    level: ERROR
+    include-stacktrace: false  # Pas de stacktrace dans les logs
+
+tibco:
+  ems:
+    server-url: tcp://ems-prod1:7222,tcp://ems-prod2:7222
+    username: ${EMS_USERNAME}
+    password: ${EMS_PASSWORD}
+    pool:
+      max-connections: 20
+
+logging:
+  level:
+    root: INFO
+    fr.lbp: INFO
+    org.apache.camel: WARN
+    org.springframework: WARN
+  
+  file:
+    name: /var/log/tibco-integration/app.log
+    max-size: 100MB
+    max-history: 90
