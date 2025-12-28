@@ -1,0 +1,1 @@
+com.tibco.tibjms.TibjmsConnectionFactory cannot be converted to jakarta.jms.ConnectionFactory
