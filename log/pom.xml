@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <dependencies>
+        
+        <!-- ========== TIBCO EMS ========== -->
+        <!-- Client TIBCO EMS (fourni par TIBCO) -->
+        <dependency>
+            <groupId>com.tibco</groupId>
+            <artifactId>tibjms</artifactId>
+            <version>8.6.0</version>
+            <!-- ⚠️ Vous devez installer ce JAR dans votre repo Maven local ou Nexus -->
+            <!-- mvn install:install-file -Dfile=tibjms.jar -DgroupId=com.tibco -DartifactId=tibjms -Dversion=8.6.0 -Dpackaging=jar -->
+        </dependency>
+        
+        <!-- Alternatives si vous n'avez pas le JAR TIBCO -->
+        <dependency>
+            <groupId>com.tibco</groupId>
+            <artifactId>tibjmsadmin</artifactId>
+            <version>8.6.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- ========== Apache Camel JMS ========== -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-jms</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jms-starter</artifactId>
+        </dependency>
+        
+        <!-- ========== Spring JMS ========== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-activemq</artifactId>
+            <exclusions>
+                <!-- Exclure ActiveMQ, on utilise EMS -->
+                <exclusion>
+                    <groupId>org.apache.activemq</groupId>
+                    <artifactId>activemq-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- ========== Pool de connexions (recommandé pour performance) ========== -->
+        <dependency>
+            <groupId>org.messaginghub</groupId>
+            <artifactId>pooled-jms</artifactId>
+        </dependency>
+        
+    </dependencies>
+</project>
