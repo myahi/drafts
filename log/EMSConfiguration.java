@@ -1,7 +1,10 @@
-package fr.lbp.config;
+package fr.lbp.lib.helper;
 
-import com.tibco.tibjms.TibjmsConnectionFactory;
-import com.tibco.tibjms.TibjmsQueueConnectionFactory;
+
+
+
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.component.jms.JmsComponent;
 import org.messaginghub.pooled.jms.JmsPoolConnectionFactory;
@@ -12,8 +15,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
+import com.tibco.tibjms.TibjmsConnectionFactory;
+import com.tibco.tibjms.TibjmsQueueConnectionFactory;
+
 
 @Slf4j
 @Configuration
@@ -38,7 +42,7 @@ public class EMSConfiguration {
     private int reconnectAttempts;
     
     @Value("${tibco.ems.reconnect.delay:5000}")
-    private long reconnectDelay;
+    private int reconnectDelay;
     
     /**
      * ConnectionFactory TIBCO EMS de base
@@ -50,7 +54,7 @@ public class EMSConfiguration {
         TibjmsQueueConnectionFactory factory = new TibjmsQueueConnectionFactory();
         
         // Configuration de base
-        factory.setServerUrl(serverUrl);
+        factory.setSerUrl(serverUrl);
         factory.setUserName(username);
         factory.setUserPassword(password);
         
