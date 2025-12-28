@@ -1,3 +1,7 @@
+Parameter 0 of method jmsTemplate in fr.lbp.lib.helper.EMSConfiguration required a single bean, but 2 were found:
+	- tibjmsConnectionFactory: defined by method 'tibjmsConnectionFactory' in class path resource [fr/lbp/lib/helper/EMSConfiguration.class]
+	- pooledEmsConnectionFactory: defined by method 'pooledEmsConnectionFactory' in class path resource [fr/lbp/lib/helper/EMSConfiguration.class]
+
 mvn -q dependency:tree | grep -E "tibjms|javax\.jms|jakarta\.jms"
 com.tibco.tibjms.TibjmsConnectionFactory cannot be converted to jakarta.jms.ConnectionFactory
 jakarta.jms-api-2.0.3.jar
