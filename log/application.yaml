@@ -4,17 +4,27 @@
 spring:
   application:
     name: eai-bofi-rgv
+  jmx:
+    enabled: true
+  datasource:
+    url: jdbc:oracle:thin:@src4eai01.f1nom0a.local:1521/rc1maes1
+    username: maestro
+    password: MPW0d-veAdK_42zKtC36
+    driver-class-name: oracle.jdbc.OracleDriver
+
+project:
+  name: RGV
 
 # ============================================================
 # AUDIT & ERROR CONFIGURATION
 # ============================================================
 audit:
-  destination: ems  # "seda" ou "ems"
+  destination: ems # "seda" ou "ems"
   logging:
-    enabled: false  # Ne pas logger les audits (déjà dans EMS)
-  
+    enabled: false # Ne pas logger les audits (déjà dans EMS)
+
 error:
-  destination: ems  # "seda" ou "ems"
+  destination: ems # "seda" ou "ems"
   auto-audit:
     enabled: true
   logging:
@@ -30,62 +40,39 @@ tibco:
     server-url: tcp://src4ems01.marches.intra.laposte.fr:7222
     username: USR_SVC_EMS_APP_QLF
     password: yo0ng80l7a
-    
     pool:
       enabled: true
       max-connections: 10
-    
     queues:
       audit: AUDIT.QUEUE
       error: ERROR.QUEUE
-    
     reconnect:
       attempts: 3
       delay: 5000
 
 # ============================================================
-# LOGGING CONFIGURATION
+# RGV SOAP CONFIGURATION
 # ============================================================
-logging:
-  # Pattern pour console et fichier
-  pattern:
-    console: "%d{HH:mm:ss.SSS} %highlight{%-5level}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=cyan} [%thread] %logger{36} - %X{correlationId} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"
-  
-  # Fichiers de log
-  file:
-    name: logs/eai-bofi-rgv.log
-    max-size: 50MB
-    max-history: 30
-    total-size-cap: 1GB
-  
-  # Niveaux de log par package
-  level:
-    root: INFO
-    
-    # Application
-    fr.lbp: INFO
-    fr.lbp.lib.audit: INFO
-    fr.lbp.lib.error: ERROR
-    fr.lbp.lib.ems: INFO
-    fr.lbp.routes: INFO
-    
-    # Frameworks
-    org.apache.camel: WARN
-    org.apache.cxf: WARN
-    org.springframework: WARN
-    org.hibernate: WARN
-    com.zaxxer.hikari: WARN
-    org.apache.camel: INFO
-    org.apache.cxf: INFO
-    
-  # Logback specific (utilisé par Spring Boot par défaut)
-  logback:
-    rollingpolicy:
-      max-file-size: 50MB
-      max-history: 30
-      total-size-cap: 1GB
+rgv:
+  soap:
+    routeId: rgv-soap-route
+    route:
+      id: rgv-soap-service
+    url: http://127.0.0.1:1120/RGV/formatter-service
 
+# ============================================================
+# CAMEL CONFIGURATION
+# ============================================================
+camel:
+  springboot:
+    name: eai-bofi-rgv
+    main-run-controller: true
+    micrometer:
+      enabled: true
+
+# ============================================================
+# MANAGEMENT / ACTUATOR
+# ============================================================
 management:
   endpoints:
     web:
@@ -93,43 +80,45 @@ management:
         include: health,info,metrics,camel
   metrics:
     enable:
-      all: 'true'
+      all: true
   endpoint:
     camel:
-      enabled: 'true'
-      show-extended-info: 'true'
-
-rgv:
-  soap:
-    routeId: rgv-soap-route
-    route:
-      id: "rgv-soap-service"
-    url: "http://127.0.0.1:1120/RGV/formatter-service"
-spring:
-  jmx:
-    enabled: 'true'
-  datasource:
-    password: MPW0d-veAdK_42zKtC36
-    driver:
-      class-name: oracle.jdbc.OracleDriver
-    username: maestro
-    url: jdbc:oracle:thin:@src4eai01.f1nom0a.local:1521/rc1maes1
-project:
-  name: RGV
+      enabled: true
+      show-extended-info: true
 
 # ============================================================
-# CAMEL CONFIGURATION
+# SERVER
 # ============================================================
-camel:
-  springboot:
-    name:'eai-bofi-rgv'
-    main-run-controller: 'true'
-    micrometer:
-      enabled: 'true'
 server:
-  port: '8080'
+  port: 8080
 
-  
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %highlight{%-5level}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=cyan} [%thread] %logger{36} - %X{correlationId} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"
+  file:
+    name: logs/eai-bofi-rgv.log
+  level:
+    root: INFO
+    fr.lbp: INFO
+    fr.lbp.lib.audit: INFO
+    fr.lbp.lib.error: ERROR
+    fr.lbp.lib.ems: INFO
+    fr.lbp.routes: INFO
+    org.apache.camel: WARN
+    org.apache.cxf: WARN
+    org.springframework: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30
+      total-size-cap: 1GB
+
 # ============================================================
 # PROFILES CONFIGURATION
 # ============================================================
@@ -141,12 +130,12 @@ spring:
       on-profile: dev
 
 audit:
-  destination: seda  # Local en DEV
+  destination: seda
   logging:
-    enabled: true    # Logger en DEV
+    enabled: true
 
 error:
-  destination: seda  # Local en DEV
+  destination: seda
   logging:
     level: ERROR
     include-stacktrace: true
@@ -162,7 +151,6 @@ logging:
     root: DEBUG
     fr.lbp: DEBUG
     org.apache.camel: INFO
-  
   pattern:
     console: "%d{HH:mm:ss.SSS} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %X{correlationId} - %m%n"
 
@@ -174,15 +162,15 @@ spring:
       on-profile: prod
 
 audit:
-  destination: ems  # EMS en PROD
+  destination: ems
   logging:
-    enabled: false  # Pas de log audit en PROD
+    enabled: false
 
 error:
-  destination: ems  # EMS en PROD
+  destination: ems
   logging:
     level: ERROR
-    include-stacktrace: false  # Pas de stacktrace dans les logs
+    include-stacktrace: false
 
 tibco:
   ems:
@@ -198,8 +186,9 @@ logging:
     fr.lbp: INFO
     org.apache.camel: WARN
     org.springframework: WARN
-  
   file:
     name: /var/log/tibco-integration/app.log
-    max-size: 100MB
-    max-history: 90
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 90
