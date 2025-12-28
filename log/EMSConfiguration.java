@@ -1,8 +1,5 @@
 package fr.lbp.lib.helper;
 
-
-
-
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
@@ -16,137 +13,112 @@ import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
 
 import com.tibco.tibjms.TibjmsConnectionFactory;
-import com.tibco.tibjms.TibjmsQueueConnectionFactory;
-
 
 @Slf4j
 @Configuration
 public class EMSConfiguration {
-    
+
     @Value("${tibco.ems.server-url}")
     private String serverUrl;
-    
+
     @Value("${tibco.ems.username}")
     private String username;
-    
+
     @Value("${tibco.ems.password}")
     private String password;
-    
-    @Value("${tibco.ems.pool.enabled:true}")
-    private boolean poolEnabled;
-    
+
     @Value("${tibco.ems.pool.max-connections:10}")
     private int maxConnections;
-    
+
     @Value("${tibco.ems.reconnect.attempts:3}")
     private int reconnectAttempts;
-    
+
     @Value("${tibco.ems.reconnect.delay:5000}")
-    private int reconnectDelay;
-    
+    private long reconnectDelay;
+
     /**
-     * ConnectionFactory TIBCO EMS de base
+     * ConnectionFactory EMS (Jakarta)
      */
     @Bean(name = "tibjmsConnectionFactory")
     public TibjmsConnectionFactory tibjmsConnectionFactory() throws JMSException {
         log.info("Creating TIBCO EMS ConnectionFactory - serverUrl={}", serverUrl);
-        
-        TibjmsQueueConnectionFactory factory = new TibjmsQueueConnectionFactory();
-        
-        // Configuration de base
-        factory.setSerUrl(serverUrl);
+
+        TibjmsConnectionFactory factory = new TibjmsConnectionFactory();
+        factory.setServerUrl(serverUrl);
         factory.setUserName(username);
         factory.setUserPassword(password);
-        
-        // Configuration de reconnexion
+
+        // Reconnexion (si supporté par cette version EMS Jakarta)
         factory.setReconnAttemptCount(reconnectAttempts);
         factory.setReconnAttemptDelay(reconnectDelay);
         factory.setReconnAttemptTimeout(30000);
-        
-        // Configuration SSL (si activé)
-        // factory.setSSLVendor("j2se");
-        // factory.setSSLEnableVerifyHost(false);
-        
+
         log.info("TIBCO EMS ConnectionFactory created successfully");
         return factory;
     }
-    
+
     /**
-     * ConnectionFactory avec pool (recommandé pour production)
+     * ConnectionFactory avec pool
      */
     @Bean(name = "emsConnectionFactory")
     @ConditionalOnProperty(name = "tibco.ems.pool.enabled", havingValue = "true", matchIfMissing = true)
     public ConnectionFactory pooledEmsConnectionFactory(TibjmsConnectionFactory tibjmsConnectionFactory) {
         log.info("Creating pooled EMS ConnectionFactory - maxConnections={}", maxConnections);
-        
+
         JmsPoolConnectionFactory pooledFactory = new JmsPoolConnectionFactory();
         pooledFactory.setConnectionFactory(tibjmsConnectionFactory);
-        
-        // Configuration du pool
+
         pooledFactory.setMaxConnections(maxConnections);
         pooledFactory.setMaxSessionsPerConnection(10);
+
         pooledFactory.setBlockIfSessionPoolIsFull(true);
-        pooledFactory.setBlockIfSessionPoolIsFullTimeout(-1);
-        pooledFactory.setConnectionIdleTimeout(30000);
+        pooledFactory.setBlockIfSessionPoolIsFullTimeout(30000); // ⚠️ évite -1 (blocage infini)
+
+        pooledFactory.setConnectionIdleTimeout(300000); // 5 min (à ajuster)
         pooledFactory.setUseAnonymousProducers(false);
-        
-        log.info("Pooled EMS ConnectionFactory created");
+
         return pooledFactory;
     }
-    
+
     /**
-     * ConnectionFactory sans pool (pour DEV/TEST)
+     * ConnectionFactory sans pool (DEV/TEST)
      */
     @Bean(name = "emsConnectionFactory")
     @ConditionalOnProperty(name = "tibco.ems.pool.enabled", havingValue = "false")
     public ConnectionFactory cachedEmsConnectionFactory(TibjmsConnectionFactory tibjmsConnectionFactory) {
         log.info("Creating cached EMS ConnectionFactory (no pool)");
-        
+
         CachingConnectionFactory cachingFactory = new CachingConnectionFactory(tibjmsConnectionFactory);
         cachingFactory.setSessionCacheSize(10);
         cachingFactory.setCacheConsumers(false);
         cachingFactory.setCacheProducers(true);
-        
+
         return cachingFactory;
     }
-    
-    /**
-     * JmsTemplate pour envoyer des messages directement (optionnel)
-     */
+
     @Bean
     public JmsTemplate jmsTemplate(ConnectionFactory emsConnectionFactory) {
-        log.info("Creating JmsTemplate");
-        
         JmsTemplate template = new JmsTemplate(emsConnectionFactory);
-        
-        // Configuration
         template.setDeliveryPersistent(true);
-        template.setPriority(4);
         template.setExplicitQosEnabled(true);
+        template.setPriority(4);
         template.setReceiveTimeout(5000);
-        
         return template;
     }
-    
-    /**
-     * Composant Camel JMS pour EMS
-     */
+
     @Bean(name = "ems")
     public JmsComponent emsJmsComponent(ConnectionFactory emsConnectionFactory) {
-        log.info("Creating Camel JMS component for EMS");
-        
         JmsComponent jmsComponent = new JmsComponent();
         jmsComponent.setConnectionFactory(emsConnectionFactory);
-        
-        // Configuration Camel
+
         jmsComponent.setRequestTimeout(20000);
-        jmsComponent.setConcurrentConsumers(5);
-        jmsComponent.setMaxConcurrentConsumers(10);
+        jmsComponent.setConcurrentConsumers(2);
+        jmsComponent.setMaxConcurrentConsumers(5);
         jmsComponent.setCacheLevelName("CACHE_CONSUMER");
+
         jmsComponent.setDeliveryPersistent(true);
         jmsComponent.setExplicitQosEnabled(true);
-        
-        log.info("Camel JMS component created");
+
         return jmsComponent;
     }
 }
