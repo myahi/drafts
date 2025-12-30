@@ -1,90 +1,20 @@
-private String generateWarnin(RGVmessage rgvMessage) {
-		if(Optional.ofNullable(rgvMessage).map(RGVmessage::getRGVcommun).map(RGVcommun::getIdentificationEmetteur).orElse(null)==null) {
-			return "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationEmetteur. \n";
-		}
-		return null;
-		}
+(string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeRemuneration)=0
+and
+$GetGenericTranscoSets/output/xcoTargets[pfx4:cat='rgv.mt065.typeRemuneration.filter' and pfx4:srcApp='Calypso']/pfx4:srcVl[1]='YES'
+)
+or
 
+(string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:garantee)=0
+or
+string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:garantee)>1
+)
+or(string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programId)=0
+and 
+$GetGenericTranscoSets/output/xcoTargets[pfx4:cat='rgv.mt065.programId.filter' and pfx4:srcApp='Calypso']/pfx4:srcVl[1]='YES')
 
+or string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programId)>6
 
-if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationEmetteur))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationEmetteur. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationRecepteur))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationRecepteur. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:referenceOperation))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/referenceOperation. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:codeOperation))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/codeOperation. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:codeEtablissement))> 0 )) then "Erreur! champ obligatoire RGVchamps/etablissementEmetteur/codeEtablissement. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:typeCode))> 0 )) then "Erreur! champ obligatoire RGVchamps/etablissementEmetteur/typeCode. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeValeur))> 0 )) then "Erreur! champ obligatoire RGVchamps/codeValeur. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN))> 0 )) then "Erreur! champ obligatoire RGVchamps/codeTauxTCN. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeDeviseEmission))> 0 )) then "Erreur! champ obligatoire RGVchamps/codeDeviseEmission. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:indicateurAdmissionSystemesRL))> 0 )) then "Erreur! champ obligatoire RGVchamps/indicateurAdmissionSystemesRL. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:referenceOperation))> 0 )) then "Erreur! champ obligatoire RGVchamps/caracteristiquesEP/referenceOperation. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:codeAdherentPartie))> 0 )) then "Erreur! champ obligatoire RGVchamps/caracteristiquesEP/codeAdherentPartie. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:typeSousComptePartie))> 0 )) then "Erreur! champ obligatoire RGVchamps/caracteristiquesEP/typeSousComptePartie. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:numeroSousComptePartie))> 0 )) then "Erreur! champ obligatoire RGVchamps/caracteristiquesEP/numeroSousComptePartie. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeEtablissementContrepartie))> 0 )) then "Erreur! champ obligatoire RGVchamps/codeEtablissementContrepartie. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTypeInstruction))> 0 )) then "Erreur! champ obligatoire RGVchamps/codeTypeInstruction. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateNegociation))> 0 )) then "Erreur! champ obligatoire RGVchamps/dateNegociation. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureNegociation))> 0 )) then "Erreur! champ obligatoire RGVchamps/heureNegociation. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateDenouementTheorique))> 0 )) then "Erreur! champ obligatoire RGVchamps/dateDenouementTheorique. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureDenouementTheorique))> 0 )) then "Erreur! champ obligatoire RGVchamps/heureDenouementTheorique. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantEmissionTCN/pfx:codeDevise))> 0 )) then "Erreur! champ obligatoire RGVchamps/montantEmissionTCN/decise.. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantEmissionTCN/pfx:montant))> 0 )) then "Erreur! champ obligatoire RGVchamps/montantEmissionTCN/montant.. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantNetLigneInstruction/pfx:devise))> 0 )) then "Erreur! champ obligatoire RGVchamps/montantNetLigneInstruction/devise.. \n"
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantNetLigneInstruction/pfx:montant))> 0) ) then "Erreur! champ obligatoire RGVchamps/montantNetLigneInstruction/montant.. \n"
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeAdherentDomiciliataire) !=0 
-and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeAdherentDomiciliataire) !='NaN' )) then "Contenue du champ erroné :codeAdherentDomiciliataire. \n"
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeEtablissementDomiciliataire) !=0 
-and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeEtablissementDomiciliataire) !='NaN')) then "Contenue du champ erroné :codeEtablissementDomiciliataire. \n"
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:codeAdherentPartie) !=0 
-and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:codeAdherentPartie) !='NaN' )) then "Contenue du champ erroné :codeAdherentPartie. \n"
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeEtablissementContrepartie) !=0 
-and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeEtablissementContrepartie) !='NaN' ) )then "Contenue du champ erroné :codeEtablissementContrepartie. \n"
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeValeur) !=0
-and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeValeur) !='NaN' )) then "Contenue du champ erroné :RGVchamps/codeValeur. \n"
-
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeAdherentContrepartie)) = 0
-   or number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeAdherentContrepartie) !=0 
-   and number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeAdherentContrepartie) !='NaN') ) then "Contenue du champ erroné :codeAdherentContrepartie regle R0061. . \n"
-
-
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:format)) =0 or
-string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:montant)) =0 or
- number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:format) >=0 and
- number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:format) <16 and
- number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:format) !='NaN' and
- number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:montant) !='NaN') ) then "Error contenue montantUnitaireRemboursement. \n"
-
-
-else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:format)) =0 or
-string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:montant))=0 or
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:format) >=0 and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:format) <16 and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:format) !='NaN' and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:montant) !='NaN' ) )then "Contenue du champ erroné :tauxInteretFixe. \n"
-
-else if(not(
-string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:format)) =0 or
-string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:montant))=0 or
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:format) >=0 and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:format) <16 and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:format) !='NaN' and
-  number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:montant) !='NaN') )then "Contenue du champ erroné :tauxMargeAbsolue. \n"
-
-else if(not(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantNetLigneInstruction/pfx:montant) !='NaN' ))  then "Contenue du champ erroné :montantNetLigneInstruction. \n"
-
-else if(not(tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:dateDemande)  ))then "Contenue du champ erroné :dateDemande. \n"
-else if(not(tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremiereEmission) ))then "Contenue du champ erroné :datePremiereEmission. \n"
-else if(not( string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremiereJouissance)) = 0  or
-      tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremiereJouissance))) then "Contenue du champ erroné :datePremiereJouissance. \n"
-else if(not( string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremierPaiementInterets)) = 0  or
-     tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremierPaiementInterets) )) then "Contenue du champ erroné :datePremierPaiementInterets. \n"
-else if(not(tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateRemboursementTCN) )) then "Contenue du champ erroné :dateRemboursementTCN. \n"
-else if(not(tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateNegociation) )) then "Contenue du champ erroné :dateNegociation. \n"
-else if(not(tib:parse-date("yyyyMMdd", $Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateDenouementTheorique) )) then "Contenue du champ erroné :dateDenouementTheorique. \n"
-else if(not(  string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureNegociation)) = 0 or
-    tib:parse-time("HHmmss",$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureNegociation )) ) then "Contenue du champ erroné :heureNegociation. \n"
-else if(not(  string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureDenouementTheorique)) = 0  or
-tib:parse-time("HHmmss",$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureDenouementTheorique )) ) then "Contenue du champ erroné :heureDenouementTheorique. \n"
-else if(not(  string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:heureDemande)) = 0  or
-tib:parse-time("HHmmss",$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:heureDemande) )) then "Contenue du champ erroné :heureDemande. \n"
-else ""
+or(string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programOrigin)=0
+and 
+$GetGenericTranscoSets/output/xcoTargets[pfx4:cat='rgv.mt065.programOrigin.filter' and pfx4:srcApp='Calypso']/pfx4:srcVl[1]='YES')
+or string-length($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programOrigin)>3
