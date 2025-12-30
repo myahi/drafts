@@ -1,3 +1,12 @@
+private String generateWarnin(RGVmessage rgvMessage) {
+		if(Optional.ofNullable(rgvMessage).map(RGVmessage::getRGVcommun).map(RGVcommun::getIdentificationEmetteur).orElse(null)==null) {
+			return "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationEmetteur. \n";
+		}
+		return null;
+		}
+
+
+
 if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationEmetteur))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationEmetteur. \n"
 else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationRecepteur))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/identificationRecepteur. \n"
 else if(not(string-length(tib:trim($Start/pfx:RGVmessage/pfx:RGVcommun/pfx:referenceOperation))> 0 )) then "Erreur! champ obligatoire RGVmessage/RGVcommun/referenceOperation. \n"
