@@ -1,1 +1,21 @@
 rvd: Failed to create license source from trusted storage []: Trusted storage is corrupted.
+
+onException(Exception.class)
+  .handled(true)
+  .process(e -> {
+      Exception ex = e.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+
+      String msg = (ex != null && ex.getMessage() != null) ? ex.getMessage() : "Erreur interne";
+
+      // SOAP Fault (Server = erreur côté serveur)
+      SoapFault fault = new SoapFault(msg, SoapFault.FAULT_CODE_SERVER);
+
+      // Optionnel : subcode
+      // fault.setSubCode(new QName("urn:errors", "INTERNAL_ERROR"));
+
+      // IMPORTANT : mettre le fault dans le body de la réponse CXF
+      e.getMessage().setBody(fault);
+
+      // (Optionnel) headers HTTP
+      e.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, 500);
+  });
