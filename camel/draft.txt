@@ -1,0 +1,1 @@
+rvd: Failed to create license source from trusted storage []: Trusted storage is corrupted.
