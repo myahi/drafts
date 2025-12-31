@@ -1,1 +1,1 @@
-[1;31mExecution repackage of goal org.springframework.boot:spring-boot-maven-plugin:2.4.0:repackage failed: Unable to find main class[m -> [1m[Help 1][m
+java.lang.ClassNotFoundException: fr.lbp.markit.application.MarkitApplication
