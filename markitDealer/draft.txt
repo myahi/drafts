@@ -1,0 +1,11 @@
+la méthode stopListening() dans la class MessageHandler dont le code est le suivant:
+  
+  public void stopListening() throws JMSException{
+		this.connection.stop();
+		this.connection.close();
+		LOGGER.info("Stop listenning incoming messages on queue >>> " + incomingQueue);
+	}
+
+génére l'exception ci-dessous
+javax.jms.IllegalStateException: Connection is being closed
+quand je l'appel depuis la méthode stopMarkitConnectorInternal de class LbpMarkitClient.java 
