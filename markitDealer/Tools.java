@@ -39,24 +39,6 @@ public class Tools {
 	public final static String MARKIT_ACTION_UPDATE = "UPDATE";
 	public final static String MARKIT_ACTION_DRAFT_AND_TRANSFERT = "DRAFT_NEW_AND_TRANSFERT";
 	
-	public static String prepareSavingFile(String msgBody,String outgingMsgFolderPath){
-		String fileName = null;
-		String currentDate =  new SimpleDateFormat("ddMMyyyy").format(new Date());
-		File folderName = new File(outgingMsgFolderPath + currentDate);
-		if (!folderName.exists()){
-			folderName.mkdirs();
-		}
-		return fileName;
-	}
-	
-	public static void writeTextInFile(String fileName, String content){
-		  try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))) {
-			  	bw.write(content);
-				LOGGER.info("Write outgoing message into file >>>" + fileName);
-			} catch (IOException e) {
-				LOGGER.error(e.getStackTrace());
-			}
-		  }
 	
 	public static String extractStackTraceExcetpionInoString(Throwable ex){
 		StringWriter stackTrace = new StringWriter();
