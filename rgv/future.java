@@ -1,0 +1,71 @@
+public void generateMTMessage(RGVmessage rgvMessage,@ExchangeProperties Map<String, Object> properties,Exchange exchange){
+		MT065 result = new MT065();
+		result.setO_R1_Identification_emetteur(rgvMessage.getRGVcommun().getIdentificationEmetteur());
+		result.setO_R2_Reference_operation(rgvMessage.getRGVcommun().getReferenceOperation());
+		result.setO_R3_Identification_recepteur(rgvMessage.getRGVcommun().getIdentificationRecepteur());
+		result.setF_R4_Type_emetteur(rgvMessage.getRGVcommun().getTypeEmetteur());
+		result.setO_R5_Code_operation(rgvMessage.getRGVcommun().getCodeOperation());
+		result.setO_Date_demande(rgvMessage.getRGVchamps().getCodification().getDateDemande());
+		result.setZ_Heure_demande(rgvMessage.getRGVchamps().getCodification().getHeureDemande());
+		result.setF_Zone_reservee(rgvMessage.getRGVchamps().getCodification().getZoneReserve());
+		result.setO_Code_etablissement_domiciliataire(rgvMessage.getRGVchamps().getCodification().getCodeEtablissementDomiciliataire());
+		result.setO_Code_adherent_domiciliataire(rgvMessage.getRGVchamps().getCodification().getCodeAdherentDomiciliataire());
+		result.setO_Type_code_emetteur_Etablissement_emetteur(rgvMessage.getRGVchamps().getEtablissementEmetteur().getTypeCode());
+		result.setO_Code_etablissement_Etablissement_emetteur(rgvMessage.getRGVchamps().getEtablissementEmetteur().getCodeEtablissement());
+		result.setF_Zone_reservee_Etablissement_emetteur(rgvMessage.getRGVchamps().getZoneReservee());
+		result.setF_Code_valeur_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeValeur());
+		result.setO_Type_valeur_TCN_Etablissement_emetteur(rgvMessage.getRGVchamps().getTypeValeurTCN());
+		result.setO_Modalite_emission_TCN_Etablissement_emetteur(rgvMessage.getRGVchamps().getModaliteEmissionTCN());
+		result.setO_Date_premiere_emission_Etablissement_emetteur(StringUtils.leftPad(rgvMessage.getRGVchamps().getDatePremiereEmission(), 8, "0"));
+		result.setO_Date_remboursement_TCN_Etablissement_emetteur(StringUtils.leftPad(rgvMessage.getRGVchamps().getDateRemboursementTCN(),8,"0"));
+		result.setZ_Date_premiere_jouissance_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeTauxTCN().contains("003-015-016") ? "00000000" : StringUtils.leftPad(rgvMessage.getRGVchamps().getDatePremiereJouissance(), 8,"0"));
+		result.setZ_Date_premier_paiement_interets_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeTauxTCN().contains("000-035") ? StringUtils.leftPad(rgvMessage.getRGVchamps().getDatePremierPaiementInterets(), 8,"0") : "00000000");
+		if("NCP".equals(rgvMessage.getRGVchamps().getTypeValeurTCN())){
+			result.setF_Type_remuneration_Etablissement_emetteur(rgvMessage.getRGVchamps().getTypeRemuneration());	
+		}
+		else {
+			result.setF_Type_remuneration_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeTauxTCN().contains("003-015-016") ? rgvMessage.getRGVchamps().getTypeRemuneration():"");
+		}
+		result.setO_Code_taux_TCN_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeTauxTCN());
+		result.setO_Code_devise_emission_Etablissement_emetteur(rgvMessage.getRGVchamps().getCodeDeviseEmission());
+		result.setO_Indicateur_admission_aux_systemes_ReglementLivraison_Etablissement_emetteur(rgvMessage.getRGVchamps().getIndicateurAdmissionSystemesRL());
+		result.setF_Format_Taux_interet_fixe(Double.valueOf(rgvMessage.getRGVchamps().getTauxInteretFixe().getMontant())==0 ? "" : rgvMessage.getRGVchamps().getTauxInteretFixe().getFormat());
+		result.setZ_Montant_Taux_interet_fixe(StringUtils.leftPad(rgvMessage.getRGVchamps().getTauxInteretFixe().getMontant(),15,"0"));
+		result.setF_Commentaire_pour_TCN_Taux_interet_fixe(rgvMessage.getRGVchamps().getTauxInteretFixe().getCommentaireTCN());
+		result.setF_Code_devise_Montant_unitaire_remboursement((!"000-035-015-016".contains(rgvMessage.getRGVchamps().getCodeTauxTCN()) || Double.valueOf(rgvMessage.getRGVchamps().getMontantUnitaireRemboursement().getMontant())==0) ?"":rgvMessage.getRGVchamps().getMontantUnitaireRemboursement().getCodeDevise());
+		result.setF_Format_Montant_unitaire_remboursement((!"000-035-015-016".contains(rgvMessage.getRGVchamps().getCodeTauxTCN()) || Double.valueOf(rgvMessage.getRGVchamps().getMontantUnitaireRemboursement().getMontant())==0) ?"":rgvMessage.getRGVchamps().getMontantUnitaireRemboursement().getFormat());
+		result.setZ_Montant_Montant_unitaire_remboursement("000-035-015-016".contains(rgvMessage.getRGVchamps().getCodeTauxTCN()) ? StringUtils.leftPad(rgvMessage.getRGVchamps().getMontantUnitaireRemboursement().getMontant(),15,"0"):"000000000000000");
+		result.setF_Code_sens_taux_Taux_marge_absolue(!StringUtils.isBlank(rgvMessage.getRGVchamps().getTauxMargeAbsolue().getMontant()) && Double.valueOf(rgvMessage.getRGVchamps().getTauxMargeAbsolue().getMontant())==0  ? "" : rgvMessage.getRGVchamps().getTauxMargeAbsolue().getCodeSens());
+		result.setF_Format_Taux_marge_absolue(!StringUtils.isBlank(rgvMessage.getRGVchamps().getTauxMargeAbsolue().getMontant()) && Double.valueOf(rgvMessage.getRGVchamps().getTauxMargeAbsolue().getMontant()) == 0 ? "" : rgvMessage.getRGVchamps().getTauxMargeAbsolue().getFormat());
+		result.setZ_Montant_Taux_marge_absolue(StringUtils.leftPad(rgvMessage.getRGVchamps().getTauxMargeAbsolue().getMontant(),15,"0"));
+		result.setF_Code_periodicite_interets_Taux_marge_absolue("000-035".contains(rgvMessage.getRGVchamps().getCodeTauxTCN())? rgvMessage.getRGVchamps().getCodePeriodiciteInterets() :"");
+		result.setF_Type_interets_Taux_marge_absolue("000-035".contains(rgvMessage.getRGVchamps().getCodeTauxTCN())? rgvMessage.getRGVchamps().getTypeInterets() :"");
+		result.setGuarantee(rgvMessage.getRGVchamps().getEtablissementEmetteur().getGarantee());
+		result.setProgram_Originator(StringUtils.leftPad(rgvMessage.getRGVchamps().getEtablissementEmetteur().getProgramOrigin(),3," "));
+		result.setProgram_Identifier(StringUtils.leftPad(rgvMessage.getRGVchamps().getEtablissementEmetteur().getProgramId(),6," "));
+		result.setO_Reference_operation_placement_Caracteristiques_placement(rgvMessage.getRGVchamps().getCaracteristiquesEP().getReferenceOperation());
+		result.setO_Code_adherent_partie_Caracteristiques_placement(rgvMessage.getRGVchamps().getCaracteristiquesEP().getCodeAdherentPartie());
+		result.setO_Type_souscompte_partie_Caracteristiques_placement(rgvMessage.getRGVchamps().getCaracteristiquesEP().getTypeSousComptePartie());
+		result.setO_Numero_souscompte_partie_Caracteristiques_placement(Double.valueOf(rgvMessage.getRGVchamps().getCaracteristiquesEP().getNumeroSousComptePartie())==0 ? "0" : rgvMessage.getRGVchamps().getCaracteristiquesEP().getNumeroSousComptePartie());
+		result.setF_Reference_interne_instruction_partie_Caracteristiques_placement(rgvMessage.getRGVchamps().getCaracteristiquesEP().getReferenceInterneInstructionPartie());
+		result.setF_Zone_reservee_Caracteristiques_placement(rgvMessage.getRGVchamps().getCaracteristiquesEP().getZoneReservee());
+		result.setO_Code_etablissement_contrepartie_Caracteristiques_placement(rgvMessage.getRGVchamps().getCodeEtablissementContrepartie());
+		result.setF_Code_adherent_contrepartie_Caracteristiques_placement(Double.valueOf(rgvMessage.getRGVchamps().getCodeAdherentContrepartie())==0 ? "" : rgvMessage.getRGVchamps().getCodeAdherentContrepartie());
+		result.setO_Code_type_instruction_Caracteristiques_placement(rgvMessage.getRGVchamps().getCodeTypeInstruction());
+		result.setO_Date_negociation_Caracteristiques_placement(StringUtils.leftPad(rgvMessage.getRGVchamps().getDateNegociation(),8,"0"));
+		result.setZ_Heure_negociation_Caracteristiques_placement(StringUtils.leftPad(rgvMessage.getRGVchamps().getHeureNegociation(),6,"0"));
+		result.setO_Date_denouement_theorique_Caracteristiques_placement(StringUtils.leftPad(rgvMessage.getRGVchamps().getDateDenouementTheorique(),8,"0"));
+		result.setZ_Heure_denouement_theorique_Caracteristiques_placement(StringUtils.leftPad(rgvMessage.getRGVchamps().getHeureDenouementTheorique(),6,"0"));
+		result.setO_Code_devise_Montant_emission_TCN(rgvMessage.getRGVchamps().getMontantEmissionTCN().getCodeDevise());
+		result.setO_Montant_Montant_emission_TCN(StringUtils.leftPad(rgvMessage.getRGVchamps().getMontantEmissionTCN().getMontant(),15,"0"));
+		result.setO_Code_devise_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getMontantNetLigneInstruction().getDevise());
+		result.setO_Montant_Montant_net_ligne_instruction(StringUtils.leftPad(rgvMessage.getRGVchamps().getMontantNetLigneInstruction().getMontant(),15,"0"));
+		result.setF_Reference_clientele_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceDeClientele());
+		result.setF_Commentaire_destine_contrepartie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getCommentaireDestineContrepartie());
+		result.setF_Type_code_externe_client_partie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getTypeCodeExterneClientPartie());
+		result.setF_Code_externe_client_partie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getCodeExterneClientPartie());
+		result.setF_Nom_client_partie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getNomClientPartie());
+		result.setF_Type_code_externe_client_contrepartie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getTypeCodeExterneClientContrepartie());
+		result.setF_Code_externe_client_contrepartie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getCodeExterneClientContrepartie());
+		result.setF_Nom_client_contrepartie_Montant_net_ligne_instruction(rgvMessage.getRGVchamps().getReferenceClientele().getNomClientContrepartie());
+	}
