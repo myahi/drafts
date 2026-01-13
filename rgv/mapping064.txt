@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MT064 xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:pfx="http://www.lbp.fr/xml" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:pfx2="http://www.calypso.com/xml" xmlns:ns="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:pfx3="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:lbp="java://LbpCustomClass" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions">
+    <O_R1_Identification_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVcommun/pfx2:identificationEmetteur"/>
+    </O_R1_Identification_emetteur>
+    <O_R2_Reference_operation>
+        <xsl:value-of select="$MT064/pfx2:RGVcommun/pfx2:referenceOperation"/>
+    </O_R2_Reference_operation>
+    <O_R3_Identification_recepteur>
+        <xsl:value-of select="$MT064/pfx2:RGVcommun/pfx2:identificationRecepteur"/>
+    </O_R3_Identification_recepteur>
+    <F_R4_Type_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVcommun/pfx2:typeEmetteur"/>
+    </F_R4_Type_emetteur>
+    <O_R5_Code_operation>
+        <xsl:value-of select="$MT064/pfx2:RGVcommun/pfx2:codeOperation"/>
+    </O_R5_Code_operation>
+    <O_Date_demande_Codification>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:dateDemande"/>
+    </O_Date_demande_Codification>
+    <Z_Heure_demande_Codification>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:heureDemande"/>
+    </Z_Heure_demande_Codification>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:zoneReserve">
+        <F_Zone_reservee_Codification>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:zoneReserve"/>
+        </F_Zone_reservee_Codification>
+    </xsl:if>
+    <O_Code_etablissement_domiciliataire_Codification>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:codeEtablissementDomiciliataire"/>
+    </O_Code_etablissement_domiciliataire_Codification>
+    <O_Code_adherent_domiciliataire_Codification>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codification/pfx2:codeAdherentDomiciliataire"/>
+    </O_Code_adherent_domiciliataire_Codification>
+    <O_Type_code_emetteur_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:typeCode"/>
+    </O_Type_code_emetteur_Etablissement_emetteur>
+    <O_Code_etablissement_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:codeEtablissement"/>
+    </O_Code_etablissement_Etablissement_emetteur>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:zoneReservee">
+        <F_Zone_reservee_Etablissement_emetteur>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Etablissement_emetteur>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:codeValeur">
+        <F_Code_valeur_Etablissement_emetteur>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codeValeur"/>
+        </F_Code_valeur_Etablissement_emetteur>
+    </xsl:if>
+    <O_Type_valeur_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:typeValeurTCN"/>
+    </O_Type_valeur_TCN_Etablissement_emetteur>
+    <O_Modalite_emission_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:modaliteEmissionTCN"/>
+    </O_Modalite_emission_TCN_Etablissement_emetteur>
+    <O_Date_premiere_emission_Etablissement_emetteur>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:datePremiereEmission, '8', '0')"/>
+    </O_Date_premiere_emission_Etablissement_emetteur>
+    <O_Date_remboursement_TCN_Etablissement_emetteur>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:dateRemboursementTCN, '8', '0')"/>
+    </O_Date_remboursement_TCN_Etablissement_emetteur>
+    <Z_Date_premiere_jouissance_Etablissement_emetteur>
+        <xsl:value-of select="if(contains(&quot;003-015-016&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &quot;00000000&quot; else&#xA;tib:pad-front($MT064/pfx2:RGVchamps/pfx2:datePremiereJouissance, '8', '0')"/>
+    </Z_Date_premiere_jouissance_Etablissement_emetteur>
+    <Z_Date_premier_paiement_interets_Etablissement_emetteur>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &#xA;tib:pad-front($MT064/pfx2:RGVchamps/pfx2:datePremierPaiementInterets, '8', '0') else &quot;00000000&quot;"/>
+    </Z_Date_premier_paiement_interets_Etablissement_emetteur>
+    <xsl:choose>
+        <xsl:when test="'035' = tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)&#xA;and&#xA;$MT064/pfx2:RGVchamps/pfx2:typeValeurTCN='NCP'">
+            <F_Type_remuneration_Etablissement_emetteur>
+                <xsl:value-of select="'V'"/>
+            </F_Type_remuneration_Etablissement_emetteur>
+        </xsl:when>
+        <xsl:when test="$MT064/pfx2:RGVchamps/pfx2:typeValeurTCN='NCP'">
+            <F_Type_remuneration_Etablissement_emetteur>
+                <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:typeRemuneration"/>
+            </F_Type_remuneration_Etablissement_emetteur>
+        </xsl:when>
+        <xsl:otherwise>
+            <F_Type_remuneration_Etablissement_emetteur>
+                <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &#xA;$MT064/pfx2:RGVchamps/pfx2:typeRemuneration &#xA;else &quot; &quot;"/>
+            </F_Type_remuneration_Etablissement_emetteur>
+        </xsl:otherwise>
+    </xsl:choose>
+    <O_Code_taux_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codeTauxTCN"/>
+    </O_Code_taux_TCN_Etablissement_emetteur>
+    <O_Code_devise_emission_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:codeDeviseEmission"/>
+    </O_Code_devise_emission_Etablissement_emetteur>
+    <O_Indicateur_admission_aux_systemes_Reglement-Livraison_Etablissement_emetteur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:indicateurAdmissionSystemesRL"/>
+    </O_Indicateur_admission_aux_systemes_Reglement-Livraison_Etablissement_emetteur>
+    <F_Format_Taux_interet_fixe>
+        <xsl:value-of select="if(number($MT064/pfx2:RGVchamps/pfx2:tauxInteretFixe/pfx2:montant) = 0) then &quot;&quot; else&#xA;$MT064/pfx2:RGVchamps/pfx2:tauxInteretFixe/pfx2:format"/>
+    </F_Format_Taux_interet_fixe>
+    <Z_Montant_Taux_interet_fixe>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:tauxInteretFixe/pfx2:montant, '15', '0')"/>
+    </Z_Montant_Taux_interet_fixe>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:tauxInteretFixe/pfx2:commentaireTCN">
+        <F_Commentaire_pour_TCN_Taux_interet_fixe>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:tauxInteretFixe/pfx2:commentaireTCN"/>
+        </F_Commentaire_pour_TCN_Taux_interet_fixe>
+    </xsl:if>
+    <F_Code_devise_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(not(contains(&quot;000-035-015-016&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)))&#xA;or number($MT064/pfx2:RGVchamps/pfx2:montantUnitaireRemboursement/pfx2:montant) = 0) then &quot;&quot; else&#xA;$MT064/pfx2:RGVchamps/pfx2:montantUnitaireRemboursement/pfx2:codeDevise"/>
+    </F_Code_devise_Montant_unitaire_remboursement>
+    <F_Format_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(not(contains(&quot;000-035-015-016&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)))&#xA;or number($MT064/pfx2:RGVchamps/pfx2:montantUnitaireRemboursement/pfx2:montant) = 0) then &quot;&quot; else&#xA;$MT064/pfx2:RGVchamps/pfx2:montantUnitaireRemboursement/pfx2:format"/>
+    </F_Format_Montant_unitaire_remboursement>
+    <Z_Montant_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(contains(&quot;000-035-015-016&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &#xA;tib:pad-front($MT064/pfx2:RGVchamps/pfx2:montantUnitaireRemboursement/pfx2:montant, '15', '0') else &#xA;&quot;000000000000000&quot;"/>
+    </Z_Montant_Montant_unitaire_remboursement>
+    <F_Code_sens_taux_Taux_marge_absolue>
+        <xsl:value-of select="if(number($MT064/pfx2:RGVchamps/pfx2:tauxMargeAbsolue/pfx2:montant) = 0 ) then &quot;&quot; else&#xA;$MT064/pfx2:RGVchamps/pfx2:tauxMargeAbsolue/pfx2:codeSens"/>
+    </F_Code_sens_taux_Taux_marge_absolue>
+    <F_Format_Taux_marge_absolue>
+        <xsl:value-of select="if(number($MT064/pfx2:RGVchamps/pfx2:tauxMargeAbsolue/pfx2:montant) = 0 ) then &quot;&quot; else&#xA;$MT064/pfx2:RGVchamps/pfx2:tauxMargeAbsolue/pfx2:format"/>
+    </F_Format_Taux_marge_absolue>
+    <Z_Montant_Taux_marge_absolue>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:tauxMargeAbsolue/pfx2:montant, '15', '0')"/>
+    </Z_Montant_Taux_marge_absolue>
+    <F_Code_periodicite_interets_Taux_marge_absolue>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &#xA;$MT064/pfx2:RGVchamps/pfx2:codePeriodiciteInterets else &quot; &quot;"/>
+    </F_Code_periodicite_interets_Taux_marge_absolue>
+    <F_Type_interets_Taux_marge_absolue>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($MT064/pfx2:RGVchamps/pfx2:codeTauxTCN)) ) then &#xA;$MT064/pfx2:RGVchamps/pfx2:typeInterets else &quot; &quot;"/>
+    </F_Type_interets_Taux_marge_absolue>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:garantee">
+        <Guarantee>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:garantee"/>
+        </Guarantee>
+    </xsl:if>
+    <Program_Originator>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programOrigin, '3', ' ')"/>
+    </Program_Originator>
+    <Program_Identifier>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programId, '6', ' ')"/>
+    </Program_Identifier>
+    <O_Reference_operation_emission_Caracteristiques_emission>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:caracteristiquesEP/pfx2:referenceOperation"/>
+    </O_Reference_operation_emission_Caracteristiques_emission>
+    <O_Code_devise_Montant_emission_TCN>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:montantEmissionTCN/pfx2:codeDevise"/>
+    </O_Code_devise_Montant_emission_TCN>
+    <O_Montant_Montant_emission_TCN>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:montantEmissionTCN/pfx2:montant, '15', '0')"/>
+    </O_Montant_Montant_emission_TCN>
+    <O_Code_adherent_etablissement_debite_Montant_emission_TCN>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:montantEmissionTCN/pfx2:codeAdherentEtablissementDebite"/>
+    </O_Code_adherent_etablissement_debite_Montant_emission_TCN>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_credite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_credite>
+    </xsl:if>
+    <O_Code_etablissement_Compte_titres_credite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:codeEtablissement"/>
+    </O_Code_etablissement_Compte_titres_credite>
+    <O_Type_sous-compte_Compte_titres_credite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:typeSousCompte"/>
+    </O_Type_sous-compte_Compte_titres_credite>
+    <O_Numero_sous-compte_Compte_titres_credite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:numeroSousCompte"/>
+    </O_Numero_sous-compte_Compte_titres_credite>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_credite_1>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_credite_1>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:codeValeur">
+        <F_Code_valeur_Compte_titres_credite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:codeValeur"/>
+        </F_Code_valeur_Compte_titres_credite>
+    </xsl:if>
+    <Z_Code_nature_compte_Compte_titres_credite>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:codeNatureCompte, '3', '0')"/>
+    </Z_Code_nature_compte_Compte_titres_credite>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_credite_2>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_credite_2>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:iCPG">
+        <F_ICPG_Compte_titres_credite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreCredite/pfx2:iCPG"/>
+        </F_ICPG_Compte_titres_credite>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_debite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_debite>
+    </xsl:if>
+    <O_Code_etablissement_Compte_titres_debite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:codeEtablissement"/>
+    </O_Code_etablissement_Compte_titres_debite>
+    <O_Type_sous-compte_Compte_titres_debite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:typeSousCompte"/>
+    </O_Type_sous-compte_Compte_titres_debite>
+    <O_Numero_sous-compte_Compte_titres_debite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:numeroSousCompte"/>
+    </O_Numero_sous-compte_Compte_titres_debite>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_debite_1>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_debite_1>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:codeValeur">
+        <F_Code_valeur_Compte_titres_debite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:codeValeur"/>
+        </F_Code_valeur_Compte_titres_debite>
+    </xsl:if>
+    <Z_Code_nature_compte_Compte_titres_debite>
+        <xsl:value-of select="tib:pad-front($MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:codeNatureCompte, '3', '0')"/>
+    </Z_Code_nature_compte_Compte_titres_debite>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee">
+        <F_Zone_reservee_Compte_titres_debite_2>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Compte_titres_debite_2>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:iCPG">
+        <F_ICPG_Compte_titres_debite>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:iCPG"/>
+        </F_ICPG_Compte_titres_debite>
+    </xsl:if>
+    <O_Date_denouement_theorique_Compte_titres_debite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:dateDenouementTheorique"/>
+    </O_Date_denouement_theorique_Compte_titres_debite>
+    <Z_Heure_denouement_theorique_Compte_titres_debite>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:compteTitreDebite/pfx2:heureDenouementTheorique"/>
+    </Z_Heure_denouement_theorique_Compte_titres_debite>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:zoneReservee">
+        <F_Zone_reservee_Reference_livre>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Reference_livre>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:codeEtablissement">
+        <F_Code_etablissement_Reference_livre>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:codeEtablissement"/>
+        </F_Code_etablissement_Reference_livre>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:codeAdherent">
+        <F_Code_adherent_Reference_livre>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:codeAdherent"/>
+        </F_Code_adherent_Reference_livre>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:referenceOperationEtablissement">
+        <F_Reference_operation_chez_etablissement_Reference_livre>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesUtilisateurs/pfx2:referenceOperationEtablissement"/>
+        </F_Reference_operation_chez_etablissement_Reference_livre>
+    </xsl:if>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:zoneReservee">
+        <F_Zone_reservee_Reference_livreur>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:zoneReservee"/>
+        </F_Zone_reservee_Reference_livreur>
+    </xsl:if>
+    <O_Code_etablissement_Reference_livreur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:codeEtablissement"/>
+    </O_Code_etablissement_Reference_livreur>
+    <O_Code_adherent_Reference_livreur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:codeAdherent"/>
+    </O_Code_adherent_Reference_livreur>
+    <O_Reference_operation_chez_etablissement_Reference_livreur>
+        <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:referenceOperationEtablissement"/>
+    </O_Reference_operation_chez_etablissement_Reference_livreur>
+    <xsl:if test="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:commentaire">
+        <F_Commentaire_Reference_livreur>
+            <xsl:value-of select="$MT064/pfx2:RGVchamps/pfx2:referencesLivreur/pfx2:commentaire"/>
+        </F_Commentaire_Reference_livreur>
+    </xsl:if>
+</MT064>
