@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BWSharedResource xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <name>RgvFormat-MT065</name>
+    <resourceType>ae.shared.ParseSharedResource</resourceType>
+    <config xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <FormatType>Fixed format</FormatType>
+        <ColumnSeparator>&gt;</ColumnSeparator>
+        <ColSeparatorRule>Treat all characters as entered as a single column separator string</ColSeparatorRule>
+        <LineSeparator>&#xD;</LineSeparator>
+        <FillCharacter>Space</FillCharacter>
+        <LineLength>625</LineLength>
+        <OffsetString>O_R1_Identification_emetteur(0,16)
+O_R2_Reference_operation(16,32)
+O_R3_Identification_recepteur(32,48)
+F_R4_Type_emetteur(48,49)
+O_R5_Code_operation(49,54)
+O_Date_demande(54,62)
+Z_Heure_demande(62,68)
+F_Zone_reservee(68,70)
+O_Code_etablissement_domiciliataire(70,82)
+O_Code_adherent_domiciliataire(82,87)
+O_Type_code_emetteur_Etablissement_emetteur(87,89)
+O_Code_etablissement_Etablissement_emetteur(89,101)
+F_Zone_reservee_Etablissement_emetteur(101,103)
+F_Code_valeur_Etablissement_emetteur(103,115)
+O_Type_valeur_TCN_Etablissement_emetteur(115,118)
+O_Modalite_emission_TCN_Etablissement_emetteur(118,119)
+O_Date_premiere_emission_Etablissement_emetteur(119,127)
+O_Date_remboursement_TCN_Etablissement_emetteur(127,135)
+Z_Date_premiere_jouissance_Etablissement_emetteur(135,143)
+Z_Date_premier_paiement_interets_Etablissement_emetteur(143,151)
+F_Type_remuneration_Etablissement_emetteur(151,152)
+O_Code_taux_TCN_Etablissement_emetteur(152,155)
+O_Code_devise_emission_Etablissement_emetteur(155,158)
+O_Indicateur_admission_aux_systemes_ReglementLivraison_Etablissement_emetteur(158,159)
+F_Format_Taux_interet_fixe(159,161)
+Z_Montant_Taux_interet_fixe(161,176)
+F_Commentaire_pour_TCN_Taux_interet_fixe(176,256)
+F_Code_devise_Montant_unitaire_remboursement(256,259)
+F_Format_Montant_unitaire_remboursement(259,261)
+Z_Montant_Montant_unitaire_remboursement(261,276)
+F_Code_sens_taux_Taux_marge_absolue(276,277)
+F_Format_Taux_marge_absolue(277,279)
+Z_Montant_Taux_marge_absolue(279,294)
+F_Code_periodicite_interets_Taux_marge_absolue(294,295)
+F_Type_interets_Taux_marge_absolue(295,296)
+Guarantee(296,297)
+Program_Originator(297,300)
+Program_Identifier(300,306)
+O_Reference_operation_placement_Caracteristiques_placement(306,322)
+O_Code_adherent_partie_Caracteristiques_placement(322,327)
+O_Type_souscompte_partie_Caracteristiques_placement(327,329)
+O_Numero_souscompte_partie_Caracteristiques_placement(329,352)
+F_Reference_interne_instruction_partie_Caracteristiques_placement(352,368)
+F_Zone_reservee_Caracteristiques_placement(368,370)
+O_Code_etablissement_contrepartie_Caracteristiques_placement(370,382)
+F_Code_adherent_contrepartie_Caracteristiques_placement(382,387)
+O_Code_type_instruction_Caracteristiques_placement(387,389)
+O_Date_negociation_Caracteristiques_placement(389,397)
+Z_Heure_negociation_Caracteristiques_placement(397,403)
+O_Date_denouement_theorique_Caracteristiques_placement(403,411)
+Z_Heure_denouement_theorique_Caracteristiques_placement(411,417)
+O_Code_devise_Montant_emission_TCN(417,420)
+O_Montant_Montant_emission_TCN(420,435)
+O_Code_devise_Montant_net_ligne_instruction(435,438)
+O_Montant_Montant_net_ligne_instruction(438,453)
+F_Reference_clientele_Montant_net_ligne_instruction(453,469)
+F_Commentaire_destine_contrepartie_Montant_net_ligne_instruction(469,519)
+F_Type_code_externe_client_partie_Montant_net_ligne_instruction(519,521)
+F_Code_externe_client_partie_Montant_net_ligne_instruction(521,544)
+F_Nom_client_partie_Montant_net_ligne_instruction(544,572)
+F_Type_code_externe_client_contrepartie_Montant_net_ligne_instruction(572,574)
+F_Code_externe_client_contrepartie_Montant_net_ligne_instruction(574,597)
+F_Nom_client_contrepartie_Montant_net_ligne_instruction(597,625)</OffsetString>
+        <DataFormat>
+            <xsd:element name="MT065">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="O_R1_Identification_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_R2_Reference_operation" type="xsd:string"/>
+                        <xsd:element name="O_R3_Identification_recepteur" type="xsd:string"/>
+                        <xsd:element name="F_R4_Type_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_R5_Code_operation" type="xsd:string"/>
+                        <xsd:element name="O_Date_demande" type="xsd:string"/>
+                        <xsd:element name="Z_Heure_demande" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_domiciliataire" type="xsd:string"/>
+                        <xsd:element name="O_Code_adherent_domiciliataire" type="xsd:string"/>
+                        <xsd:element name="O_Type_code_emetteur_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Code_etablissement_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="F_Zone_reservee_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_valeur_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Type_valeur_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Modalite_emission_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Date_premiere_emission_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Date_remboursement_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="Z_Date_premiere_jouissance_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Date_premier_paiement_interets_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_remuneration_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_taux_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Code_devise_emission_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Indicateur_admission_aux_systemes_ReglementLivraison_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="F_Format_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Commentaire_pour_TCN_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_devise_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Format_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_sens_taux_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Format_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_periodicite_interets_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_interets_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Guarantee" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Program_Originator" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Program_Identifier" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Reference_operation_placement_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="O_Code_adherent_partie_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="O_Type_souscompte_partie_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="O_Numero_souscompte_partie_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="F_Reference_interne_instruction_partie_Caracteristiques_placement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Caracteristiques_placement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_contrepartie_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="F_Code_adherent_contrepartie_Caracteristiques_placement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_type_instruction_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="O_Date_negociation_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="Z_Heure_negociation_Caracteristiques_placement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Date_denouement_theorique_Caracteristiques_placement" type="xsd:string"/>
+                        <xsd:element name="Z_Heure_denouement_theorique_Caracteristiques_placement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_devise_Montant_emission_TCN" type="xsd:string"/>
+                        <xsd:element name="O_Montant_Montant_emission_TCN" type="xsd:string"/>
+                        <xsd:element name="O_Code_devise_Montant_net_ligne_instruction" type="xsd:string"/>
+                        <xsd:element name="O_Montant_Montant_net_ligne_instruction" type="xsd:string"/>
+                        <xsd:element name="F_Reference_clientele_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Commentaire_destine_contrepartie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_code_externe_client_partie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_externe_client_partie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Nom_client_partie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_code_externe_client_contrepartie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_externe_client_contrepartie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Nom_client_contrepartie_Montant_net_ligne_instruction" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </DataFormat>
+    </config>
+</BWSharedResource>
