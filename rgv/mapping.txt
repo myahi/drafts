@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MT065 xmlns:pfx="http://www.calypso.com/xml" xmlns:pfx2="http://www.tibco.com/ns/no_namespace_schema_location/Resources/RgvFormat-MT065.sharedparse" xmlns:ns="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:pfx3="http://www.lbp.fr/xml" xmlns:pfx4="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/pe/EngineTypes" xmlns:ns4="http://www.tibco.com/pe/WriteToLogActivitySchema" xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <O_R1_Identification_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationEmetteur"/>
+    </O_R1_Identification_emetteur>
+    <O_R2_Reference_operation>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVcommun/pfx:referenceOperation"/>
+    </O_R2_Reference_operation>
+    <O_R3_Identification_recepteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVcommun/pfx:identificationRecepteur"/>
+    </O_R3_Identification_recepteur>
+    <F_R4_Type_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVcommun/pfx:typeEmetteur"/>
+    </F_R4_Type_emetteur>
+    <O_R5_Code_operation>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVcommun/pfx:codeOperation"/>
+    </O_R5_Code_operation>
+    <O_Date_demande>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:dateDemande"/>
+    </O_Date_demande>
+    <Z_Heure_demande>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:heureDemande"/>
+    </Z_Heure_demande>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:zoneReserve">
+        <F_Zone_reservee>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:zoneReserve"/>
+        </F_Zone_reservee>
+    </xsl:if>
+    <O_Code_etablissement_domiciliataire>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeEtablissementDomiciliataire"/>
+    </O_Code_etablissement_domiciliataire>
+    <O_Code_adherent_domiciliataire>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codification/pfx:codeAdherentDomiciliataire"/>
+    </O_Code_adherent_domiciliataire>
+    <O_Type_code_emetteur_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:typeCode"/>
+    </O_Type_code_emetteur_Etablissement_emetteur>
+    <O_Code_etablissement_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:codeEtablissement"/>
+    </O_Code_etablissement_Etablissement_emetteur>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:zoneReservee">
+        <F_Zone_reservee_Etablissement_emetteur>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:zoneReservee"/>
+        </F_Zone_reservee_Etablissement_emetteur>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeValeur">
+        <F_Code_valeur_Etablissement_emetteur>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeValeur"/>
+        </F_Code_valeur_Etablissement_emetteur>
+    </xsl:if>
+    <O_Type_valeur_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeValeurTCN"/>
+    </O_Type_valeur_TCN_Etablissement_emetteur>
+    <O_Modalite_emission_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:modaliteEmissionTCN"/>
+    </O_Modalite_emission_TCN_Etablissement_emetteur>
+    <O_Date_premiere_emission_Etablissement_emetteur>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremiereEmission, '8', '0')"/>
+    </O_Date_premiere_emission_Etablissement_emetteur>
+    <O_Date_remboursement_TCN_Etablissement_emetteur>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateRemboursementTCN,'8','0')"/>
+    </O_Date_remboursement_TCN_Etablissement_emetteur>
+    <Z_Date_premiere_jouissance_Etablissement_emetteur>
+        <xsl:value-of select="if(contains(&quot;003-015-016&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then &quot;00000000&quot; else&#xA;tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremiereJouissance,'8','0')"/>
+    </Z_Date_premiere_jouissance_Etablissement_emetteur>
+    <Z_Date_premier_paiement_interets_Etablissement_emetteur>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then&#xA;tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:datePremierPaiementInterets,'8','0') else &quot;00000000&quot;"/>
+    </Z_Date_premier_paiement_interets_Etablissement_emetteur>
+    <xsl:choose>
+        <xsl:when test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeValeurTCN='NCP'">
+            <F_Type_remuneration_Etablissement_emetteur>
+                <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeRemuneration"/>
+            </F_Type_remuneration_Etablissement_emetteur>
+        </xsl:when>
+        <xsl:otherwise>
+            <F_Type_remuneration_Etablissement_emetteur>
+                <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then &#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeRemuneration &#xA;else &quot; &quot;"/>
+            </F_Type_remuneration_Etablissement_emetteur>
+        </xsl:otherwise>
+    </xsl:choose>
+    <O_Code_taux_TCN_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN"/>
+    </O_Code_taux_TCN_Etablissement_emetteur>
+    <O_Code_devise_emission_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeDeviseEmission"/>
+    </O_Code_devise_emission_Etablissement_emetteur>
+    <O_Indicateur_admission_aux_systemes_ReglementLivraison_Etablissement_emetteur>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:indicateurAdmissionSystemesRL"/>
+    </O_Indicateur_admission_aux_systemes_ReglementLivraison_Etablissement_emetteur>
+    <F_Format_Taux_interet_fixe>
+        <xsl:value-of select="if(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:montant) = 0) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:format"/>
+    </F_Format_Taux_interet_fixe>
+    <Z_Montant_Taux_interet_fixe>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:montant, '15', '0')"/>
+    </Z_Montant_Taux_interet_fixe>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:commentaireTCN">
+        <F_Commentaire_pour_TCN_Taux_interet_fixe>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxInteretFixe/pfx:commentaireTCN"/>
+        </F_Commentaire_pour_TCN_Taux_interet_fixe>
+    </xsl:if>
+    <F_Code_devise_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(not(contains(&quot;000-035-015-016&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)))&#xA;or number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:montant) = 0) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:codeDevise"/>
+    </F_Code_devise_Montant_unitaire_remboursement>
+    <F_Format_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(not(contains(&quot;000-035-015-016&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)))&#xA;or number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:montant) = 0) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:format"/>
+    </F_Format_Montant_unitaire_remboursement>
+    <Z_Montant_Montant_unitaire_remboursement>
+        <xsl:value-of select="if(contains(&quot;000-035-015-016&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then &#xA;tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantUnitaireRemboursement/pfx:montant, '15', '0') else &#xA;&quot;000000000000000&quot;"/>
+    </Z_Montant_Montant_unitaire_remboursement>
+    <F_Code_sens_taux_Taux_marge_absolue>
+        <xsl:value-of select="if(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:montant) = 0 ) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:codeSens"/>
+    </F_Code_sens_taux_Taux_marge_absolue>
+    <F_Format_Taux_marge_absolue>
+        <xsl:value-of select="if(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:montant) = 0 ) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:format"/>
+    </F_Format_Taux_marge_absolue>
+    <Z_Montant_Taux_marge_absolue>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:tauxMargeAbsolue/pfx:montant, '15', '0')"/>
+    </Z_Montant_Taux_marge_absolue>
+    <F_Code_periodicite_interets_Taux_marge_absolue>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then &#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codePeriodiciteInterets else &quot; &quot;"/>
+    </F_Code_periodicite_interets_Taux_marge_absolue>
+    <F_Type_interets_Taux_marge_absolue>
+        <xsl:value-of select="if(contains(&quot;000-035&quot;,tib:trim($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTauxTCN)) ) then &#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:typeInterets else &quot; &quot;"/>
+    </F_Type_interets_Taux_marge_absolue>
+    <Guarantee>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:garantee"/>
+    </Guarantee>
+    <Program_Originator>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programOrigin, '3', ' ')"/>
+    </Program_Originator>
+    <Program_Identifier>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:etablissementEmetteur/pfx:programId, '6', ' ')"/>
+    </Program_Identifier>
+    <O_Reference_operation_placement_Caracteristiques_placement>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:referenceOperation"/>
+    </O_Reference_operation_placement_Caracteristiques_placement>
+    <O_Code_adherent_partie_Caracteristiques_placement>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:codeAdherentPartie"/>
+    </O_Code_adherent_partie_Caracteristiques_placement>
+    <O_Type_souscompte_partie_Caracteristiques_placement>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:typeSousComptePartie"/>
+    </O_Type_souscompte_partie_Caracteristiques_placement>
+    <O_Numero_souscompte_partie_Caracteristiques_placement>
+        <xsl:value-of select="if(number($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:numeroSousComptePartie) = 0) then &quot;0&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:numeroSousComptePartie"/>
+    </O_Numero_souscompte_partie_Caracteristiques_placement>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:referenceInterneInstructionPartie">
+        <F_Reference_interne_instruction_partie_Caracteristiques_placement>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:referenceInterneInstructionPartie"/>
+        </F_Reference_interne_instruction_partie_Caracteristiques_placement>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:zoneReservee">
+        <F_Zone_reservee_Caracteristiques_placement>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:caracteristiquesEP/pfx:zoneReservee"/>
+        </F_Zone_reservee_Caracteristiques_placement>
+    </xsl:if>
+    <O_Code_etablissement_contrepartie_Caracteristiques_placement>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeEtablissementContrepartie"/>
+    </O_Code_etablissement_contrepartie_Caracteristiques_placement>
+    <F_Code_adherent_contrepartie_Caracteristiques_placement>
+        <xsl:value-of select="if (number ($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeAdherentContrepartie) = 0) then &quot;&quot; else&#xA;$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeAdherentContrepartie"/>
+    </F_Code_adherent_contrepartie_Caracteristiques_placement>
+    <O_Code_type_instruction_Caracteristiques_placement>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:codeTypeInstruction"/>
+    </O_Code_type_instruction_Caracteristiques_placement>
+    <O_Date_negociation_Caracteristiques_placement>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateNegociation, '8', '0')"/>
+    </O_Date_negociation_Caracteristiques_placement>
+    <Z_Heure_negociation_Caracteristiques_placement>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureNegociation, '6', '0')"/>
+    </Z_Heure_negociation_Caracteristiques_placement>
+    <O_Date_denouement_theorique_Caracteristiques_placement>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:dateDenouementTheorique, '8', '0')"/>
+    </O_Date_denouement_theorique_Caracteristiques_placement>
+    <Z_Heure_denouement_theorique_Caracteristiques_placement>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:heureDenouementTheorique, '6', '0')"/>
+    </Z_Heure_denouement_theorique_Caracteristiques_placement>
+    <O_Code_devise_Montant_emission_TCN>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantEmissionTCN/pfx:codeDevise"/>
+    </O_Code_devise_Montant_emission_TCN>
+    <O_Montant_Montant_emission_TCN>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantEmissionTCN/pfx:montant, '15', '0')"/>
+    </O_Montant_Montant_emission_TCN>
+    <O_Code_devise_Montant_net_ligne_instruction>
+        <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantNetLigneInstruction/pfx:devise"/>
+    </O_Code_devise_Montant_net_ligne_instruction>
+    <O_Montant_Montant_net_ligne_instruction>
+        <xsl:value-of select="tib:pad-front($Start/pfx:RGVmessage/pfx:RGVchamps/pfx:montantNetLigneInstruction/pfx:montant, '15', '0')"/>
+    </O_Montant_Montant_net_ligne_instruction>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceDeClientele">
+        <F_Reference_clientele_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceDeClientele"/>
+        </F_Reference_clientele_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:commentaireDestineContrepartie">
+        <F_Commentaire_destine_contrepartie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:commentaireDestineContrepartie"/>
+        </F_Commentaire_destine_contrepartie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:typeCodeExterneClientPartie">
+        <F_Type_code_externe_client_partie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:typeCodeExterneClientPartie"/>
+        </F_Type_code_externe_client_partie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:codeExterneClientPartie">
+        <F_Code_externe_client_partie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:codeExterneClientPartie"/>
+        </F_Code_externe_client_partie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:nomClientPartie">
+        <F_Nom_client_partie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:nomClientPartie"/>
+        </F_Nom_client_partie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:typeCodeExterneClientContrepartie">
+        <F_Type_code_externe_client_contrepartie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:typeCodeExterneClientContrepartie"/>
+        </F_Type_code_externe_client_contrepartie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:codeExterneClientContrepartie">
+        <F_Code_externe_client_contrepartie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:codeExterneClientContrepartie"/>
+        </F_Code_externe_client_contrepartie_Montant_net_ligne_instruction>
+    </xsl:if>
+    <xsl:if test="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:nomClientContrepartie">
+        <F_Nom_client_contrepartie_Montant_net_ligne_instruction>
+            <xsl:value-of select="$Start/pfx:RGVmessage/pfx:RGVchamps/pfx:referenceClientele/pfx:nomClientContrepartie"/>
+        </F_Nom_client_contrepartie_Montant_net_ligne_instruction>
+    </xsl:if>
+</MT065>
