@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BWSharedResource xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <name>RgvFormat-MT064</name>
+    <resourceType>ae.shared.ParseSharedResource</resourceType>
+    <config xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <FormatType>Fixed format</FormatType>
+        <ColumnSeparator>,</ColumnSeparator>
+        <ColSeparatorRule>Treat all characters as entered as a single column separator string</ColSeparatorRule>
+        <LineSeparator>&#xD;</LineSeparator>
+        <FillCharacter>Space</FillCharacter>
+        <LineLength>625</LineLength>
+        <OffsetString>O_R1_Identification_emetteur(0,16)
+O_R2_Reference_operation(16,32)
+O_R3_Identification_recepteur(32,48)
+F_R4_Type_emetteur(48,49)
+O_R5_Code_operation(49,54)
+O_Date_demande_Codification(54,62)
+Z_Heure_demande_Codification(62,68)
+F_Zone_reservee_Codification(68,70)
+O_Code_etablissement_domiciliataire_Codification(70,82)
+O_Code_adherent_domiciliataire_Codification(82,87)
+O_Type_code_emetteur_Etablissement_emetteur(87,89)
+O_Code_etablissement_Etablissement_emetteur(89,101)
+F_Zone_reservee_Etablissement_emetteur(101,103)
+F_Code_valeur_Etablissement_emetteur(103,115)
+O_Type_valeur_TCN_Etablissement_emetteur(115,118)
+O_Modalite_emission_TCN_Etablissement_emetteur(118,119)
+O_Date_premiere_emission_Etablissement_emetteur(119,127)
+O_Date_remboursement_TCN_Etablissement_emetteur(127,135)
+Z_Date_premiere_jouissance_Etablissement_emetteur(135,143)
+Z_Date_premier_paiement_interets_Etablissement_emetteur(143,151)
+F_Type_remuneration_Etablissement_emetteur(151,152)
+O_Code_taux_TCN_Etablissement_emetteur(152,155)
+O_Code_devise_emission_Etablissement_emetteur(155,158)
+O_Indicateur_admission_aux_systemes_Reglement-Livraison_Etablissement_emetteur(158,159)
+F_Format_Taux_interet_fixe(159,161)
+Z_Montant_Taux_interet_fixe(161,176)
+F_Commentaire_pour_TCN_Taux_interet_fixe(176,256)
+F_Code_devise_Montant_unitaire_remboursement(256,259)
+F_Format_Montant_unitaire_remboursement(259,261)
+Z_Montant_Montant_unitaire_remboursement(261,276)
+F_Code_sens_taux_Taux_marge_absolue(276,277)
+F_Format_Taux_marge_absolue(277,279)
+Z_Montant_Taux_marge_absolue(279,294)
+F_Code_periodicite_interets_Taux_marge_absolue(294,295)
+F_Type_interets_Taux_marge_absolue(295,296)
+Guarantee(296,297)
+Program_Originator(297,300)
+Program_Identifier(300,306)
+O_Reference_operation_emission_Caracteristiques_emission(306,322)
+O_Code_devise_Montant_emission_TCN(322,325)
+O_Montant_Montant_emission_TCN(325,340)
+O_Code_adherent_etablissement_debite_Montant_emission_TCN(340,345)
+F_Zone_reservee_Compte_titres_credite(345,347)
+O_Code_etablissement_Compte_titres_credite(347,359)
+O_Type_sous-compte_Compte_titres_credite(359,361)
+O_Numero_sous-compte_Compte_titres_credite(361,384)
+F_Zone_reservee_Compte_titres_credite_1(384,386)
+F_Code_valeur_Compte_titres_credite(386,398)
+Z_Code_nature_compte_Compte_titres_credite(398,401)
+F_Zone_reservee_Compte_titres_credite_2(401,402)
+F_ICPG_Compte_titres_credite(402,403)
+F_Zone_reservee_Compte_titres_debite(403,405)
+O_Code_etablissement_Compte_titres_debite(405,417)
+O_Type_sous-compte_Compte_titres_debite(417,419)
+O_Numero_sous-compte_Compte_titres_debite(419,442)
+F_Zone_reservee_Compte_titres_debite_1(442,444)
+F_Code_valeur_Compte_titres_debite(444,456)
+Z_Code_nature_compte_Compte_titres_debite(456,459)
+F_Zone_reservee_Compte_titres_debite_2(459,460)
+F_ICPG_Compte_titres_debite(460,461)
+O_Date_denouement_theorique_Compte_titres_debite(461,469)
+Z_Heure_denouement_theorique_Compte_titres_debite(469,475)
+F_Zone_reservee_Reference_livre(475,477)
+F_Code_etablissement_Reference_livre(477,489)
+F_Code_adherent_Reference_livre(489,494)
+F_Reference_operation_chez_etablissement_Reference_livre(494,510)
+F_Zone_reservee_Reference_livreur(510,512)
+O_Code_etablissement_Reference_livreur(512,524)
+O_Code_adherent_Reference_livreur(524,529)
+O_Reference_operation_chez_etablissement_Reference_livreur(529,545)
+F_Commentaire_Reference_livreur(545,625)</OffsetString>
+        <DataFormat>
+            <xsd:element name="MT064">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="O_R1_Identification_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_R2_Reference_operation" type="xsd:string"/>
+                        <xsd:element name="O_R3_Identification_recepteur" type="xsd:string"/>
+                        <xsd:element name="F_R4_Type_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_R5_Code_operation" type="xsd:string"/>
+                        <xsd:element name="O_Date_demande_Codification" type="xsd:string"/>
+                        <xsd:element name="Z_Heure_demande_Codification" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Codification" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_domiciliataire_Codification" type="xsd:string"/>
+                        <xsd:element name="O_Code_adherent_domiciliataire_Codification" type="xsd:string"/>
+                        <xsd:element name="O_Type_code_emetteur_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Code_etablissement_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="F_Zone_reservee_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_valeur_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Type_valeur_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Modalite_emission_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Date_premiere_emission_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Date_remboursement_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="Z_Date_premiere_jouissance_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Date_premier_paiement_interets_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_remuneration_Etablissement_emetteur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_taux_TCN_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Code_devise_emission_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="O_Indicateur_admission_aux_systemes_Reglement-Livraison_Etablissement_emetteur" type="xsd:string"/>
+                        <xsd:element name="F_Format_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Commentaire_pour_TCN_Taux_interet_fixe" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_devise_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Format_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Montant_unitaire_remboursement" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_sens_taux_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Format_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Montant_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_periodicite_interets_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Type_interets_Taux_marge_absolue" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Guarantee" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Program_Originator" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Program_Identifier" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Reference_operation_emission_Caracteristiques_emission" type="xsd:string"/>
+                        <xsd:element name="O_Code_devise_Montant_emission_TCN" type="xsd:string"/>
+                        <xsd:element name="O_Montant_Montant_emission_TCN" type="xsd:string"/>
+                        <xsd:element name="O_Code_adherent_etablissement_debite_Montant_emission_TCN" type="xsd:string"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_credite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_Compte_titres_credite" type="xsd:string"/>
+                        <xsd:element name="O_Type_sous-compte_Compte_titres_credite" type="xsd:string"/>
+                        <xsd:element name="O_Numero_sous-compte_Compte_titres_credite" type="xsd:string"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_credite_1" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_valeur_Compte_titres_credite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Code_nature_compte_Compte_titres_credite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_credite_2" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_ICPG_Compte_titres_credite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_debite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_Compte_titres_debite" type="xsd:string"/>
+                        <xsd:element name="O_Type_sous-compte_Compte_titres_debite" type="xsd:string"/>
+                        <xsd:element name="O_Numero_sous-compte_Compte_titres_debite" type="xsd:string"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_debite_1" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_valeur_Compte_titres_debite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="Z_Code_nature_compte_Compte_titres_debite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Compte_titres_debite_2" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_ICPG_Compte_titres_debite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Date_denouement_theorique_Compte_titres_debite" type="xsd:string"/>
+                        <xsd:element name="Z_Heure_denouement_theorique_Compte_titres_debite" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Reference_livre" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_etablissement_Reference_livre" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Code_adherent_Reference_livre" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Reference_operation_chez_etablissement_Reference_livre" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="F_Zone_reservee_Reference_livreur" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="O_Code_etablissement_Reference_livreur" type="xsd:string"/>
+                        <xsd:element name="O_Code_adherent_Reference_livreur" type="xsd:string"/>
+                        <xsd:element name="O_Reference_operation_chez_etablissement_Reference_livreur" type="xsd:string"/>
+                        <xsd:element name="F_Commentaire_Reference_livreur" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </DataFormat>
+    </config>
+</BWSharedResource>
