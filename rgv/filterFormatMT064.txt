@@ -1,0 +1,19 @@
+(string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:typeRemuneration)=0 
+and
+$GetGenericTranscoSets/output/xcoTargets[pfx3:cat='rgv.mt064.typeRemuneration.filter' and pfx3:srcApp='Calypso']/pfx3:srcVl[1]='YES')
+or
+
+(string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:garantee)=0
+or
+string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:garantee)>1
+)
+or((string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programId)=0
+and 
+$GetGenericTranscoSets/output/xcoTargets[pfx3:cat='rgv.mt064.programId.filter' and pfx3:srcApp='Calypso']/pfx3:srcVl[1]='YES'))
+
+or string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programId)>6
+
+or(string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programOrigin)=0
+and 
+$GetGenericTranscoSets/output/xcoTargets[pfx3:cat='rgv.mt064.programOrigin.filter' and pfx3:srcApp='Calypso']/pfx3:srcVl[1]='YES')
+or string-length($Start/pfx2:RGVmessage/pfx2:RGVchamps/pfx2:etablissementEmetteur/pfx2:programOrigin)>3
