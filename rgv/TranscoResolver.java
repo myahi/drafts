@@ -8,16 +8,15 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import fr.lbp.lib.model.transco.Transco;
-import fr.lbp.lib.model.transco.Transcos;
 
 @Component
 public class TranscoResolver {
 
     
-	public List<Transco> findAllTransco(Map<String, Transcos> transcosByCategory, String category, Map<String, String> srcConditions) {
+	public List<Transco> findAllTransco(Map<String, List<Transco>> transcoByCategory, String category, Map<String, String> srcConditions) {
 
-		if (transcosByCategory == null || transcosByCategory.isEmpty()) {
-			throw new IllegalArgumentException("transcosByCategory must not be null or empty");
+		if (transcoByCategory == null || transcoByCategory.isEmpty()) {
+			throw new IllegalArgumentException("transcoByCategory must not be null or empty");
 		}
 		if (category == null || category.isBlank()) {
 			throw new IllegalArgumentException("category must not be null or blank");
@@ -26,17 +25,17 @@ public class TranscoResolver {
 			throw new IllegalArgumentException("conditions must not be null or empty");
 		}
 
-		Transcos group = transcosByCategory.get(category);
+		List<Transco> group = transcoByCategory.get(category);
 		if (group == null) {
 			throw new IllegalArgumentException("Unknown transco category: " + category);
 		}
 
-		return group.getTransco().stream().filter(t -> matches(t, srcConditions)).toList();
+		return group.stream().filter(t -> matches(t, srcConditions)).toList();
 	}
 
-	public Transco findTransco(Map<String, Transcos> transcosByCategory, String category, Map<String, String> conditions) {
+	public Transco findTransco(Map<String, List<Transco>> transcoByCategory, String category, Map<String, String> conditions) {
 
-		List<Transco> matches = findAllTransco(transcosByCategory, category, conditions);
+		List<Transco> matches = findAllTransco(transcoByCategory, category, conditions);
 
 		return matches != null && matches.size() > 0 ? matches.get(0) : null;
 	}
