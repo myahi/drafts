@@ -9,23 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-/**
- * Java 8 - Extraction streaming de records <Stat> vers CSV.
- *
- * - Le XML peut être volumineux (plusieurs Mo)
- * - Les records sont des blocs répétés <Stat>...</Stat>
- * - Les colonnes sont définies par une map (nomColonne -> path relatif à Stat)
- *
- * Exemple de path: "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI"
- */
 public class StatXmlToCsvExtractor {
 
-    /**
-     * Définition des colonnes (ordre conservé grâce à LinkedHashMap).
-     * IMPORTANT: adapte cette map à tes champs cibles.
-     *
-     * Ici je mets les 3 champs montrés dans ton exemple.
-     */
+    // 3 champs de ton exemple
     private static final LinkedHashMap<String, String> COLUMN_TO_PATH = new LinkedHashMap<String, String>();
     static {
         COLUMN_TO_PATH.put("ID", "CmonTradData/TxData/TxId/Prtry/Id");
@@ -33,11 +19,8 @@ public class StatXmlToCsvExtractor {
         COLUMN_TO_PATH.put("LEI_OTHER_CTP", "CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
     }
 
-    /**
-     * Parse le XML en streaming et génère un CSV.
-     */
     public void extract(Path xmlInput, Path csvOutput) throws Exception {
-        // Précompilation: colonne -> liste de segments du path
+
         final List<String> columns = new ArrayList<String>(COLUMN_TO_PATH.keySet());
         final Map<String, List<String>> colPathSegments = new HashMap<String, List<String>>();
         for (Map.Entry<String, String> e : COLUMN_TO_PATH.entrySet()) {
@@ -45,11 +28,9 @@ public class StatXmlToCsvExtractor {
         }
 
         XMLInputFactory factory = XMLInputFactory.newFactory();
-        // Coalescing: regroupe les événements CHARACTERS contigus
         try {
             factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
         } catch (IllegalArgumentException ignore) {
-            // certains impl ne supportent pas, on ignore
         }
 
         try (InputStream in = Files.newInputStream(xmlInput);
@@ -59,20 +40,19 @@ public class StatXmlToCsvExtractor {
                      StandardOpenOption.CREATE,
                      StandardOpenOption.TRUNCATE_EXISTING)) {
 
-            // 1) Écrire header CSV
+            // Header
             writeCsvRow(writer, columns);
 
             XMLStreamReader r = factory.createXMLStreamReader(in);
 
             boolean inStat = false;
 
-            // stack des éléments courant DANS Stat (path relatif)
+            // Chemin courant à l'intérieur de <Stat> (inclut l'élément courant)
             Deque<String> statStack = new ArrayDeque<String>();
 
-            // buffer texte courant
+            // Buffer texte
             StringBuilder textBuf = new StringBuilder();
 
-            // record courant: colonne -> valeur
             Map<String, String> currentRow = null;
 
             while (r.hasNext()) {
@@ -81,25 +61,25 @@ public class StatXmlToCsvExtractor {
                 switch (event) {
                     case XMLStreamConstants.START_ELEMENT: {
                         String name = r.getLocalName();
+                        textBuf.setLength(0);
 
                         if ("Stat".equals(name)) {
                             inStat = true;
                             statStack.clear();
+
                             currentRow = new HashMap<String, String>();
-                            // init à vide (pour garantir colonnes présentes)
                             for (String col : columns) {
                                 currentRow.put(col, "");
                             }
                         } else if (inStat) {
-                            // on empile le nom de l'élément (relatif à Stat)
+                            // push l'élément courant dans le chemin
                             statStack.addLast(name);
                         }
-
-                        textBuf.setLength(0);
                         break;
                     }
 
                     case XMLStreamConstants.CHARACTERS: {
+                        // Accumule le texte (coalescing ou pas)
                         textBuf.append(r.getText());
                         break;
                     }
@@ -107,21 +87,18 @@ public class StatXmlToCsvExtractor {
                     case XMLStreamConstants.END_ELEMENT: {
                         String name = r.getLocalName();
                         String value = textBuf.toString();
-                        if (value != null) value = value.trim();
-                        else value = "";
+                        value = value == null ? "" : value.trim();
 
                         if (inStat) {
                             if (!"Stat".equals(name)) {
-                                // Chemin courant = statStack + name (élément qui se ferme)
+                                // On est en fin d'un élément interne à Stat.
+                                // Le chemin courant = statStack (il inclut déjà l'élément qui se ferme)
                                 List<String> currentPath = new ArrayList<String>(statStack);
-                                currentPath.add(name);
 
-                                // On compare avec chaque colonne
                                 for (String col : columns) {
-                                    // si déjà rempli, on ne réécrit pas (comportement "premier trouvé")
                                     String existing = currentRow.get(col);
                                     if (existing != null && existing.length() > 0) {
-                                        continue;
+                                        continue; // garde le premier match
                                     }
                                     List<String> target = colPathSegments.get(col);
                                     if (pathEquals(currentPath, target)) {
@@ -129,12 +106,12 @@ public class StatXmlToCsvExtractor {
                                     }
                                 }
 
-                                // on sort d'un élément interne à Stat
+                                // pop l'élément qui se ferme
                                 if (!statStack.isEmpty()) {
                                     statStack.pollLast();
                                 }
                             } else {
-                                // fin du record Stat => écrire ligne CSV
+                                // fin de Stat => écrire la ligne
                                 List<String> rowValues = new ArrayList<String>(columns.size());
                                 for (String col : columns) {
                                     rowValues.add(nullToEmpty(currentRow.get(col)));
@@ -153,7 +130,6 @@ public class StatXmlToCsvExtractor {
                     }
 
                     default:
-                        // ignore
                         break;
                 }
             }
@@ -162,17 +138,12 @@ public class StatXmlToCsvExtractor {
         }
     }
 
-    // -----------------------
-    // Helpers Java 8
-    // -----------------------
+    // ---------------- Helpers Java 8 ----------------
 
     private static List<String> splitPath(String path) {
-        // Java 8: pas de List.of
         String[] parts = path.split("/");
         List<String> out = new ArrayList<String>(parts.length);
-        for (int i = 0; i < parts.length; i++) {
-            out.add(parts[i]);
-        }
+        for (int i = 0; i < parts.length; i++) out.add(parts[i]);
         return out;
     }
 
@@ -190,10 +161,9 @@ public class StatXmlToCsvExtractor {
     }
 
     private static void writeCsvRow(BufferedWriter writer, List<String> values) throws Exception {
-        // CSV simple: on escape " et on quote si nécessaire
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < values.size(); i++) {
-            if (i > 0) sb.append(';'); // séparateur ; (souvent mieux pour Excel FR)
+            if (i > 0) sb.append(';'); // ; pour Excel FR
             sb.append(escapeCsv(values.get(i)));
         }
         sb.append("\n");
@@ -204,13 +174,9 @@ public class StatXmlToCsvExtractor {
         if (v == null) v = "";
         boolean mustQuote = v.indexOf(';') >= 0 || v.indexOf('"') >= 0 || v.indexOf('\n') >= 0 || v.indexOf('\r') >= 0;
         String escaped = v.replace("\"", "\"\"");
-        if (mustQuote) {
-            return "\"" + escaped + "\"";
-        }
-        return escaped;
+        return mustQuote ? ("\"" + escaped + "\"") : escaped;
     }
 
-    // Exemple d'utilisation
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.out.println("Usage: java StatXmlToCsvExtractor <input.xml> <output.csv>");
@@ -220,7 +186,6 @@ public class StatXmlToCsvExtractor {
         Path out = new java.io.File(args[1]).toPath();
 
         new StatXmlToCsvExtractor().extract(in, out);
-
         System.out.println("OK -> " + out.toAbsolutePath());
     }
 }
