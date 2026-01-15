@@ -1,157 +1,186 @@
-import java.io.*;
-import java.nio.file.*;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
-import javax.xml.stream.*;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-
-public class StatExtractor {
+/**
+ * Java 8 - Extraction streaming de records <Stat> vers CSV.
+ *
+ * - Le XML peut être volumineux (plusieurs Mo)
+ * - Les records sont des blocs répétés <Stat>...</Stat>
+ * - Les colonnes sont définies par une map (nomColonne -> path relatif à Stat)
+ *
+ * Exemple de path: "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI"
+ */
+public class StatXmlToCsvExtractor {
 
     /**
-     * Déclare ici les colonnes dans l'ordre souhaité + leur path RELATIF à <Stat>.
-     * Le path est une liste de noms d'éléments (localName), séparés par "/".
+     * Définition des colonnes (ordre conservé grâce à LinkedHashMap).
+     * IMPORTANT: adapte cette map à tes champs cibles.
      *
-     * Exemple: "TxData/TxId/Prtry/Id"
+     * Ici je mets les 3 champs montrés dans ton exemple.
      */
-    private static final LinkedHashMap<String, String> COLUMN_TO_PATH = new LinkedHashMap<>();
+    private static final LinkedHashMap<String, String> COLUMN_TO_PATH = new LinkedHashMap<String, String>();
     static {
         COLUMN_TO_PATH.put("ID", "CmonTradData/TxData/TxId/Prtry/Id");
         COLUMN_TO_PATH.put("LEI_REPORTING_CTP", "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI");
         COLUMN_TO_PATH.put("LEI_OTHER_CTP", "CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
-        COLUMN_TO_PATH.put("RPTG_TM_STMP", "CtrPtySpcfcData/RptgTmStmp");
-        COLUMN_TO_PATH.put("CTRCT_TP", "CmonTradData/CtrctData/CtrctTp");
-        COLUMN_TO_PATH.put("ASST_CLSS", "CmonTradData/CtrctData/AsstClss");
-        COLUMN_TO_PATH.put("PDCT_CLSSFCTN", "CmonTradData/CtrctData/PdctClssfctn");
-        COLUMN_TO_PATH.put("EXCTN_TMSTMP", "CmonTradData/TxData/ExctnTmStmp");
-        // Ajoute tes autres champs ici...
     }
 
-    public static void extractToExcel(Path xmlPath, Path xlsxPath) throws Exception {
-        // Précompile les paths (String -> List<String>)
-        List<String> columns = new ArrayList<>(COLUMN_TO_PATH.keySet());
-        Map<String, List<String>> colPathParts = new HashMap<>();
+    /**
+     * Parse le XML en streaming et génère un CSV.
+     */
+    public void extract(Path xmlInput, Path csvOutput) throws Exception {
+        // Précompilation: colonne -> liste de segments du path
+        final List<String> columns = new ArrayList<String>(COLUMN_TO_PATH.keySet());
+        final Map<String, List<String>> colPathSegments = new HashMap<String, List<String>>();
         for (Map.Entry<String, String> e : COLUMN_TO_PATH.entrySet()) {
-            colPathParts.put(e.getKey(), List.of(e.getValue().split("/")));
+            colPathSegments.put(e.getKey(), splitPath(e.getValue()));
         }
 
         XMLInputFactory factory = XMLInputFactory.newFactory();
-        factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+        // Coalescing: regroupe les événements CHARACTERS contigus
+        try {
+            factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+        } catch (IllegalArgumentException ignore) {
+            // certains impl ne supportent pas, on ignore
+        }
 
-        try (InputStream in = Files.newInputStream(xmlPath);
-             SXSSFWorkbook wb = new SXSSFWorkbook(200);
-             OutputStream out = Files.newOutputStream(xlsxPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+        try (InputStream in = Files.newInputStream(xmlInput);
+             BufferedWriter writer = Files.newBufferedWriter(
+                     csvOutput,
+                     StandardCharsets.UTF_8,
+                     StandardOpenOption.CREATE,
+                     StandardOpenOption.TRUNCATE_EXISTING)) {
 
-            Sheet sheet = wb.createSheet("Stat");
-            int rowNum = 0;
-
-            // Header
-            Row header = sheet.createRow(rowNum++);
-            for (int c = 0; c < columns.size(); c++) {
-                header.createCell(c).setCellValue(columns.get(c));
-            }
+            // 1) Écrire header CSV
+            writeCsvRow(writer, columns);
 
             XMLStreamReader r = factory.createXMLStreamReader(in);
 
-            // Stack du chemin courant (localNames)
-            Deque<String> stack = new ArrayDeque<>();
-
             boolean inStat = false;
-            // path dans <Stat> uniquement
-            Deque<String> statStack = new ArrayDeque<>();
 
-            // Buffer texte courant
+            // stack des éléments courant DANS Stat (path relatif)
+            Deque<String> statStack = new ArrayDeque<String>();
+
+            // buffer texte courant
             StringBuilder textBuf = new StringBuilder();
 
-            // Row courante (colName -> value)
+            // record courant: colonne -> valeur
             Map<String, String> currentRow = null;
 
             while (r.hasNext()) {
                 int event = r.next();
 
                 switch (event) {
-                    case XMLStreamConstants.START_ELEMENT -> {
+                    case XMLStreamConstants.START_ELEMENT: {
                         String name = r.getLocalName();
-                        stack.addLast(name);
 
-                        // Dès qu'on rentre dans Stat, on initialise
                         if ("Stat".equals(name)) {
                             inStat = true;
                             statStack.clear();
-                            currentRow = new HashMap<>();
-                            for (String col : columns) currentRow.put(col, "");
+                            currentRow = new HashMap<String, String>();
+                            // init à vide (pour garantir colonnes présentes)
+                            for (String col : columns) {
+                                currentRow.put(col, "");
+                            }
                         } else if (inStat) {
+                            // on empile le nom de l'élément (relatif à Stat)
                             statStack.addLast(name);
                         }
 
                         textBuf.setLength(0);
+                        break;
                     }
 
-                    case XMLStreamConstants.CHARACTERS -> {
+                    case XMLStreamConstants.CHARACTERS: {
                         textBuf.append(r.getText());
+                        break;
                     }
 
-                    case XMLStreamConstants.END_ELEMENT -> {
+                    case XMLStreamConstants.END_ELEMENT: {
                         String name = r.getLocalName();
-
-                        // La valeur du noeud qu'on ferme
-                        String value = textBuf.toString().trim();
+                        String value = textBuf.toString();
+                        if (value != null) value = value.trim();
+                        else value = "";
 
                         if (inStat) {
-                            // On est dans <Stat> : vérifier si le path courant correspond à une colonne
-                            // Le path courant à matcher = statStack + name(qui se ferme)
-                            List<String> currentPath = new ArrayList<>(statStack);
-                            currentPath.add(name);
+                            if (!"Stat".equals(name)) {
+                                // Chemin courant = statStack + name (élément qui se ferme)
+                                List<String> currentPath = new ArrayList<String>(statStack);
+                                currentPath.add(name);
 
-                            for (String col : columns) {
-                                // Si déjà renseigné, on ne réécrit pas (tu peux changer ce comportement si besoin)
-                                if (currentRow.get(col) != null && !currentRow.get(col).isEmpty()) continue;
-
-                                List<String> target = colPathParts.get(col);
-                                if (pathEquals(currentPath, target)) {
-                                    currentRow.put(col, value);
+                                // On compare avec chaque colonne
+                                for (String col : columns) {
+                                    // si déjà rempli, on ne réécrit pas (comportement "premier trouvé")
+                                    String existing = currentRow.get(col);
+                                    if (existing != null && existing.length() > 0) {
+                                        continue;
+                                    }
+                                    List<String> target = colPathSegments.get(col);
+                                    if (pathEquals(currentPath, target)) {
+                                        currentRow.put(col, value);
+                                    }
                                 }
+
+                                // on sort d'un élément interne à Stat
+                                if (!statStack.isEmpty()) {
+                                    statStack.pollLast();
+                                }
+                            } else {
+                                // fin du record Stat => écrire ligne CSV
+                                List<String> rowValues = new ArrayList<String>(columns.size());
+                                for (String col : columns) {
+                                    rowValues.add(nullToEmpty(currentRow.get(col)));
+                                }
+                                writeCsvRow(writer, rowValues);
+
+                                // reset
+                                inStat = false;
+                                statStack.clear();
+                                currentRow = null;
                             }
                         }
-
-                        // Si on ferme </Stat> : on écrit la ligne
-                        if ("Stat".equals(name) && inStat) {
-                            Row row = sheet.createRow(rowNum++);
-                            for (int c = 0; c < columns.size(); c++) {
-                                String col = columns.get(c);
-                                row.createCell(c).setCellValue(nullToEmpty(currentRow.get(col)));
-                            }
-                            inStat = false;
-                            statStack.clear();
-                            currentRow = null;
-                        } else if (inStat) {
-                            // on sort d'un élément à l'intérieur de Stat
-                            if (!statStack.isEmpty()) {
-                                // on enlève le dernier ouvert (celui qu'on ferme) -> en pratique statStack contient le START_ELEMENT,
-                                // et on enlève maintenant qu'on termine son END_ELEMENT.
-                                statStack.pollLast();
-                            }
-                        }
-
-                        // pop stack global
-                        if (!stack.isEmpty()) stack.pollLast();
 
                         textBuf.setLength(0);
+                        break;
                     }
 
-                    default -> { /* ignore */ }
+                    default:
+                        // ignore
+                        break;
                 }
             }
 
-            wb.write(out);
-            wb.dispose();
+            r.close();
         }
     }
 
-    private static boolean pathEquals(List<String> current, List<String> target) {
-        if (current.size() != target.size()) return false;
-        for (int i = 0; i < current.size(); i++) {
-            if (!Objects.equals(current.get(i), target.get(i))) return false;
+    // -----------------------
+    // Helpers Java 8
+    // -----------------------
+
+    private static List<String> splitPath(String path) {
+        // Java 8: pas de List.of
+        String[] parts = path.split("/");
+        List<String> out = new ArrayList<String>(parts.length);
+        for (int i = 0; i < parts.length; i++) {
+            out.add(parts[i]);
+        }
+        return out;
+    }
+
+    private static boolean pathEquals(List<String> a, List<String> b) {
+        if (a == null || b == null) return false;
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!Objects.equals(a.get(i), b.get(i))) return false;
         }
         return true;
     }
@@ -160,11 +189,38 @@ public class StatExtractor {
         return s == null ? "" : s;
     }
 
+    private static void writeCsvRow(BufferedWriter writer, List<String> values) throws Exception {
+        // CSV simple: on escape " et on quote si nécessaire
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) sb.append(';'); // séparateur ; (souvent mieux pour Excel FR)
+            sb.append(escapeCsv(values.get(i)));
+        }
+        sb.append("\n");
+        writer.write(sb.toString());
+    }
+
+    private static String escapeCsv(String v) {
+        if (v == null) v = "";
+        boolean mustQuote = v.indexOf(';') >= 0 || v.indexOf('"') >= 0 || v.indexOf('\n') >= 0 || v.indexOf('\r') >= 0;
+        String escaped = v.replace("\"", "\"\"");
+        if (mustQuote) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
+    }
+
     // Exemple d'utilisation
     public static void main(String[] args) throws Exception {
-        Path xml = Paths.get("input.xml");
-        Path xlsx = Paths.get("output.xlsx");
-        extractToExcel(xml, xlsx);
-        System.out.println("OK: " + xlsx);
+        if (args.length < 2) {
+            System.out.println("Usage: java StatXmlToCsvExtractor <input.xml> <output.csv>");
+            return;
+        }
+        Path in = new java.io.File(args[0]).toPath();
+        Path out = new java.io.File(args[1]).toPath();
+
+        new StatXmlToCsvExtractor().extract(in, out);
+
+        System.out.println("OK -> " + out.toAbsolutePath());
     }
 }
