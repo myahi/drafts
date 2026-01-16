@@ -1,6 +1,13 @@
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import javax.xml.stream.XMLInputFactory;
@@ -19,6 +26,10 @@ import java.util.*;
  * - Parse XML en streaming (StAX)
  * - Chaque <Stat>...</Stat> => 1 ligne Excel
  * - Colonnes configurées via mapping (nomColonne -> chemin XML relatif à Stat)
+ *
+ * Notes:
+ * - Compatible Java 8 (pas de Map.of, List.of, etc.)
+ * - SXSSF pour limiter la mémoire
  */
 public class StatXmlToExcelExtractor {
 
@@ -50,14 +61,22 @@ public class StatXmlToExcelExtractor {
         try {
             xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
         } catch (IllegalArgumentException ignore) {
+            // some impl may not support it; safe to ignore
         }
 
         // Workbook streaming (garde seulement N lignes en mémoire avant flush)
-        // 200 est un bon compromis ; tu peux ajuster
-        SXSSFWorkbook workbook = new SXSSFWorkbook(200);
+        final int rowWindowSize = 200;
+        SXSSFWorkbook workbook = new SXSSFWorkbook(rowWindowSize);
         workbook.setCompressTempFiles(true);
 
         Sheet sheet = workbook.createSheet("Stat");
+
+        // Important pour SXSSF: autoSizeColumn nécessite le tracking
+        sheet.trackAllColumnsForAutoSizing();
+
+        // Header style: gras + fond bleu clair
+        CellStyle headerStyle = createHeaderStyle(workbook);
+
         int excelRowIndex = 0;
 
         // Header Excel
@@ -65,6 +84,7 @@ public class StatXmlToExcelExtractor {
         for (int i = 0; i < columnNames.size(); i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(columnNames.get(i));
+            cell.setCellStyle(headerStyle);
         }
 
         try (InputStream xmlStream = Files.newInputStream(xmlInput);
@@ -77,13 +97,13 @@ public class StatXmlToExcelExtractor {
 
             boolean isInsideStatBlock = false;
 
-            // pile des éléments ouverts DANS <Stat> (chemin relatif)
+            // Pile des éléments ouverts DANS <Stat> (chemin relatif)
             Deque<String> currentRelativePathStack = new ArrayDeque<String>();
 
-            // buffer texte
+            // Buffer texte
             StringBuilder currentTextBuffer = new StringBuilder();
 
-            // ligne courante: colonne -> valeur
+            // Ligne courante: colonne -> valeur
             Map<String, String> currentRecordValues = null;
 
             while (xmlReader.hasNext()) {
@@ -120,14 +140,19 @@ public class StatXmlToExcelExtractor {
 
                         if (isInsideStatBlock) {
                             if (!"Stat".equals(elementName)) {
+
                                 // chemin courant = stack (inclut déjà l'élément qu'on ferme)
                                 List<String> currentRelativePath = new ArrayList<String>(currentRelativePathStack);
 
-                                // si ce chemin correspond à une colonne ciblée => on stocke
-                                for (String columnName : columnNames) {
-                                    if (!isEmpty(currentRecordValues.get(columnName))) {
-                                        continue; // garde le premier trouvé
+                                // Si ce chemin correspond à une colonne ciblée => on stocke (1er match gagne)
+                                for (int i = 0; i < columnNames.size(); i++) {
+                                    String columnName = columnNames.get(i);
+
+                                    String existingValue = currentRecordValues.get(columnName);
+                                    if (existingValue != null && !existingValue.isEmpty()) {
+                                        continue;
                                     }
+
                                     List<String> targetPath = columnNameToPathSegments.get(columnName);
                                     if (pathEquals(currentRelativePath, targetPath)) {
                                         currentRecordValues.put(columnName, elementText);
@@ -138,6 +163,7 @@ public class StatXmlToExcelExtractor {
                                 if (!currentRelativePathStack.isEmpty()) {
                                     currentRelativePathStack.pollLast();
                                 }
+
                             } else {
                                 // fin du record Stat => écrire la ligne Excel
                                 Row dataRow = sheet.createRow(excelRowIndex++);
@@ -165,21 +191,50 @@ public class StatXmlToExcelExtractor {
 
             xmlReader.close();
 
-            // Optionnel: ajuster la largeur (à éviter si très gros, mais 10k ok)
-            // Attention: autosize sur SXSSF peut être coûteux si beaucoup de colonnes.
-            // for (int i = 0; i < columnNames.size(); i++) sheet.autoSizeColumn(i);
+            // Auto-size (peut être coûteux si beaucoup de colonnes, OK pour 10k lignes et qq colonnes)
+            for (int i = 0; i < columnNames.size(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Optionnel: plafonner les colonnes trop larges (évite un xlsx moche)
+            // int maxWidth = 10000; // ~40 caractères
+            // for (int i = 0; i < columnNames.size(); i++) {
+            //     int w = sheet.getColumnWidth(i);
+            //     if (w > maxWidth) sheet.setColumnWidth(i, maxWidth);
+            // }
 
             workbook.write(excelStream);
         } finally {
-            // Important: cleanup des fichiers temporaires SXSSF
+            // Cleanup fichiers temporaires SXSSF
             workbook.dispose();
             workbook.close();
         }
     }
 
     // -----------------------
-    // Helpers Java 8
+    // Helpers
     // -----------------------
+
+    private static CellStyle createHeaderStyle(SXSSFWorkbook workbook) {
+        CellStyle headerStyle = workbook.createCellStyle();
+
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+
+        headerStyle.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        headerStyle.setBorderBottom(BorderStyle.THIN);
+        headerStyle.setBorderTop(BorderStyle.THIN);
+        headerStyle.setBorderLeft(BorderStyle.THIN);
+        headerStyle.setBorderRight(BorderStyle.THIN);
+
+        return headerStyle;
+    }
 
     private static List<String> splitPath(String path) {
         String[] parts = path.split("/");
@@ -203,16 +258,13 @@ public class StatXmlToExcelExtractor {
         return s == null ? "" : s.trim();
     }
 
-    private static boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
-
     // Exemple CLI
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.out.println("Usage: java StatXmlToExcelExtractor <input.xml> <output.xlsx>");
             return;
         }
+
         Path input = new java.io.File(args[0]).toPath();
         Path output = new java.io.File(args[1]).toPath();
 
