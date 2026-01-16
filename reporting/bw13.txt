@@ -1,0 +1,77 @@
+intfGetTargetStatus-service.serviceagent]
+        at com.tibco.pe.core.AgentJobCreator.setState(Unknown Source)
+        at com.tibco.pe.core.JobPool.activateServiceAgents(Unknown Source)
+        at com.tibco.pe.core.finishStartup.itsTime(Unknown Source)
+        at com.tibco.pe.util.ReminderQueue.run(Unknown Source)
+caused by: An IOException occurred while initializing the service
+        at com.tibco.bw.service.serviceAgent.ServiceServiceAgent.activate(Unknown Source)
+        at com.tibco.pe.core.AgentJobCreator.setState(Unknown Source)
+        at com.tibco.pe.core.JobPool.activateServiceAgents(Unknown Source)
+        at com.tibco.pe.core.finishStartup.itsTime(Unknown Source)
+        at com.tibco.pe.util.ReminderQueue.run(Unknown Source)
+caused by: com.tibco.plugin.share.http.HttpInitServerIOException
+        at com.tibco.bw.service.binding.bwhttp.HttpDriver.startListening(Unknown Source)
+        at com.tibco.bw.service.binding.soap.http.SoapHttpTransportApplication.activate(Unknown Source)
+        at com.tibco.bw.service.impl.DefaultService.activate(Unknown Source)
+        at com.tibco.bw.service.serviceAgent.ServiceServiceAgent.activate(Unknown Source)
+        at com.tibco.pe.core.AgentJobCreator.setState(Unknown Source)
+        at com.tibco.pe.core.JobPool.activateServiceAgents(Unknown Source)
+        at com.tibco.pe.core.finishStartup.itsTime(Unknown Source)
+        at com.tibco.pe.util.ReminderQueue.run(Unknown Source)
+caused by: org.apache.catalina.LifecycleException: Un conteneur fils a échoué pendant son démarrage
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:768)
+        at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:211)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at org.apache.catalina.core.StandardService.startInternal(StandardService.java:415)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:874)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at com.tibco.bw.service.binding.bwhttp.tomcat.TomcatServer.startServer(Unknown Source)
+        at com.tibco.bw.service.binding.bwhttp.HttpDriver.startServer(Unknown Source)
+        at com.tibco.bw.service.binding.bwhttp.HttpDriver.startListening(Unknown Source)
+        at com.tibco.bw.service.binding.soap.http.SoapHttpTransportApplication.activate(Unknown Source)
+        at com.tibco.bw.service.impl.DefaultService.activate(Unknown Source)
+        at com.tibco.bw.service.serviceAgent.ServiceServiceAgent.activate(Unknown Source)
+        at com.tibco.pe.core.AgentJobCreator.setState(Unknown Source)
+        at com.tibco.pe.core.JobPool.activateServiceAgents(Unknown Source)
+        at com.tibco.pe.core.finishStartup.itsTime(Unknown Source)
+        at com.tibco.pe.util.ReminderQueue.run(Unknown Source)
+Caused by: java.util.concurrent.ExecutionException: org.apache.catalina.LifecycleException: Un conteneur fils a échoué pendant son démarrage
+        at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:191)
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:756)
+        ... 16 more
+Caused by: org.apache.catalina.LifecycleException: Un conteneur fils a échoué pendant son démarrage
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:768)
+        at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:721)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203)
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)
+        at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749)
+        ... 16 more
+Caused by: java.util.concurrent.ExecutionException: org.apache.catalina.LifecycleException: Echec de démarrage du composant [NonLoginAuthenticator[StandardEngine[TomcatEngine-BOFI-UX].StandardHost[localhost].StandardContext[]]]
+        at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:191)
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:756)
+        ... 24 more
+Caused by: org.apache.catalina.LifecycleException: Echec de démarrage du composant [NonLoginAuthenticator[StandardEngine[TomcatEngine-BOFI-UX].StandardHost[localhost].StandardContext[]]]
+        at org.apache.catalina.util.LifecycleBase.handleSubClassException(LifecycleBase.java:402)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:179)
+        at org.apache.catalina.core.StandardPipeline.startInternal(StandardPipeline.java:157)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4364)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203)
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)
+        at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749)
+        ... 24 more
+Caused by: java.lang.NoSuchMethodError: 'java.lang.String javax.servlet.ServletContext.getVirtualServerName()'
+        at org.apache.catalina.authenticator.AuthenticatorBase.startInternal(AuthenticatorBase.java:1198)
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+        ... 34 more
