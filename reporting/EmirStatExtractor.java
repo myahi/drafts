@@ -1,131 +1,160 @@
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-public class StatXmlToCsvExtractor {
+/**
+ * Java 8 - Extraction streaming de records <Stat> vers Excel (.xlsx)
+ *
+ * - Parse XML en streaming (StAX)
+ * - Chaque <Stat>...</Stat> => 1 ligne Excel
+ * - Colonnes configurées via mapping (nomColonne -> chemin XML relatif à Stat)
+ */
+public class StatXmlToExcelExtractor {
 
-    // 3 champs de ton exemple
-    private static final LinkedHashMap<String, String> COLUMN_TO_PATH = new LinkedHashMap<String, String>();
+    /**
+     * Mapping: Nom de colonne -> chemin XML relatif à <Stat>.
+     * Adapte ce mapping à tes champs.
+     */
+    private static final LinkedHashMap<String, String> COLUMN_NAME_TO_RELATIVE_PATH = new LinkedHashMap<String, String>();
     static {
-        COLUMN_TO_PATH.put("ID", "CmonTradData/TxData/TxId/Prtry/Id");
-        COLUMN_TO_PATH.put("LEI_REPORTING_CTP", "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI");
-        COLUMN_TO_PATH.put("LEI_OTHER_CTP", "CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
+        COLUMN_NAME_TO_RELATIVE_PATH.put("ID", "CmonTradData/TxData/TxId/Prtry/Id");
+        COLUMN_NAME_TO_RELATIVE_PATH.put("LEI_REPORTING_CTP", "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI");
+        COLUMN_NAME_TO_RELATIVE_PATH.put("LEI_OTHER_CTP", "CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
     }
 
-    public void extract(Path xmlInput, Path csvOutput) throws Exception {
+    /**
+     * Extrait les données depuis xmlInput et écrit un fichier Excel xlsxOutput.
+     */
+    public void extractToXlsx(Path xmlInput, Path xlsxOutput) throws Exception {
 
-        final List<String> columns = new ArrayList<String>(COLUMN_TO_PATH.keySet());
-        final Map<String, List<String>> colPathSegments = new HashMap<String, List<String>>();
-        for (Map.Entry<String, String> e : COLUMN_TO_PATH.entrySet()) {
-            colPathSegments.put(e.getKey(), splitPath(e.getValue()));
+        // Prépare: liste ordonnée des colonnes et paths segmentés
+        final List<String> columnNames = new ArrayList<String>(COLUMN_NAME_TO_RELATIVE_PATH.keySet());
+        final Map<String, List<String>> columnNameToPathSegments = new HashMap<String, List<String>>();
+        for (Map.Entry<String, String> entry : COLUMN_NAME_TO_RELATIVE_PATH.entrySet()) {
+            columnNameToPathSegments.put(entry.getKey(), splitPath(entry.getValue()));
         }
 
-        XMLInputFactory factory = XMLInputFactory.newFactory();
+        // StAX factory
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
         try {
-            factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
         } catch (IllegalArgumentException ignore) {
         }
 
-        try (InputStream in = Files.newInputStream(xmlInput);
-             BufferedWriter writer = Files.newBufferedWriter(
-                     csvOutput,
-                     StandardCharsets.UTF_8,
+        // Workbook streaming (garde seulement N lignes en mémoire avant flush)
+        // 200 est un bon compromis ; tu peux ajuster
+        SXSSFWorkbook workbook = new SXSSFWorkbook(200);
+        workbook.setCompressTempFiles(true);
+
+        Sheet sheet = workbook.createSheet("Stat");
+        int excelRowIndex = 0;
+
+        // Header Excel
+        Row headerRow = sheet.createRow(excelRowIndex++);
+        for (int i = 0; i < columnNames.size(); i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columnNames.get(i));
+        }
+
+        try (InputStream xmlStream = Files.newInputStream(xmlInput);
+             OutputStream excelStream = Files.newOutputStream(
+                     xlsxOutput,
                      StandardOpenOption.CREATE,
                      StandardOpenOption.TRUNCATE_EXISTING)) {
 
-            // Header
-            writeCsvRow(writer, columns);
+            XMLStreamReader xmlReader = xmlInputFactory.createXMLStreamReader(xmlStream);
 
-            XMLStreamReader r = factory.createXMLStreamReader(in);
+            boolean isInsideStatBlock = false;
 
-            boolean inStat = false;
+            // pile des éléments ouverts DANS <Stat> (chemin relatif)
+            Deque<String> currentRelativePathStack = new ArrayDeque<String>();
 
-            // Chemin courant à l'intérieur de <Stat> (inclut l'élément courant)
-            Deque<String> statStack = new ArrayDeque<String>();
+            // buffer texte
+            StringBuilder currentTextBuffer = new StringBuilder();
 
-            // Buffer texte
-            StringBuilder textBuf = new StringBuilder();
+            // ligne courante: colonne -> valeur
+            Map<String, String> currentRecordValues = null;
 
-            Map<String, String> currentRow = null;
+            while (xmlReader.hasNext()) {
+                int eventType = xmlReader.next();
 
-            while (r.hasNext()) {
-                int event = r.next();
-
-                switch (event) {
+                switch (eventType) {
                     case XMLStreamConstants.START_ELEMENT: {
-                        String name = r.getLocalName();
-                        textBuf.setLength(0);
+                        String elementName = xmlReader.getLocalName();
+                        currentTextBuffer.setLength(0);
 
-                        if ("Stat".equals(name)) {
-                            inStat = true;
-                            statStack.clear();
+                        if ("Stat".equals(elementName)) {
+                            isInsideStatBlock = true;
+                            currentRelativePathStack.clear();
 
-                            currentRow = new HashMap<String, String>();
-                            for (String col : columns) {
-                                currentRow.put(col, "");
+                            currentRecordValues = new HashMap<String, String>();
+                            for (String col : columnNames) {
+                                currentRecordValues.put(col, "");
                             }
-                        } else if (inStat) {
-                            // push l'élément courant dans le chemin
-                            statStack.addLast(name);
+                        } else if (isInsideStatBlock) {
+                            // on entre dans un élément du Stat => push dans le chemin
+                            currentRelativePathStack.addLast(elementName);
                         }
                         break;
                     }
 
                     case XMLStreamConstants.CHARACTERS: {
-                        // Accumule le texte (coalescing ou pas)
-                        textBuf.append(r.getText());
+                        currentTextBuffer.append(xmlReader.getText());
                         break;
                     }
 
                     case XMLStreamConstants.END_ELEMENT: {
-                        String name = r.getLocalName();
-                        String value = textBuf.toString();
-                        value = value == null ? "" : value.trim();
+                        String elementName = xmlReader.getLocalName();
+                        String elementText = safeTrim(currentTextBuffer.toString());
 
-                        if (inStat) {
-                            if (!"Stat".equals(name)) {
-                                // On est en fin d'un élément interne à Stat.
-                                // Le chemin courant = statStack (il inclut déjà l'élément qui se ferme)
-                                List<String> currentPath = new ArrayList<String>(statStack);
+                        if (isInsideStatBlock) {
+                            if (!"Stat".equals(elementName)) {
+                                // chemin courant = stack (inclut déjà l'élément qu'on ferme)
+                                List<String> currentRelativePath = new ArrayList<String>(currentRelativePathStack);
 
-                                for (String col : columns) {
-                                    String existing = currentRow.get(col);
-                                    if (existing != null && existing.length() > 0) {
-                                        continue; // garde le premier match
+                                // si ce chemin correspond à une colonne ciblée => on stocke
+                                for (String columnName : columnNames) {
+                                    if (!isEmpty(currentRecordValues.get(columnName))) {
+                                        continue; // garde le premier trouvé
                                     }
-                                    List<String> target = colPathSegments.get(col);
-                                    if (pathEquals(currentPath, target)) {
-                                        currentRow.put(col, value);
+                                    List<String> targetPath = columnNameToPathSegments.get(columnName);
+                                    if (pathEquals(currentRelativePath, targetPath)) {
+                                        currentRecordValues.put(columnName, elementText);
                                     }
                                 }
 
-                                // pop l'élément qui se ferme
-                                if (!statStack.isEmpty()) {
-                                    statStack.pollLast();
+                                // fin d'un élément du Stat => pop
+                                if (!currentRelativePathStack.isEmpty()) {
+                                    currentRelativePathStack.pollLast();
                                 }
                             } else {
-                                // fin de Stat => écrire la ligne
-                                List<String> rowValues = new ArrayList<String>(columns.size());
-                                for (String col : columns) {
-                                    rowValues.add(nullToEmpty(currentRow.get(col)));
+                                // fin du record Stat => écrire la ligne Excel
+                                Row dataRow = sheet.createRow(excelRowIndex++);
+                                for (int i = 0; i < columnNames.size(); i++) {
+                                    String col = columnNames.get(i);
+                                    String val = currentRecordValues.get(col);
+                                    dataRow.createCell(i).setCellValue(val == null ? "" : val);
                                 }
-                                writeCsvRow(writer, rowValues);
 
-                                // reset
-                                inStat = false;
-                                statStack.clear();
-                                currentRow = null;
+                                // reset pour le Stat suivant
+                                isInsideStatBlock = false;
+                                currentRelativePathStack.clear();
+                                currentRecordValues = null;
                             }
                         }
 
-                        textBuf.setLength(0);
+                        currentTextBuffer.setLength(0);
                         break;
                     }
 
@@ -134,58 +163,60 @@ public class StatXmlToCsvExtractor {
                 }
             }
 
-            r.close();
+            xmlReader.close();
+
+            // Optionnel: ajuster la largeur (à éviter si très gros, mais 10k ok)
+            // Attention: autosize sur SXSSF peut être coûteux si beaucoup de colonnes.
+            // for (int i = 0; i < columnNames.size(); i++) sheet.autoSizeColumn(i);
+
+            workbook.write(excelStream);
+        } finally {
+            // Important: cleanup des fichiers temporaires SXSSF
+            workbook.dispose();
+            workbook.close();
         }
     }
 
-    // ---------------- Helpers Java 8 ----------------
+    // -----------------------
+    // Helpers Java 8
+    // -----------------------
 
     private static List<String> splitPath(String path) {
         String[] parts = path.split("/");
-        List<String> out = new ArrayList<String>(parts.length);
-        for (int i = 0; i < parts.length; i++) out.add(parts[i]);
-        return out;
+        List<String> segments = new ArrayList<String>(parts.length);
+        for (int i = 0; i < parts.length; i++) {
+            segments.add(parts[i]);
+        }
+        return segments;
     }
 
-    private static boolean pathEquals(List<String> a, List<String> b) {
-        if (a == null || b == null) return false;
-        if (a.size() != b.size()) return false;
-        for (int i = 0; i < a.size(); i++) {
-            if (!Objects.equals(a.get(i), b.get(i))) return false;
+    private static boolean pathEquals(List<String> left, List<String> right) {
+        if (left == null || right == null) return false;
+        if (left.size() != right.size()) return false;
+        for (int i = 0; i < left.size(); i++) {
+            if (!Objects.equals(left.get(i), right.get(i))) return false;
         }
         return true;
     }
 
-    private static String nullToEmpty(String s) {
-        return s == null ? "" : s;
+    private static String safeTrim(String s) {
+        return s == null ? "" : s.trim();
     }
 
-    private static void writeCsvRow(BufferedWriter writer, List<String> values) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < values.size(); i++) {
-            if (i > 0) sb.append(';'); // ; pour Excel FR
-            sb.append(escapeCsv(values.get(i)));
-        }
-        sb.append("\n");
-        writer.write(sb.toString());
+    private static boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 
-    private static String escapeCsv(String v) {
-        if (v == null) v = "";
-        boolean mustQuote = v.indexOf(';') >= 0 || v.indexOf('"') >= 0 || v.indexOf('\n') >= 0 || v.indexOf('\r') >= 0;
-        String escaped = v.replace("\"", "\"\"");
-        return mustQuote ? ("\"" + escaped + "\"") : escaped;
-    }
-
+    // Exemple CLI
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
-            System.out.println("Usage: java StatXmlToCsvExtractor <input.xml> <output.csv>");
+            System.out.println("Usage: java StatXmlToExcelExtractor <input.xml> <output.xlsx>");
             return;
         }
-        Path in = new java.io.File(args[0]).toPath();
-        Path out = new java.io.File(args[1]).toPath();
+        Path input = new java.io.File(args[0]).toPath();
+        Path output = new java.io.File(args[1]).toPath();
 
-        new StatXmlToCsvExtractor().extract(in, out);
-        System.out.println("OK -> " + out.toAbsolutePath());
+        new StatXmlToExcelExtractor().extractToXlsx(input, output);
+        System.out.println("OK -> " + output.toAbsolutePath());
     }
 }
