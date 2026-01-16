@@ -25,7 +25,7 @@ import java.util.*;
  *
  * - Parse XML en streaming (StAX)
  * - Chaque <Stat>...</Stat> => 1 ligne Excel
- * - Colonnes configurées via mapping (nomColonne -> chemin XML relatif à Stat)
+ * - Colonnes configurées via mapping (nomColonne -> liste de chemins XML relatifs à Stat, avec fallback)
  *
  * Notes:
  * - Compatible Java 8 (pas de Map.of, List.of, etc.)
@@ -34,14 +34,28 @@ import java.util.*;
 public class StatXmlToExcelExtractor {
 
     /**
-     * Mapping: Nom de colonne -> chemin XML relatif à <Stat>.
-     * Adapte ce mapping à tes champs.
+     * Mapping: Nom de colonne -> liste de chemins XML relatifs à <Stat>.
+     * Les chemins sont testés dans l'ordre: le 1er qui matche remplit la colonne (fallback).
+     *
+     * ⚠️ Ajuste les chemins "fallback" selon TON XML réel.
      */
-    private static final LinkedHashMap<String, String> COLUMN_NAME_TO_RELATIVE_PATH = new LinkedHashMap<String, String>();
+    private static final LinkedHashMap<String, List<String>> COLUMN_NAME_TO_RELATIVE_PATHS =
+            new LinkedHashMap<String, List<String>>();
+
     static {
-        COLUMN_NAME_TO_RELATIVE_PATH.put("ID", "CmonTradData/TxData/TxId/Prtry/Id");
-        COLUMN_NAME_TO_RELATIVE_PATH.put("LEI_REPORTING_CTP", "CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI");
-        COLUMN_NAME_TO_RELATIVE_PATH.put("LEI_OTHER_CTP", "CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
+        // ID : chemin principal + fallback(s)
+        List<String> idPaths = new ArrayList<String>();
+        idPaths.add("CmonTradData/TxData/TxId/Prtry/Id");  // principal (vu dans ton extrait)
+        idPaths.add("CmonTradData/TxData/TxId/UnqTxIdr");  // fallback exemple (à ajuster si besoin)
+        COLUMN_NAME_TO_RELATIVE_PATHS.put("ID", idPaths);
+
+        List<String> reportingLeiPaths = new ArrayList<String>();
+        reportingLeiPaths.add("CtrPtySpcfcData/CtrPty/RptgCtrPty/Id/Lgl/Id/LEI");
+        COLUMN_NAME_TO_RELATIVE_PATHS.put("LEI_REPORTING_CTP", reportingLeiPaths);
+
+        List<String> otherLeiPaths = new ArrayList<String>();
+        otherLeiPaths.add("CtrPtySpcfcData/CtrPty/OthrCtrPty/IdTp/Lgl/Id/LEI");
+        COLUMN_NAME_TO_RELATIVE_PATHS.put("LEI_OTHER_CTP", otherLeiPaths);
     }
 
     /**
@@ -49,11 +63,22 @@ public class StatXmlToExcelExtractor {
      */
     public void extractToXlsx(Path xmlInput, Path xlsxOutput) throws Exception {
 
-        // Prépare: liste ordonnée des colonnes et paths segmentés
-        final List<String> columnNames = new ArrayList<String>(COLUMN_NAME_TO_RELATIVE_PATH.keySet());
-        final Map<String, List<String>> columnNameToPathSegments = new HashMap<String, List<String>>();
-        for (Map.Entry<String, String> entry : COLUMN_NAME_TO_RELATIVE_PATH.entrySet()) {
-            columnNameToPathSegments.put(entry.getKey(), splitPath(entry.getValue()));
+        // Colonnes dans l'ordre
+        final List<String> columnNames = new ArrayList<String>(COLUMN_NAME_TO_RELATIVE_PATHS.keySet());
+
+        // Pré-compile: colonne -> liste de chemins "segmentés" (List<List<String>>)
+        final Map<String, List<List<String>>> columnNameToAllPathSegments =
+                new HashMap<String, List<List<String>>>();
+
+        for (Map.Entry<String, List<String>> entry : COLUMN_NAME_TO_RELATIVE_PATHS.entrySet()) {
+            List<List<String>> allSegments = new ArrayList<List<String>>();
+            List<String> paths = entry.getValue();
+            if (paths != null) {
+                for (int i = 0; i < paths.size(); i++) {
+                    allSegments.add(splitPath(paths.get(i)));
+                }
+            }
+            columnNameToAllPathSegments.put(entry.getKey(), allSegments);
         }
 
         // StAX factory
@@ -110,6 +135,7 @@ public class StatXmlToExcelExtractor {
                 int eventType = xmlReader.next();
 
                 switch (eventType) {
+
                     case XMLStreamConstants.START_ELEMENT: {
                         String elementName = xmlReader.getLocalName();
                         currentTextBuffer.setLength(0);
@@ -119,9 +145,10 @@ public class StatXmlToExcelExtractor {
                             currentRelativePathStack.clear();
 
                             currentRecordValues = new HashMap<String, String>();
-                            for (String col : columnNames) {
-                                currentRecordValues.put(col, "");
+                            for (int i = 0; i < columnNames.size(); i++) {
+                                currentRecordValues.put(columnNames.get(i), "");
                             }
+
                         } else if (isInsideStatBlock) {
                             // on entre dans un élément du Stat => push dans le chemin
                             currentRelativePathStack.addLast(elementName);
@@ -139,23 +166,31 @@ public class StatXmlToExcelExtractor {
                         String elementText = safeTrim(currentTextBuffer.toString());
 
                         if (isInsideStatBlock) {
+
                             if (!"Stat".equals(elementName)) {
 
                                 // chemin courant = stack (inclut déjà l'élément qu'on ferme)
                                 List<String> currentRelativePath = new ArrayList<String>(currentRelativePathStack);
 
-                                // Si ce chemin correspond à une colonne ciblée => on stocke (1er match gagne)
+                                // Pour chaque colonne: si vide, on teste la liste des chemins (fallback)
                                 for (int i = 0; i < columnNames.size(); i++) {
                                     String columnName = columnNames.get(i);
 
                                     String existingValue = currentRecordValues.get(columnName);
                                     if (existingValue != null && !existingValue.isEmpty()) {
+                                        continue; // déjà rempli => on n'écrase pas
+                                    }
+
+                                    List<List<String>> allTargetPaths = columnNameToAllPathSegments.get(columnName);
+                                    if (allTargetPaths == null) {
                                         continue;
                                     }
 
-                                    List<String> targetPath = columnNameToPathSegments.get(columnName);
-                                    if (pathEquals(currentRelativePath, targetPath)) {
-                                        currentRecordValues.put(columnName, elementText);
+                                    for (int p = 0; p < allTargetPaths.size(); p++) {
+                                        if (pathEquals(currentRelativePath, allTargetPaths.get(p))) {
+                                            currentRecordValues.put(columnName, elementText);
+                                            break; // premier chemin qui matche gagne
+                                        }
                                     }
                                 }
 
@@ -191,19 +226,13 @@ public class StatXmlToExcelExtractor {
 
             xmlReader.close();
 
-            // Auto-size (peut être coûteux si beaucoup de colonnes, OK pour 10k lignes et qq colonnes)
+            // Auto-size (OK pour 10k lignes et un nombre raisonnable de colonnes)
             for (int i = 0; i < columnNames.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            // Optionnel: plafonner les colonnes trop larges (évite un xlsx moche)
-            // int maxWidth = 10000; // ~40 caractères
-            // for (int i = 0; i < columnNames.size(); i++) {
-            //     int w = sheet.getColumnWidth(i);
-            //     if (w > maxWidth) sheet.setColumnWidth(i, maxWidth);
-            // }
-
             workbook.write(excelStream);
+
         } finally {
             // Cleanup fichiers temporaires SXSSF
             workbook.dispose();
