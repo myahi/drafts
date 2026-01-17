@@ -34,9 +34,6 @@ var tradeId = null;
 var currentXHR = null;
 var isFireDrillData = false;
 
-// Garde-fou : évite les refresh en cascade pendant le chargement serveur de la table
-let isTableLoading = false;
-
 // Loading modal : compteur pour éviter double show/hide et cas "page inclicable"
 let loadingCount = 0;
 
@@ -309,7 +306,7 @@ function load_status(){
 			}
 		}
 	}).fail( function(d, textStatus, error) {
-		console.error(error);
+			console.error(error);
 	});
 }
 
@@ -622,12 +619,11 @@ $(document).ready(function(){
 		});
 	}
 
-	// --- FIX: soumission safe + anti-concurrence + refresh protégé
-	// IMPORTANT: on ne pilote PLUS le loading ici (pilotage unique via bootstrap-table)
+	// --- FIX: soumission safe + anti-concurrence
 	document.getElementById('auditform').addEventListener("submit", function(e) {
 		e.preventDefault();
 
-		// Annule la recherche précédente si elle existe (évite enchaînement refresh)
+		// Annule la recherche précédente si elle existe
 		if (currentXHR) {
 			try { currentXHR.abort(); } catch (_) {}
 			currentXHR = null;
@@ -649,11 +645,10 @@ $(document).ready(function(){
 		currentXHR.onload = function(){
 			try {
 				if(currentXHR.status===200){
-					// Ne pas casser la pagination: on garde bootstrapTable + refresh
-					// Garde-fou anti-boucle: si la table charge déjà, ne pas relancer un refresh en cascade
-					if (!isTableLoading) {
-						$('#auditTable').bootstrapTable('refresh');
-					}
+					// On démarre le loader ici (pilotage fiable),
+					// puis on le stoppe sur load-success/load-error de la table.
+					showLoading();
+					$('#auditTable').bootstrapTable('refresh', { silent: false });
 				}
 			} finally {
 				if (searchBtn) searchBtn.removeAttribute('disabled');
@@ -662,11 +657,13 @@ $(document).ready(function(){
 		};
 
 		currentXHR.onerror = function(){
+			hideLoading(true);
 			if (searchBtn) searchBtn.removeAttribute('disabled');
 			currentXHR = null;
 		};
 
 		currentXHR.onabort = function(){
+			hideLoading(true);
 			if (searchBtn) searchBtn.removeAttribute('disabled');
 			currentXHR = null;
 		};
@@ -674,7 +671,7 @@ $(document).ready(function(){
 		currentXHR.send(fd);
 	});
 
-	// --- FIX: Annuler = annule l'XHR + force fermeture loading (sans casser le compteur)
+	// --- Annuler = annule l'XHR + force fermeture loading
 	document.getElementById('cancelBtn').addEventListener("click", function(){
 		if (currentXHR) {
 			try { currentXHR.abort(); } catch (_) {}
@@ -683,25 +680,16 @@ $(document).ready(function(){
 		hideLoading(true);
 	});
 
-	// --- FIX: tracking du chargement de table (pilotage unique du loading)
-	$('#auditTable').on('pre-body.bs.table', function () {
-		isTableLoading = true;
-		showLoading();
-	});
-
-	$('#auditTable').on('post-body.bs.table', function () {
-		isTableLoading = false;
-		hideLoading();
-	});
-
-	$('#auditTable').on('load-error.bs.table', function () {
-		isTableLoading = false;
-		hideLoading(true);
-	});
-
-	$('#auditTable').on('load-success.bs.table', function (e, data) {
-		document.getElementById("total").innerHTML = "Total lignes: " + data.total;
-	});
+	// --- FIX: rebind events table (pilotage stop loader)
+	$('#auditTable')
+		.off('load-success.bs.table load-error.bs.table')
+		.on('load-success.bs.table', function (e, data) {
+			document.getElementById("total").innerHTML = "Total lignes: " + data.total;
+			hideLoading();
+		})
+		.on('load-error.bs.table', function () {
+			hideLoading(true);
+		});
 
 	let flowTags = flowList.map(function(flow){return flow.flowName});
 	$('#tagInput').typeahead({
@@ -728,7 +716,7 @@ function levenshteinv1(a, b) {
 	for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
 	for (let i = 1; i <= b.length; i++) {
 		for (let j = 1; j <= a.length; j++) {
-			matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+			matrix[i][j] = b.charAt(i - 1) === b.charAt(j - 1)
 				? matrix[i - 1][j - 1]
 				: Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
 		}
@@ -884,13 +872,11 @@ window.rowCheckboxEvents = {
 };
 
 function clearFormInput(){
-  // 1) Nettoyage champs (au plus proche de ton existant)
   document.getElementById("details").value = "";
 
   const form = document.getElementById("auditform");
   form.reset();
 
-  // Forcer à vide (sinon form.reset() peut remettre les valeurs initiales PHP)
   const codeEl = document.getElementById("code");
   if (codeEl) codeEl.value = "";
 
@@ -903,21 +889,18 @@ function clearFormInput(){
   const tagInputEl = document.getElementById("tagInput");
   if (tagInputEl) tagInputEl.value = "";
 
-  // 2) Vider la liste de tags Flux (UI + état)
   let fluxList = document.getElementById("flux-list");
   if (fluxList) {
     fluxList.innerHTML = "";
   }
   selectedFlows = [];
 
-  // 3) Remise à zéro des selects
   const projectSel = document.getElementById("projectName");
   if (projectSel) projectSel.selectedIndex = 0;
 
   const statusSel = document.getElementById("STATUS");
   if (statusSel) statusSel.selectedIndex = 0;
 
-  // 4) DateRangePicker : reset propre + mettre J 00:00 -> 23:59
   const $dr = $('input[name="daterange"]');
 
   $dr.off('apply.daterangepicker');
@@ -1034,7 +1017,6 @@ $(document).on('click', '.close-tag', function() {
 											<span class="glyphicon glyphicon-search"></span> Rechercher
 										</button>
 
-										<!-- FIX: reset = type button (ne déclenche pas submit/recherche) -->
 										<button class="btn btn-warning round-button"
 												id="resetBtn"
 												type="button">
