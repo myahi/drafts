@@ -37,6 +37,9 @@ var isFireDrillData = false;
 // Loading modal : compteur pour éviter double show/hide et cas "page inclicable"
 let loadingCount = 0;
 
+// ✅ Flag : premier chargement de page (arrivée utilisateur)
+let isFirstPageLoad = true;
+
 if (!String.prototype.startsWith) {
 	String.prototype.startsWith = function(searchString, position) {
 		position = position || 0;
@@ -86,10 +89,8 @@ function affichage_audit_detail(pData){
 	document.getElementById('addproject').value=pData.project;
 	document.getElementById('adddata').value=(pData.label!= null ? htmlspecialchars_decode(pData.label,2) : "");
  	document.getElementById('addinsertTimestamp').value=pData.insertTimestamp;
-	var panel = document.getElementById('adddetails');
 
 	pData.details ? $('#download-details-zip-btn').show():$('#download-details-zip-btn').hide();
-	var xmlValue = pData.details!=null ? htmlspecialchars_decode(pData.details,2) : "";
 	var xmlValue2 = pData.details!=null ? pData.details : "";
 	auditDetails = pData.details!=null ? pData.details : "";
 
@@ -127,7 +128,6 @@ function affichage_audit_detail(pData){
 }
 
 function forceFireDrillTrade(){
-	let messageId = tradeId;
 	document.getElementById("force-fire-drill-btn").setAttribute("disabled", true);
 	let messageContent = "<root><Token>" + fireDrillToken + "</Token>" + "<Trade_ID>" + tradeId + "</Trade_ID>" + "</root>";
 	$.ajax({
@@ -145,11 +145,11 @@ function forceFireDrillTrade(){
 				displayNotification("Une erreur est survenue lors de la demande de forçage <br>" + data ,"error");
 			}
 		},
-		error : function(result, statut, error) {
+		error : function() {
 			displayNotification("Une erreur est survenue lors de la demande de forçage" ,"error");
 			document.getElementById("force-fire-drill-btn").removeAttribute("disabled");
 		}
-	}).fail( function(d, textStatus, error) {
+	}).fail(function(d, textStatus, error) {
 		console.error(error);
 	});
 }
@@ -189,7 +189,7 @@ function exportAudit(typeExport,fromDetailPanel) {
 				alert("Une erreur est survenue lors de l'extraction. Essayez de préciser votre recherche.");
 			}
 		},
-		error : function(result, statut, error) {
+		error : function() {
 			hideLoading(true);
 		}
 	});
@@ -211,7 +211,7 @@ function sendMessage(messageId,code,inputQueue) {
 				}
 			}
 		}
-		messageContent += "</metatdatas><messageContent>" + data.details.replace("<\?xml version=\"1.0\" encoding=\"UTF-8\"\?>","") + "</messageContent></root>";
+		messageContent += "</metatdatas><messageContent>" + data.details.replace("<\\?xml version=\"1.0\" encoding=\"UTF-8\"\\?>","") + "</messageContent></root>";
 		if(isFireDrillData){
 			$.ajax({
 				url : 'JMSHelper.php',
@@ -226,10 +226,10 @@ function sendMessage(messageId,code,inputQueue) {
 						displayNotification("Une erreur est survenue lors de l'envoi du message <br>" + data ,"error");
 					}
 				},
-				error : function(result, statut, error) {
+				error : function() {
 					displayNotification("Une erreur est survenue lors de l'envoi du message" ,"error");
 				}
-			}).fail( function(d, textStatus, error) {
+			}).fail(function(d, textStatus, error) {
 				console.error(error);
 			});
 		}
@@ -247,14 +247,14 @@ function sendMessage(messageId,code,inputQueue) {
 						displayNotification("Une erreur est survenue lors de l'envoi du message <br>" + data ,"error");
 					}
 				},
-				error : function(result, statut, error) {
+				error : function() {
 					displayNotification("Une erreur est survenue lors de l'envoi du message" ,"error");
 				}
-			}).fail( function(d, textStatus, error) {
+			}).fail(function(d, textStatus, error) {
 				console.error(error);
 			});
 		}
-	}).fail( function(d, textStatus, error) {
+	}).fail(function(d, textStatus, error) {
 		console.error(error);
 	});
 }
@@ -269,26 +269,8 @@ function affichage_fenetre_detail(id){
 	document.getElementById('adddata').value = '';
 	$.getJSON("AuditDetailLoader.php", {columnName:'DETAILS',auditId:id}, function(data) {
 		affichage_audit_detail(data);
-	}).fail( function(d, textStatus, error) {
+	}).fail(function(d, textStatus, error) {
 		console.log(error);
-	});
-}
-
-function load_project_names(){
-	$.getJSON("AuditDetailLoader.php", {columnName:'PROJECT'}, function(response) {
-		$('#PROJECT').empty();
-		var projects = $("#PROJECT");
-		var selectedValue =<?php echo json_encode($criteres['PROJECT']); ?>;
-		var firstSelectedTag = selectedValue == '' ? "selected" : "";
-		$('#PROJECT').append($('<option>', {value: '',text: 'ALL',selected:firstSelectedTag}));
-		for (var i = 0; i < response.length; i++) {
-			if(response[i] != null && response[i].length>0){
-				var selectTag = response[i] == selectedValue ? "selected" : "";
-				projects.append($("<option " +  selectTag +"></option>").val(response[i]).text(response[i]));
-			}
-		}
-	}).fail( function(d, textStatus, error) {
-		console.error(error);
 	});
 }
 
@@ -305,8 +287,8 @@ function load_status(){
 				projects.append($("<option " +  selectTag + "></option>").val(response[i]).text(response[i]));
 			}
 		}
-	}).fail( function(d, textStatus, error) {
-			console.error(error);
+	}).fail(function(d, textStatus, error) {
+		console.error(error);
 	});
 }
 
@@ -392,43 +374,6 @@ function createMetadata(key, value) {
 
 function resetMetadataTextArea(){
 	document.getElementById("functionalDataText").value = "";
-}
-
-function resetMetadataPanel() {
-	var panel = document.getElementById('metadataList');
-	if(panel){ panel.innerHTML = ""; }
-	var panel = document.getElementById('metadataListTitle');
-	if(panel){ panel.innerHTML = ""; }
-}
-
-function addLabel() {
-	var panel = document.getElementById('metadataListTitle');
-	panel.innerHTML = "<span>Données associées:</span><br/>";
-}
-
-function closeLabel() {
-  var panel = document.getElementById('metadataList');
-  panel.innerHTML = "<div id=\"metadataList\"><fieldset style=\"background-color:#f5f2f0\" class=\"form-group\"> " + panel.innerHTML + "</fieldset></div>";
-}
-
-function addMetadata(key, value) {
-	var panel = document.getElementById('metadataList');
-	panel.append(createMetadata(key, value));
-}
-
-function addMetadataCriteriaForDetail(key, value) {
-	var panel = document.getElementById('metadataList');
-	panel.innerHTML = panel.innerHTML + createMetadata(key, value);
-}
-
-function addMetadataCriteria(key, value) {
-	var panel = document.getElementById('metadataCriterias');
-	panel.innerHTML = panel.innerHTML + createCriteriaPanel(key, value);
-}
-
-function addNewCriteria() {
-	var panel = document.getElementById('metadataCriterias');
-	panel.innerHTML = panel.innerHTML + createCriteriaPanelWithoutValue();
 }
 
 // Loading modal : versions "safe" (compteur + nettoyage)
@@ -534,10 +479,6 @@ function initDateRangePicker(resetDate = false){
 	});
 }
 
-window.addEventListener('resize', function () {
-	//setDivsHeight();
-});
-
 let innerHeightWin = 0;
 function setDivsHeight(){
 	let browserZoomLevel = Math.round(window.devicePixelRatio * 100);
@@ -555,6 +496,18 @@ function setDivsHeight(){
 }
 
 $(document).ready(function(){
+
+	// ✅ Afficher le loader dès l'arrivée sur la page (premier chargement)
+	showLoading();
+
+	// Garde-fou très large : si pour une raison rare la table ne répond jamais, on évite le blocage infini
+	setTimeout(function(){
+		if (isFirstPageLoad) {
+			hideLoading(true);
+			isFirstPageLoad = false;
+		}
+	}, 120000); // 2 minutes
+
 	initDateRangePicker();
 
 	$('#fenetre-access-modif-audit').on('transitionstart', function() {
@@ -610,7 +563,7 @@ $(document).ready(function(){
 
 	fillSuggestionListCache('#codifier',<?php echo json_encode(array_map('utf8_encode',$codifiers));?>);
 
-	// --- FIX: Reset = bouton (pas submit)
+	// Reset = bouton (pas submit)
 	var resetBtn = document.getElementById('resetBtn');
 	if (resetBtn) {
 		resetBtn.addEventListener("click", function(e){
@@ -619,7 +572,7 @@ $(document).ready(function(){
 		});
 	}
 
-	// --- FIX: soumission safe + anti-concurrence
+	// Soumission safe + anti-concurrence
 	document.getElementById('auditform').addEventListener("submit", function(e) {
 		e.preventDefault();
 
@@ -645,8 +598,7 @@ $(document).ready(function(){
 		currentXHR.onload = function(){
 			try {
 				if(currentXHR.status===200){
-					// On démarre le loader ici (pilotage fiable),
-					// puis on le stoppe sur load-success/load-error de la table.
+					// Loader démarré ici, stoppé sur load-success/load-error de la table
 					showLoading();
 					$('#auditTable').bootstrapTable('refresh', { silent: false });
 				}
@@ -671,23 +623,26 @@ $(document).ready(function(){
 		currentXHR.send(fd);
 	});
 
-	// --- Annuler = annule l'XHR + force fermeture loading
+	// Annuler = annule l'XHR + force fermeture loading
 	document.getElementById('cancelBtn').addEventListener("click", function(){
 		if (currentXHR) {
 			try { currentXHR.abort(); } catch (_) {}
 			currentXHR = null;
 		}
 		hideLoading(true);
+		isFirstPageLoad = false;
 	});
 
-	// --- FIX: rebind events table (pilotage stop loader)
+	// Pilotage fin loader par la table (fiable)
 	$('#auditTable')
 		.off('load-success.bs.table load-error.bs.table')
 		.on('load-success.bs.table', function (e, data) {
 			document.getElementById("total").innerHTML = "Total lignes: " + data.total;
+			if (isFirstPageLoad) isFirstPageLoad = false;
 			hideLoading();
 		})
 		.on('load-error.bs.table', function () {
+			if (isFirstPageLoad) isFirstPageLoad = false;
 			hideLoading(true);
 		});
 
@@ -716,7 +671,7 @@ function levenshteinv1(a, b) {
 	for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
 	for (let i = 1; i <= b.length; i++) {
 		for (let j = 1; j <= a.length; j++) {
-			matrix[i][j] = b.charAt(i - 1) === b.charAt(j - 1)
+			matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
 				? matrix[i - 1][j - 1]
 				: Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
 		}
@@ -740,11 +695,7 @@ function levenshtein(a, b) {
 		for (let j = 1; j <= n; j++) {
 			const tmp = dp[j];
 			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-			dp[j] = Math.min(
-				dp[j] + 1,
-				dp[j - 1] + 1,
-				prev + cost
-			);
+			dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + cost);
 			prev = tmp;
 		}
 	}
@@ -767,7 +718,6 @@ $(function($){
 });
 
 function modif_data(actionType, form){
-	messages = "";
 	if (actionType == 'resendResponseBatch'){
 		var ids = Array.from(seletectedIdLineSet).join(',')
 		resendByBatch(ids,actionType);
@@ -775,7 +725,6 @@ function modif_data(actionType, form){
 }
 
 function resendByBatch(technicalIds,actionType){
-	let idsAsArray = technicalIds.split(",");
 	$.getJSON("auditSpecificAction.php", {actionType:actionType,idListToResend:technicalIds}, function(data) {
 		if(data == '0'){
 			displayNotification("Aucun donnée n'a été renvoyée à Calypso");
@@ -787,7 +736,7 @@ function resendByBatch(technicalIds,actionType){
 			displayNotification("Les " + data + " données ont été envoyées avec succès","success");
 		}
 		$("#fenetre-access-action-group").modal('hide');
-	}).fail( function(data, textStatus, error) {
+	}).fail(function(data, textStatus, error) {
 		console.error("getJSON failed, status: " + textStatus + ", error: " + error)
 	});
 	$("#fenetre-access-action-group").modal('hide');
@@ -818,9 +767,7 @@ function resendFormatter(value, row, index) {
 			'<button style="margin-top:8px;" type="button" data-placement="left" class="resend-message btn btn-success btn-xs" title="Renvoyer" data-id="' + row.auditId + '" data-ref="'+ row.code +'" data-inputqueue="' + row.inputQueue + '" rel="tooltip" data-toggle="modal" data-target="#exampleModal"><span rel="tooltip" data-placement="left" style="font-size:12px;" class="glyphicon glyphicon-send resend-message"></span></button>'
 		];
 	}
-	else {
-		return ['']
-	}
+	return [''];
 }
 
 window.showDetailEvent = {
@@ -925,7 +872,6 @@ $('#tagInput').on('keypress', function(e) {
 	}
 });
 
-// Fonction d’ajout de tag
 function addTag(tagText) {
 	tagText = tagText.trim();
 	if (!tagText) return;
