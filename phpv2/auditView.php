@@ -19,12 +19,10 @@ let flowList = <?php echo json_encode($flowsList,JSON_UNESCAPED_UNICODE)?>;
 flowList = JSON.parse(flowList);
 var selectedFlows = <?php echo json_encode($criteres['DISPLAYED_FLOW_TAGS'],JSON_UNESCAPED_UNICODE)?>;
 selectedFlows =  selectedFlows.length > 0 ? selectedFlows.split(";"):[];
-
 const success_status = ["Success"];
 const warning_status = ["Warning"];
 const danger_status = ["Error","Pending-Error","4","REJECTED"];
 const info_status = ["Info"];
-
 var seletectedIdLineSet = new Set();
 var idLineSet = new Set();
 var currentAuditId="";
@@ -33,14 +31,11 @@ var isForamted;
 var fireDrillToken = null;
 var fireDrillForceQueue= null;
 var tradeId = null;
-
 var currentXHR = null;
 var isFireDrillData = false;
 
-// ===== ANTI-BOUCLE TABLE =====
+// Garde-fou : évite les refresh en cascade pendant le chargement serveur de la table
 let isTableLoading = false;
-let tableXHR = null;              // XHR utilisé par BootstrapTable custom ajax
-let allowTableRequest = true;     // tu peux mettre false si tu veux empêcher le load initial
 
 if (!String.prototype.startsWith) {
 	String.prototype.startsWith = function(searchString, position) {
@@ -91,6 +86,1199 @@ function affichage_audit_detail(pData){
 	document.getElementById('addproject').value=pData.project;
 	document.getElementById('adddata').value=(pData.label!= null ? htmlspecialchars_decode(pData.label,2) : "");
  	document.getElementById('addinsertTimestamp').value=pData.insertTimestamp;
+	var panel = document.getElementById('adddetails');
 
 	pData.details ? $('#download-details-zip-btn').show():$('#download-details-zip-btn').hide();
-	var xmlVa
+	var xmlValue = pData.details!=null ? htmlspecialchars_decode(pData.details,2) : "";
+	var xmlValue2 = pData.details!=null ? pData.details : "";
+	auditDetails = pData.details!=null ? pData.details : "";
+
+	$('#adddetails').text(xmlValue2);
+
+	resetMetadataTextArea();
+	let isFireDrillFluxFound = false;
+
+	if (pData.metadatas != null) {
+		if ($.isArray(pData.metadatas) && pData.metadatas.length>0) {
+			for (var i = 0; i < pData.metadatas.length; i++) {
+				var currentKey = pData.metadatas[i].key;
+				var currentValue = pData.metadatas[i].value!=null ? htmlspecialchars_decode(pData.metadatas[i].value,2) : "";
+				if(currentKey=="FLOW_TYPE" && currentValue =="FireDrill"){
+					isFireDrillFluxFound = true;
+				}
+				if(currentKey=="TRADE_ID" && currentValue !=null){
+					tradeId = currentValue;
+				}
+				if(currentKey=="FIREDRILL_TOKEN" && currentValue !=null){
+					fireDrillToken = currentValue;
+				}
+				if(currentKey=="FIRE_DRILL_FORCE_QUEUE" && currentValue !=null){
+					fireDrillForceQueue = currentValue;
+				}
+				document.getElementById("functionalDataText").value += currentKey + " = " + currentValue + "\n";
+			}
+		}
+	}
+	if(isFireDrillFluxFound && tradeId != null && fireDrillToken != null && fireDrillForceQueue != null){
+		$("#force-fire-drill-btn").show();
+	}
+	affichage_fenetre_generique('update');
+	return true;
+}
+
+function forceFireDrillTrade(){
+	let messageId = tradeId;
+	document.getElementById("force-fire-drill-btn").setAttribute("disabled", true);
+	let messageContent = "<root><Token>" + fireDrillToken + "</Token>" + "<Trade_ID>" + tradeId + "</Trade_ID>" + "</root>";
+	$.ajax({
+		url : 'JMSHelper.php',
+		type : 'POST',
+		dataType : 'text',
+		data : { messageContent : messageContent, isFireDrillMessage:"true",inputQueue:fireDrillForceQueue},
+		success : function(data) {
+			if(data.startsWith("successfully sent")){
+				displayNotification("La demande de forçage a été soumise avec succès","success");
+				document.getElementById("force-fire-drill-btn").removeAttribute('disabled');
+			}
+			else {
+				document.getElementById("force-fire-drill-btn").removeAttribute('disabled');
+				displayNotification("Une erreur est survenue lors de la demande de forçage <br>" + data ,"error");
+			}
+		},
+		error : function(result, statut, error) {
+			displayNotification("Une erreur est survenue lors de la demande de forçage" ,"error");
+			document.getElementById("force-fire-drill-btn").removeAttribute("disabled");
+		}
+	}).fail( function(d, textStatus, error) {
+		console.error(error);
+	});
+}
+
+function exportAudit(typeExport,fromDetailPanel) {
+ 	MyTimestamp = new Date().getTime();
+	var fileName = "";
+	var fileExtension = "";
+	var targetURL = "";
+	if(typeExport == 'current' || typeExport == 'all'){
+		fileName = 'AuditExport_' + MyTimestamp + '.csv';
+		fileExtension = ".csv"
+	}
+	else {
+		fileName = 'AuditExport_' + MyTimestamp + '.zip';
+		fileExtension = ".zip"
+	}
+
+	if(fromDetailPanel){
+		auditId = currentAuditId;
+		targetURL = "AuditCsvExport.php?exportFileName=" + fileName + "&typeExport=" + typeExport + "&auditId=" + auditId;
+	}
+	else {
+		targetURL= "AuditCsvExport.php?exportFileName=" + fileName + "&typeExport=" + typeExport + "&pagination=<?php echo $pagination; ?>";
+	}
+	$.ajax({
+		url : targetURL,
+		type : 'POST',
+		dataType : 'text',
+		data : { fileName : String },
+		success : function(data) {
+			masquerloading();
+			if (data.startsWith("fileName=")) {
+				var result = data.split('=');
+				location.href = 'ExportToCsv.php?exportFileName='+ result[1]+"&directory=<?php echo urlencode(sys_get_temp_dir()); ?>" + "&exportType=AuditExport&fileExtension=" +fileExtension ;
+			} else {
+				alert("Une erreur est survenue lors de l'extraction. Essayez de préciser votre recherche.");
+			}
+		},
+		error : function(result, statut, error) {
+			masquerloading();
+		}
+	});
+}
+
+function sendMessage(messageId,code,inputQueue) {
+	isFireDrillData = false;
+	let messageContent ="<root><metatdatas>"
+	$.getJSON("AuditDetailLoader.php", {columnName:'DETAILS',auditId:messageId}, function(data) {
+		if (data.metadatas != null) {
+			if ($.isArray(data.metadatas) && data.metadatas.length>0) {
+				for (var i = 0; i < data.metadatas.length; i++) {
+					var currentKey = data.metadatas[i].key;
+					var currentValue = data.metadatas[i].value!=null ? htmlspecialchars_decode(data.metadatas[i].value,2) : "";
+					messageContent += "<metadata>"+"<key>" + currentKey + "</key>" + "<value>" + currentValue + "</value>" + "</metadata>";
+					if(currentKey=="FIRE_DRILL_RESEND_QUEUE" && currentValue !=null){
+						isFireDrillData = true;
+					}
+				}
+			}
+		}
+		messageContent += "</metatdatas><messageContent>" + data.details.replace("<\?xml version=\"1.0\" encoding=\"UTF-8\"\?>","") + "</messageContent></root>";
+		if(isFireDrillData){
+			$.ajax({
+				url : 'JMSHelper.php',
+				type : 'POST',
+				dataType : 'text',
+				data : { messageContent : messageContent, isFireDrillMessage:"true",inputQueue:inputQueue},
+				success : function(data) {
+					if(data.startsWith("successfully sent")){
+						displayNotification("Le message " + code + " a été envoyé avec succès" ,"success");
+					}
+					else {
+						displayNotification("Une erreur est survenue lors de l'envoi du message <br>" + data ,"error");
+					}
+				},
+				error : function(result, statut, error) {
+					displayNotification("Une erreur est survenue lors de l'envoi du message" ,"error");
+				}
+			}).fail( function(d, textStatus, error) {
+				console.error(error);
+			});
+		}
+		else {
+			$.ajax({
+				url : 'JMSHelper.php?messageId=' + messageId + '&inputQueue='+inputQueue,
+				type : 'POST',
+				dataType : 'text',
+				data : { messageId : String },
+				success : function(data) {
+					if(data.startsWith("successfully sent")){
+						displayNotification("Le message " + code + " a été envoyé avec succès" ,"success");
+					}
+					else {
+						displayNotification("Une erreur est survenue lors de l'envoi du message <br>" + data ,"error");
+					}
+				},
+				error : function(result, statut, error) {
+					displayNotification("Une erreur est survenue lors de l'envoi du message" ,"error");
+				}
+			}).fail( function(d, textStatus, error) {
+				console.error(error);
+			});
+		}
+	}).fail( function(d, textStatus, error) {
+		console.error(error);
+	});
+}
+
+function affichage_fenetre_detail(id){
+	currentAuditId = id;
+	document.getElementById("adddetails").replaceChildren();
+	document.getElementById('addcode').value = '';
+	document.getElementById('addinsertTimestamp').value = '';
+	document.getElementById('addcodifier').value = '';
+	document.getElementById('addproject').value = '';
+	document.getElementById('adddata').value = '';
+	$.getJSON("AuditDetailLoader.php", {columnName:'DETAILS',auditId:id}, function(data) {
+		affichage_audit_detail(data);
+	}).fail( function(d, textStatus, error) {
+		console.log(error);
+	});
+}
+
+function load_project_names(){
+	$.getJSON("AuditDetailLoader.php", {columnName:'PROJECT'}, function(response) {
+		$('#PROJECT').empty();
+		var projects = $("#PROJECT");
+		var selectedValue =<?php echo json_encode($criteres['PROJECT']); ?>;
+		var firstSelectedTag = selectedValue == '' ? "selected" : "";
+		$('#PROJECT').append($('<option>', {value: '',text: 'ALL',selected:firstSelectedTag}));
+		for (var i = 0; i < response.length; i++) {
+			if(response[i] != null && response[i].length>0){
+				var selectTag = response[i] == selectedValue ? "selected" : "";
+				projects.append($("<option " +  selectTag +"></option>").val(response[i]).text(response[i]));
+			}
+		}
+	}).fail( function(d, textStatus, error) {
+		console.error(error);
+	});
+}
+
+function load_status(){
+	$.getJSON("AuditDetailLoader.php", {columnName:'STATUT'}, function(response) {
+		$('#STATUS').empty();
+		var projects = $("#STATUS");
+		var selectedValue =<?php echo json_encode($criteres['STATUS']); ?>;
+		var firstSelectedTag = selectedValue == '' ? "selected" : "";
+		$('#STATUS').append($('<option>', {value: '',text: 'ALL',selected:firstSelectedTag}));
+		for (var i = 0; i < response.length; i++) {
+			if(response[i] != null && response[i].length>0){
+				var selectTag = response[i] == selectedValue ? "selected" : "";
+				projects.append($("<option " +  selectTag + "></option>").val(response[i]).text(response[i]));
+			}
+		}
+	}).fail( function(d, textStatus, error) {
+		console.error(error);
+	});
+}
+
+function htmlspecialchars_decode (string, quote_style) {
+	var optTemp = 0, i = 0, noquotes = false;
+	if (typeof quote_style === 'undefined') {
+		quote_style = 2;
+	}
+	string = string.toString().replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+	var OPTS = {
+		'ENT_NOQUOTES': 0,
+		'ENT_HTML_QUOTE_SINGLE': 1,
+		'ENT_HTML_QUOTE_DOUBLE': 2,
+		'ENT_COMPAT': 2, 'ENT_QUOTES': 3,
+		'ENT_IGNORE': 4
+	};
+	if (quote_style === 0) {
+		noquotes = true;
+	}
+	if (typeof quote_style !== 'number') {
+		quote_style = [].concat(quote_style);
+		for (i = 0; i < quote_style.length; i++) {
+			if (OPTS[quote_style[i]] === 0) {
+				noquotes = true;
+			} else if (OPTS[quote_style[i]]) {
+				optTemp = optTemp | OPTS[quote_style[i]];
+			}
+		}
+		quote_style = optTemp;
+	}
+	if (quote_style & OPTS.ENT_HTML_QUOTE_SINGLE) {
+		string = string.replace(/&#0*39;/g, "'");
+	}
+	if (!noquotes) {
+		string = string.replace(/&quot;/g, '"');
+	}
+	string = string.replace(/&amp;/g, '&');
+	return string;
+}
+
+function createCriteriaPanel(key, value) {
+	var content = "<span><fieldset class=\"form-group\"><span style=\"float:right\" class=\"glyphicon glyphicon-remove text-danger\" onclick='removeCriteria(this.parentNode); return false;'></span><BR/><select class=\"form-control\" name='criteria_key[]' name='criteria_key[]'>";
+	<?php
+	if ((isset($keywords)) && (count($keywords)>0)) {
+		foreach ($keywords as $keyword) {
+	?>
+			if (key == "<?php echo $keyword->key; ?>") {
+				content = content + "<OPTION value='<?php echo $keyword->key; ?>' selected=\"true\" ><?php echo utf8_encode($keyword->label); ?></OPTION>";
+			} else {
+				content = content + "<OPTION value='<?php echo $keyword->key; ?>'><?php echo utf8_encode($keyword->label); ?></OPTION>";
+			}
+	<?php
+		}
+	}
+	?>
+	content = content + "</select>&nbsp;<input class=\"form-control\" id='criteria_value[]' name='criteria_value[]' value=\""+value+"\"/>&nbsp;</fieldSet></span>";
+	return content;
+}
+
+function createCriteriaPanelWithoutValue() {
+	var content = "<span><fieldset class=\"form-group\"><span style=\"float:right\" class=\"glyphicon glyphicon-remove text-danger\" onclick='removeCriteria(this.parentNode); return false;'></span><BR/><select class=\"form-control\" name='criteria_key[]' name='criteria_key[]'>";
+	<?php
+	if ((isset($keywords)) && (count($keywords)>0)) {
+		foreach ($keywords as $keyword) {
+	?>
+			content = content + "<OPTION value='<?php echo $keyword->key; ?>'><?php echo utf8_encode($keyword->label); ?></OPTION>";
+	<?php
+		}
+	}
+	?>
+	content = content + "</select>&nbsp;<input class=\"form-control\" id='criteria_value[]' name='criteria_value[]'/>&nbsp;</fieldSet></span>";
+	return content;
+}
+
+function removeCriteria(criteriaToRemove) {
+	criteriaToRemove.remove();
+}
+
+function createMetadata(key, value) {
+	var content = "<span align='left'><span>"+key+"</span>&nbsp;=&nbsp;" + value + "<br/></span>"
+	return content;
+}
+
+function resetMetadataTextArea(){
+	document.getElementById("functionalDataText").value = "";
+}
+
+function resetMetadataPanel() {
+	var panel = document.getElementById('metadataList');
+	if(panel){ panel.innerHTML = ""; }
+	var panel = document.getElementById('metadataListTitle');
+	if(panel){ panel.innerHTML = ""; }
+}
+
+function addLabel() {
+	var panel = document.getElementById('metadataListTitle');
+	panel.innerHTML = "<span>Données associées:</span><br/>";
+}
+
+function closeLabel() {
+  var panel = document.getElementById('metadataList');
+  panel.innerHTML = "<div id=\"metadataList\"><fieldset style=\"background-color:#f5f2f0\" class=\"form-group\"> " + panel.innerHTML + "</fieldset></div>";
+}
+
+function addMetadata(key, value) {
+	var panel = document.getElementById('metadataList');
+	panel.append(createMetadata(key, value));
+}
+
+function addMetadataCriteriaForDetail(key, value) {
+	var panel = document.getElementById('metadataList');
+	panel.innerHTML = panel.innerHTML + createMetadata(key, value);
+}
+
+function addMetadataCriteria(key, value) {
+	var panel = document.getElementById('metadataCriterias');
+	panel.innerHTML = panel.innerHTML + createCriteriaPanel(key, value);
+}
+
+function addNewCriteria() {
+	var panel = document.getElementById('metadataCriterias');
+	panel.innerHTML = panel.innerHTML + createCriteriaPanelWithoutValue();
+}
+
+function showLoading(){
+	$('#loadingModal').modal('show');
+}
+
+function hideLoading(){
+	$('#loadingModal').modal('hide');
+}
+
+function initDateRangePicker(resetDate = false){
+	// --- FIX: éviter d'empiler handlers/instances lors des ré-inits (reset, etc.)
+	const $dr = $('input[name="daterange"]');
+	$dr.off('apply.daterangepicker');
+	if ($dr.data('daterangepicker')) {
+		$dr.data('daterangepicker').remove();
+		$dr.removeData('daterangepicker');
+	}
+
+	var d = new Date();
+	var end = new Date();
+	end.setHours(23,59,59,999);
+	var todayDate = d.getDate();
+	var startDatestring;
+
+	if(resetDate==true){
+		startDatestring = new Date(Date.now() - 864e5);
+		startDatestring.setHours(0, 0, 0);
+	}
+	else {
+	<?php if (array_key_exists('TIMESTAMP', $criteres)) { ?>
+	startDatestring = "<?php echo $criteres['TIMESTAMP']; ?>";
+	<?php } else { ?>
+	startDatestring = (d.getDate() -1)  + "-" + (d.getMonth()+1) + "-" + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes();
+	<?php } ?>
+	}
+
+	if(resetDate==true){
+		var endDatestring = (d.getDate() + 1 )  + "-" + (d.getMonth()+1) + "-" + d.getFullYear() + " 23:59";
+	}
+	else {
+	<?php if (array_key_exists('TIMESTAMP2', $criteres)) { ?>
+	var endDatestring = "<?php echo $criteres['TIMESTAMP2']; ?>";
+	<?php } else { ?>
+	var endDatestring = (d.getDate() + 1 )  + "-" + (d.getMonth()+1) + "-" + d.getFullYear() + " 23:59";
+	<?php } ?>
+	}
+
+	$dr.daterangepicker({
+		"timePicker": true,
+		"timePicker24Hour": true,
+		"autoApply": true,
+		"alwaysShowCalendars": true,
+		"minDate": new Date(new Date().setDate(todayDate - 365)),
+		"maxDate": end,
+		"locale": {
+			"format": 'DD-MM-YYYY HH:mm',
+			"separator": " - ",
+			"applyLabel": "Appliquer",
+			"cancelLabel": "Annuler",
+			"fromLabel": "De",
+			"toLabel": "a",
+			"customRangeLabel": "Custom",
+			"daysOfWeek": ["Di","Lu","Ma","Me","Je","Ve","Sa"],
+			"monthNames": ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"],
+		},
+		"startDate": startDatestring,
+		"endDate": endDatestring,
+	}, function(start, end, label) {
+	}).on('apply.daterangepicker', function (ev, picker) {
+		var start = picker.startDate.clone().startOf('day');
+		var end   = picker.endDate.clone().endOf('day');
+
+		var today = moment().endOf('day');
+
+		if (end.isAfter(today)) {
+			end = today.clone();
+		}
+
+		var diffDays = end.diff(start, 'days');
+		if (diffDays > 120) {
+			var softMax = start.clone().add(30, 'days').endOf('day');
+			end = moment.min(softMax, today);
+			picker.setEndDate(end);
+			displayNotification("La plage de dates s'étale à 30 jours max","warning");
+			$(this).val(start.format('DD-MM-YYYY HH:mm') + " - " + end.format('DD-MM-YYYY HH:mm'));
+		}
+	});
+}
+
+window.addEventListener('resize', function () {
+	//setDivsHeight();
+});
+
+let innerHeightWin = 0;
+function setDivsHeight(){
+	let browserZoomLevel = Math.round(window.devicePixelRatio * 100);
+	let outerHeightWin=0;
+	if(browserZoomLevel>=100){
+		innerHeightWin = $(window).height() - (300 * 100/browserZoomLevel);
+		outerHeightWin = $(window).height() - (160 * 100/browserZoomLevel);
+	}
+	else{
+		innerHeightWin = $(window).height() - (250 * 100/browserZoomLevel);
+		outerHeightWin = $(window).height() + (250 * 100/browserZoomLevel);
+	}
+	$('#auditTable').bootstrapTable('resetView',{height: innerHeightWin});
+	$('#bigsidebar').css('height', outerHeightWin);
+}
+
+$(document).ready(function(){
+	initDateRangePicker();
+
+	$('#fenetre-access-modif-audit').on('transitionstart', function() {
+		$('body').removeClass('modal-open');
+		$('body').addClass('modal-open-fullscreen');
+	});
+
+	$('#fenetre-access-modif-audit').on('hidden.bs.modal', function () {
+		isForamted=false;
+		auditDetails="";
+		document.getElementById('prettyPrintXMLBtn').innerHTML="Format XML";
+	});
+
+	load_status();
+	currentAuditId="";
+
+	$("#exportCsvMenuLayer").contextMenu({
+		menu: 'exportCsvMenu'
+	}, function(action, el, pos) {
+		if (action=="export-current") {
+			exportAudit("current",false);
+		}
+		else if (action=="export-details") {
+			exportAudit("details",false);
+		}
+		else {
+			exportAudit("all",false);
+		}
+	});
+
+	var copyDetailsbtn = document.getElementById("copy-details-btn");
+	var detailsClipboard = new Clipboard(copyDetailsbtn);
+
+	setDivsHeight();
+
+	$("#auditData").typeahead({
+		minLength: 1,
+		items: <?php echo count($data);?> ,
+		source: <?php echo json_encode(array_map('utf8_encode',$data));?>,
+		matcher: function (item) {
+			const query = this.query.toLowerCase();
+			const name = item.toLowerCase();
+			const d = levenshtein(query, name);
+			return d <= 4 || name.indexOf(query) >= 0;
+		}
+	});
+
+	fillSuggestionListCache('#codifier',<?php echo json_encode(array_map('utf8_encode',$codifiers));?>);
+
+	// --- FIX: Reset = bouton (pas submit)
+	var resetBtn = document.getElementById('resetBtn');
+	if (resetBtn) {
+		resetBtn.addEventListener("click", function(e){
+			e.preventDefault();
+			clearFormInput();
+		});
+	}
+
+	// --- FIX: soumission safe + anti-concurrence + refresh protégé
+	document.getElementById('auditform').addEventListener("submit", function(e) {
+		e.preventDefault();
+
+		// Annule la recherche précédente si elle existe (évite enchaînement refresh)
+		if (currentXHR) {
+			try { currentXHR.abort(); } catch (_) {}
+			currentXHR = null;
+		}
+
+		const searchBtn = document.getElementById('searchBtn');
+		if (searchBtn) searchBtn.setAttribute('disabled', 'disabled');
+
+		let fd = new FormData(this);
+		currentXHR = new XMLHttpRequest();
+
+		showLoading();
+
+		let filetredFlows = flowList.filter(flow => selectedFlows.includes(flow.flowName));
+		let flows = filetredFlows.map(flow => flow.projects.join(";"));
+		fd.append("FLOWS",flows);
+		fd.append("DISPLAYED_FLOW_TAGS",selectedFlows.join(";"));
+
+		currentXHR.open("POST", this.getAttribute('action'),true);
+
+		currentXHR.onload = function(){
+			try {
+				if(currentXHR.status===200){
+					// Ne pas casser la pagination: on garde bootstrapTable + refresh
+					// Garde-fou anti-boucle: si la table charge déjà, ne pas relancer un refresh en cascade
+					if (!isTableLoading) {
+						$('#auditTable').bootstrapTable('refresh');
+					}
+				}
+			} catch (e) {
+				hideLoading();
+			} finally {
+				hideLoading();
+				if (searchBtn) searchBtn.removeAttribute('disabled');
+				currentXHR = null;
+			}
+		};
+
+		currentXHR.onerror = function(){
+			hideLoading();
+			if (searchBtn) searchBtn.removeAttribute('disabled');
+			currentXHR = null;
+		};
+
+		currentXHR.onabort = function(){
+			hideLoading();
+			if (searchBtn) searchBtn.removeAttribute('disabled');
+			currentXHR = null;
+		};
+
+		currentXHR.send(fd);
+	});
+
+	// --- FIX: Annuler ne doit pas relancer showLoading; il doit annuler l'XHR
+	document.getElementById('cancelBtn').addEventListener("click", function(){
+		if (currentXHR) {
+			hideLoading();
+			try { currentXHR.abort(); } catch (_) {}
+			currentXHR = null;
+		} else {
+			hideLoading();
+		}
+	});
+
+	// --- FIX: tracking du chargement de table pour éviter refresh en cascade
+	$('#auditTable').on('pre-body.bs.table', function () {
+		isTableLoading = true;
+		showLoading();
+	});
+
+	$('#auditTable').on('post-body.bs.table', function () {
+		isTableLoading = false;
+		hideLoading();
+	});
+
+	$('#auditTable').on('load-error.bs.table', function () {
+		isTableLoading = false;
+		hideLoading();
+	});
+
+	$('#auditTable').on('load-success.bs.table', function (e, data) {
+		document.getElementById("total").innerHTML = "Total lignes: " + data.total;
+	});
+
+	let flowTags = flowList.map(function(flow){return flow.flowName});
+	$('#tagInput').typeahead({
+		source: flowTags,
+		autoSelect:true,
+		minLength: 1,
+		matcher: function (item) {
+			const query = this.query.toLowerCase();
+			const name = item.toLowerCase();
+			const d = levenshtein(query, name);
+			return d <= 4 || name.indexOf(query) >= 0;
+		},
+		afterSelect: function(item) {
+			addTag(item);
+		}
+	});
+
+	selectedFlows.forEach(item =>{displayTag(item)});
+});
+
+function levenshteinv1(a, b) {
+	const matrix = [];
+	for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+	for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+	for (let i = 1; i <= b.length; i++) {
+		for (let j = 1; j <= a.length; j++) {
+			matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+				? matrix[i - 1][j - 1]
+				: Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+		}
+	}
+	return matrix[b.length][a.length];
+}
+
+function levenshtein(a, b) {
+	a = (a || '').toLowerCase();
+	b = (b || '').toLowerCase();
+	const m = a.length, n = b.length;
+	if (!m) return n;
+	if (!n) return m;
+
+	const dp = new Uint16Array(n + 1);
+	for (let j = 0; j <= n; j++) dp[j] = j;
+
+	for (let i = 1; i <= m; i++) {
+		let prev = dp[0];
+		dp[0] = i;
+		for (let j = 1; j <= n; j++) {
+			const tmp = dp[j];
+			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+			dp[j] = Math.min(
+				dp[j] + 1,
+				dp[j - 1] + 1,
+				prev + cost
+			);
+			prev = tmp;
+		}
+	}
+	return dp[n];
+}
+
+$(function($){
+	$('#resendMessageButton').click(function(ev){
+		$("#fenetre-access-action-title").html("Renvoyer les données selectionnées ");
+		if(seletectedIdLineSet.size==1){
+			$('#actionBatchMessage').text("Voulez-vous renvoyer la donnée selectionnée ?");
+		}
+		else {
+			$('#actionBatchMessage').text("Voulez-vous renvoyer les "+ seletectedIdLineSet.size + " données selectionnées ?");
+		}
+
+		$("#button_action_batch").attr("onclick","modif_data('resendResponseBatch',event);");
+		$("#button_action_batch").html('Renvoyer');
+	});
+});
+
+function modif_data(actionType, form){
+	messages = "";
+	if (actionType == 'resendResponseBatch'){
+		var ids = Array.from(seletectedIdLineSet).join(',')
+		resendByBatch(ids,actionType);
+	}
+}
+
+function resendByBatch(technicalIds,actionType){
+	let idsAsArray = technicalIds.split(",");
+	$.getJSON("auditSpecificAction.php", {actionType:actionType,idListToResend:technicalIds}, function(data) {
+		if(data == '0'){
+			displayNotification("Aucun donnée n'a été renvoyée à Calypso");
+		}
+		else if(data == '1'){
+			displayNotification("La donnée a été envoyé à Calypso avec succès","success");
+		}
+		else {
+			displayNotification("Les " + data + " données ont été envoyées avec succès","success");
+		}
+		$("#fenetre-access-action-group").modal('hide');
+	}).fail( function(data, textStatus, error) {
+		console.error("getJSON failed, status: " + textStatus + ", error: " + error)
+	});
+	$("#fenetre-access-action-group").modal('hide');
+}
+
+function rowStyle(row, index) {
+	if (success_status.includes(row.statut)) {
+		return { classes: 'success',css:{"height":"40px"} };
+	}
+	else if(warning_status.includes(row.statut)){
+		return { classes: 'warning',css:{"height":"40px"} };
+	}
+	else if (danger_status.includes(row.statut)) {
+		return { classes: 'danger' ,css:{"height":"40px"}};
+	}
+	return {css:{"height":"40px","background-color":"#f5f5f5"} };
+}
+
+function detailFormatter(value, row, index) {
+	return [
+		'<button style="margin-top:8px;" type="button" class="btn btn-primary btn-xs show-detail" data-id='+row.auditId + '><span rel="tooltip" data-placement="left" title="Détails" class="glyphicon glyphicon-export" style="font-size:12px;"></span></button>'
+	].join('');
+}
+
+function resendFormatter(value, row, index) {
+	if(row.inputQueue){
+		return [
+			'<button style="margin-top:8px;" type="button" data-placement="left" class="resend-message btn btn-success btn-xs" title="Renvoyer" data-id="' + row.auditId + '" data-ref="'+ row.code +'" data-inputqueue="' + row.inputQueue + '" rel="tooltip" data-toggle="modal" data-target="#exampleModal"><span rel="tooltip" data-placement="left" style="font-size:12px;" class="glyphicon glyphicon-send resend-message"></span></button>'
+		];
+	}
+	else {
+		return ['']
+	}
+}
+
+window.showDetailEvent = {
+	'click .show-detail': function (e, value, row, index) {
+		var uid = row.auditId;
+		affichage_fenetre_detail(uid);
+		$('#fenetre-access-modif-audit').modal('show', {backdrop: 'static'});
+	},
+	'click .resend-message': function (e, value, row, index) {
+		document.getElementById('messageId_modal').value= row.auditId;
+		document.getElementById('code_modal').value = row.code;
+		document.getElementById('inputQueue_modal').value=row.inputQueue;
+		document.getElementById("confirmation_id").innerHTML ='Confirmation: ' + row.code;
+	}
+};
+
+function rowCheckboxFormatter(value, row) {
+	if (row.inputQueue) {
+		return '<input type="checkbox" class="row-check" data-id="' + row.auditId + '">';
+	}
+	return '';
+}
+
+$(document).on('change', '#selectAll', function() {
+	var checked = this.checked;
+	if(checked==false){
+		seletectedIdLineSet.clear();
+	}
+	$('#auditTable').find('tbody .row-check').prop('checked', checked).trigger('change');
+	var allData = $('#auditTable').bootstrapTable('getData');
+	allData.forEach(function(row) {
+		if (row.checked) {
+			seletectedIdLineSet.add(row.auditId);
+		}
+	});
+});
+
+window.rowCheckboxEvents = {
+	'change .row-check': function (e, value, row) {
+		if(e.currentTarget.checked){
+			seletectedIdLineSet.add(row.auditId);
+		}
+		else {
+			seletectedIdLineSet.delete(row.auditId);
+		}
+		seletectedIdLineSet.size > 0 ? $('#resendMessageButton').show():$('#resendMessageButton').hide();
+		row.checked = e.currentTarget.checked;
+	}
+};
+
+function clearFormInput(){
+  // 1) Nettoyage champs (au plus proche de ton existant)
+  document.getElementById("details").value = "";
+
+  const form = document.getElementById("auditform");
+  form.reset();
+
+  // Forcer à vide (sinon form.reset() peut remettre les valeurs initiales PHP)
+  const codeEl = document.getElementById("code");
+  if (codeEl) codeEl.value = "";
+
+  const codifierEl = document.getElementById("codifier");
+  if (codifierEl) codifierEl.value = "";
+
+  const auditDataEl = document.getElementById("auditData");
+  if (auditDataEl) auditDataEl.value = "";
+
+  const tagInputEl = document.getElementById("tagInput");
+  if (tagInputEl) tagInputEl.value = "";
+
+  // 2) Vider la liste de tags Flux (UI + état)
+  let fluxList = document.getElementById("flux-list");
+  if (fluxList) {
+    // plus robuste que remove span par span
+    fluxList.innerHTML = "";
+  }
+  selectedFlows = [];
+
+  // 3) Remise à zéro des selects
+  const projectSel = document.getElementById("projectName");
+  if (projectSel) projectSel.selectedIndex = 0;
+
+  const statusSel = document.getElementById("STATUS");
+  if (statusSel) statusSel.selectedIndex = 0;
+
+  // 4) DateRangePicker : reset propre + mettre J 00:00 -> 23:59
+  const $dr = $('input[name="daterange"]');
+
+  // IMPORTANT: éviter empilement d'instances/handlers
+  $dr.off('apply.daterangepicker');
+  if ($dr.data('daterangepicker')) {
+    $dr.data('daterangepicker').remove();
+    $dr.removeData('daterangepicker');
+  }
+
+  // Ré-instancie avec tes options via ta fonction existante (qui doit maintenant être "clean")
+  // Si tu as déjà appliqué le fix dans initDateRangePicker (off/remove), tu peux juste appeler initDateRangePicker(true)
+  // Ici, on le fait explicitement: on remet le champ sur "Aujourd'hui 00:00 - 23:59" juste après.
+  initDateRangePicker(true);
+
+  // Forcer la valeur à aujourd'hui 00:00 - 23:59 (ce que tu veux exactement)
+  const start = moment().startOf('day');
+  const end = moment().endOf('day');
+  $dr.val(start.format('DD-MM-YYYY HH:mm') + " - " + end.format('DD-MM-YYYY HH:mm'));
+}
+
+// Touche Entrée = ajouter
+$('#tagInput').on('keypress', function(e) {
+	if (e.which === 13) {
+		e.preventDefault();
+		var val = $('#tagInput').val();
+		addTag(val);
+	}
+});
+
+// Fonction d’ajout de tag
+function addTag(tagText) {
+	tagText = tagText.trim();
+	if (!tagText) return;
+	if (selectedFlows.indexOf(tagText) !== -1) return;
+	selectedFlows.push(tagText);
+	displayTag(tagText);
+}
+
+function displayTag(tagText) {
+	var tag = $('<span class="label label-primary flowTag">' +
+		$('<div>').text(tagText).html() +
+		' <span class="close-tag">&times;</span></span>');
+	$('.tag-list').append(tag);
+	$("#tagInput").val('');
+}
+
+$(document).on('click', '.close-tag', function() {
+	var text = $(this).parent().text().slice(0, -1).trim();
+	selectedFlows = selectedFlows.filter(t => t !== text);
+	$(this).closest('.flowTag').fadeOut(200, function() {$(this).remove(); });
+});
+</script>
+
+</head>
+<body>
+	<div id="base">
+		<div class="container-fluid" id="wrapper">
+			<!----------------------------- TOP MENU ------------------------------------->
+			<?php $category = "audit";?>
+			<?php include 'menu-central.php';?>
+			<!----------------------------- HEADER   ------------------------------------->
+			<?php $page = 'AuditView';?>
+			<?php include 'menu-audit.php';?>
+			<!---------------------------- RECHERCHE --------------------------------->
+			<div id="main">
+				<div id="bigsidebar">
+					<form id="auditform" name="auditform" action="AuditLoaderForSearch.php" method="post" autocomplete="off" role="form" data-toggle="validator">
+						<fieldset class="form-group" style="margin-top:2%;">
+							<span>Composant</span>
+							<select id ="projectName" class="form-control" name="PROJECT" size="1">
+								<option value='' <?php if($criteres['PROJECT'] == '') { echo "selected='selected'";} ?>></option>
+								<?php foreach ( $resultProject as $valueProject ) { ?>
+								<option value="<?php echo $valueProject; ?>" <?php if ($criteres ['PROJECT'] == $valueProject) echo "selected='selected'"; ?>><?php echo $valueProject; ?></OPTION>
+								<?php } ?>
+							</select>
+
+							<span>Référence</span>
+							<input class="form-control" id="code" name="code" size="20" type="text" value="<?php echo $criteres['CODE'];?>"/>
+
+							<div style="margin-top: 2px;">
+								<span>Flux</span>
+								<input class="form-control" id="tagInput" type="text" data-provide="typeahead" placeholder="Saisir pour choisir un flux" size="20" type="text"/>
+								<div id="flux-list" class="tag-list"></div>
+
+								<div style="margin-top: 2px;">
+									<div class="row" style="margin-top: 4px;">
+										<div class="col-xs-6">
+											<span>Plage de dates</span>
+										</div>
+										<div class="col-xs-5" style="padding-top:5px; margin-left: -100px;">
+											<span  id="intervalle-date" style="font-size: 10px; font-weight: bold;"></span>
+										</div>
+									</div>
+									<input id="daterange" class="form-control" type="text" name="daterange" style="font-size: 13.5px;text-align: center"/>
+
+									<span>Type de référence</span>
+									<input class="form-control" id="codifier" name="codifier" size="20" type="text" data-provide="typeahead" placeholder="Commencer &agrave; taper pour rechercher..." value="<?php echo $criteres['CODIFIER'];?>"/>
+
+									<span>Statut</span>
+									<select class="form-control" name="STATUS" id="STATUS" size="1"></select>
+
+									<span>Libellé</span>
+									<input class="form-control" id="auditData" name="auditData" size="20" type="text" data-provide="typeahead" placeholder="Commencer &agrave; taper pour rechercher..." value="<?php if (!empty ($criteres['DATA'])) echo $criteres['DATA']?>"/>
+
+									<span>Détails</span>
+									<textarea class="form-control" id="details" name="details" rows="3" type="text" style="resize: none;" placeholder="Les %(Like) sont supportés" value=""><?php if (!empty ($criteres['DETAILS'])) echo $criteres['DETAILS']?></textarea>
+
+									<input accesskey="pag" id="pag" name="pagination" size="20" type="hidden" value="<?php echo $pagination;?>"/>
+									<input type="hidden" id="store" name="store" size="20" value="<?php echo $orderColumn;?>"/>
+									<input type="hidden" id="sensAff" name="sensAff" size="4" value="<?php echo $orderDirection;?>"/>
+
+									<div class="btn-toolbar pull-right" style="margin-top:5px;">
+										<button class="btn btn-success round-button"
+												id="searchBtn"
+												accesskey="g"
+												name="go"
+												type="submit"
+												value="Valider">
+											<span class="glyphicon glyphicon-search"></span> Rechercher
+										</button>
+
+										<!-- FIX: reset = type button (ne déclenche pas submit/recherche) -->
+										<button class="btn btn-warning round-button"
+												id="resetBtn"
+												type="button">
+											<span class="glyphicon glyphicon-refresh"></span> Réinitialiser
+										</button>
+									</div>
+
+									<br><br><br>
+
+									<span id="metadataCriterias">
+										<?php
+											if ((isset ( $criteres ['audit_metadata'] )) || (! empty ( $criteres ['audit_metadata'] ))) {
+												if (is_array($criteres['audit_metadata'])) {
+													for ($i=0; $i < sizeof($criteres['audit_metadata']) ; $i++) {
+														$key = array_shift(array_keys($criteres['audit_metadata'][$i]));
+														$value = $criteres['audit_metadata'][$i][$key];
+										?>
+											<script type="text/javascript">addMetadataCriteria('<?php echo $key ?>', '<?php  echo $value ?>');</script>
+										<?php 			}
+												} else {
+													$key = array_shift(array_keys($criteres['audit_metadata']));
+													$value = $criteres['audit_metadata'][$key];
+										?>
+											<script type="text/javascript">addMetadataCriteria('<?php echo $key ?>', '<?php  echo $value ?>');</script>
+										<?php 	}
+											}
+										?>
+									</span>
+								</div>
+							</div>
+						</fieldset>
+					</form>
+				</div>
+
+				<!----------------------------- MENU CONTEXTUEL EXPORT --------------------->
+				<ul id="exportCsvMenu" class="contextMenu">
+					<li class="export-current"><a href="#export-current">Page courante</a></li>
+					<li class="export-all"><a href="#export-all">Global</a></li>
+					<li class="export-details"><a href="#export-details">Détails des messages bruts</a></li>
+				</ul>
+
+				<!----------------------------- MAIN   -------------------------------------->
+				<form id="auditTableForm">
+				<div id="content">
+					<button style="margin-bottom:5px" class="btn btn-success round-button" title="Recharger les données" data-placement="bottom" value="Valider" onclick="refreshPage()">
+						<span class="glyphicon glyphicon-refresh"></span> Rafraîchir
+					</button>
+
+					<?php if ($droit->isResendAllowed) { ?>
+						<button id="resendMessageButton" data-target="#fenetre-access-action-group" data-toggle="modal" rel="tooltip" data-placement="bottom" title="Renvoyer les données" type="button"  class="btn btn-info round-button" style="margin-bottom:5px;display: none;">
+							<span class="glyphicon glyphicon-play"></span> Renvoyer
+						</button>
+					<?php } ?>
+
+				    <div class="btn-toolbar pull-right" style="margin-top:-40px;margin-top: -40px;position: fixed;z-index:999;right: 20px;">
+						<span class="dropdown">
+							<button id="exportButtton" style="padding-top: 8px; padding-bottom: 8px;" class="btn dropdown-toggle" type="button" data-toggle="dropdown" >
+								<span class="glyphicon glyphicon-export icon-share"></span>
+								<span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu" style="margin-top: 40px;width:250px">
+								<li><a style="padding-left: 5px;" href="#" onclick="exportAudit('current',false)"> <span class="glyphicon glyphicon-save-file"></span> Page courante</a></li>
+								<li><a style="padding-left: 5px;" href="#" onclick="exportAudit('all',false)"> <span class="glyphicon glyphicon-duplicate"></span> Toutes les pages</a></li>
+								<li><a style="padding-left: 5px;" href="#" onclick="exportAudit('details',false)"> <span class="glyphicon glyphicon-compressed"></span> Détails des messages bruts</a></li>
+							</ul>
+						</span>
+						<div id="total" class="label label-pill label-danger">Total lignes:</div>
+					</div>
+
+					<div id="tableContentRoot">
+						<div id="tableContent">
+							<table id="auditTable"
+								   data-toggle="table"
+								   data-height="250"
+								   data-url="AuditLoader.php"
+								   data-pagination="true"
+								   data-pagination-v-align="top"
+								   data-pagination-h-align="center"
+								   data-side-pagination="server"
+								   data-page-size="50"
+								   data-row-style="rowStyle"
+								   data-click-to-select="true"
+								   class="table table-striped table-hover">
+								<thead>
+									<th data-field="checkCol" data-formatter="rowCheckboxFormatter" data-events="rowCheckboxEvents">
+										<input type="checkbox" id="selectAll">
+									</th>
+									<th data-field="code"><a style="cursor: pointer;text-decoration: none;">Référence</a></th>
+									<th data-field="codifier"><a style="cursor: pointer;text-decoration: none;">Type</a></th>
+									<th data-field="project"><a style="cursor: pointer;text-decoration: none;">Projet</a></th>
+									<th data-field="label"><a style="cursor: pointer;text-decoration: none;">Libellé</a></th>
+									<th data-field="insertTimestamp"><a style="cursor: pointer;text-decoration: none;">Date</a></th>
+									<th data-field="statut"><a style="cursor: pointer;text-decoration: none;">Statut</a></th>
+									<th data-field="show" data-formatter="detailFormatter" data-events="showDetailEvent">&nbsp;</th>
+									<?php if ($droit->isResendAllowed) { ?>
+										<th data-field="resend" data-formatter="resendFormatter" data-events="showDetailEvent">&nbsp;</th>
+									<?php } ?>
+								</thead>
+							</table>
+						</div>
+					</div>
+				</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!---------------------------- PALETTE DETAIL ------------------------------------>
+	<div id="fenetre-access-modif-audit" class="modal fade" role="dialog" tabindex='-1'>
+		<div class="modal-dialog" style="width: 100%; height: 100%;margin: 0;padding: 0;margin-left: 22%;">
+			<div class="modal-content" style="width:100%;  height: 100%;border: 0;border-radius: 0;box-shadow: none;">
+				<div class="modal-header" style="padding:8px !important">
+					<button type="button" class="btn btn-danger btn-sm pull-right" data-dismiss="modal"> Fermer</button>
+					<h4 class="modal-title">Détails d'audit</h4>
+				</div>
+				<div class="modal-body" style="margin-top:-20px;">
+					<div class="formulaire">
+						<div class="row">
+							<div class="col-md-3" style="font-size:15px;">
+								<span>Reférence</span>
+								<input class="form-control" accesskey="e" id="addcode" name="addcode" size="50" type="text" readonly="readonly" value="" />
+							</div>
+							<div class="col-md-3" style="font-size:15px;">
+								<span>Type de référence</span>
+								<input class="form-control" accesskey="a" id="addcodifier" name="addcodifier" size="50" type="text" readonly="readonly" value="" />
+							</div>
+							<div class="col-md-3" style="font-size:15px;">
+								<span>Date</span>
+								<input class="form-control" accesskey="t" id="addinsertTimestamp" name="addinsertTimestamp" readonly="readonly" size="50" type="text" value="" />
+							</div>
+							<div class="col-md-3" style="font-size:15px;">
+								<span>Projet</span>
+								<input class="form-control" accesskey="i" id="addproject" name="addproject" size="50" type="text" readonly="readonly" value="" />
+							</div>
+						</div>
+						<span>Libellé</span>
+						<input class="form-control" accesskey="d" id="adddata" name="adddata" size="40" type="text" readonly="readonly" value="" />
+
+						<ul id="myTab" class="nav nav-tabs" role="tablist" >
+							<li class="active"><a href = "#detailsIndented" data-toggle = "tab">Donnée</a></li>
+							<li><a href = "#functionalData" data-toggle = "tab">Données associées</a></li>
+							<div style="text-align: right;">
+								<button style="margin-top: 5px;" id="prettyPrintXMLBtn" class="btn btn-xs btn-info" data-toggle="tooltip" data-placement="bottom" onclick="prettyPrintXML()"><span id="prettyPrintXMLSpan"></span>  Format XML</button>
+							</div>
+						</ul>
+
+						<div id = "myTabContent" class = "tab-content" style="">
+							<div class = "tab-pane fade in active" id = "detailsIndented">
+								<pre id="detailsContainer" style="overflow-y: scroll;height: 66dvh;resize: none;">
+									<code id="adddetails" class="language-markup"></code>
+								</pre>
+
+								<div class="row" style="margin-top: 2px">
+									<div class="col-xs-6">
+										<div style="text-align: left;">
+											<button style="margin-top: 5px; margin-bottom: 5px;" id="download-details-zip-btn" class="btn btn-success" data-toggle="tooltip" data-placement="bottom" title="télécharger le contenu compressé" onclick="exportAudit('oneDetail',true)" data-placement="right"><span class="glyphicon glyphicon-compressed"></span>  Le contenu compressé</button>
+										</div>
+									</div>
+									<div class="col-xs-6">
+										<div style="text-align: right;">
+											<button style="margin-top: 5px; margin-bottom: 5px;" id="download-details-btn" class="btn btn-primary" data-toggle="tooltip" data-placement="bottom" title="télécharger" onclick="saveTextAsFile('auditDetails','adddetails')"><span class="glyphicon glyphicon-floppy-save"> </span>  Télécharger</button>
+											<button style="margin-top: 5px; margin-bottom: 5px;" id="copy-details-btn" class="btn btn-primary" data-clipboard-target="#adddetails" data-toggle="tooltip" data-placement="bottom" title="Copier"><span class="glyphicon glyphicon-copy"></span>  Copier</button>
+											<button style="margin-top: 5px; margin-bottom: 5px;" id="force-fire-drill-btn" class="btn btn-danger" data-clipboard-target="#adddetails" data-toggle="tooltip" data-placement="bottom" title="Forcer FireDrill" onclick="forceFireDrillTrade()"><span class="glyphicon glyphicon-flash"></span>  Forcer FireDrill</button>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class = "tab-pane fade"  id = "functionalData" >
+								<textarea readonly id="functionalDataText" class="form-control"  style="overflow-y: scroll;height:59vh;resize: none; background-color:blanc;font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;"></textarea>
+							</div>
+						</div>
+
+					</div> <!-- formulaire -->
+				</div> <!-- modal-body -->
+			</div> <!-- modal-content -->
+		</div> <!-- modal-dialog -->
+	</div> <!-- modal -->
+
+	<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" style="margin-left: 50vh !important">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header" style="padding:8px !important">
+					<button type="button" class="btn btn-danger btn-sm pull-right" data-dismiss="modal"> Fermer</button>
+					<h4 id="confirmation_id" name="confirmation_id" class="modal-title"></h4>
+				</div>
+				<div class="modal-body">
+					Êtes-vous sûr de vouloir renvoyer ce message ?
+				</div>
+				<input id="messageId_modal" name="messageId_modal" hidden/>
+				<input id="code_modal" name="code_modal" hidden/>
+				<input id="inputQueue_modal" name="inputQueue_modal" hidden/>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" onclick="sendMessage(document.getElementById('messageId_modal').value,document.getElementById('code_modal').value,document.getElementById('inputQueue_modal').value)" data-dismiss="modal">Renvoyer</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="loadingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" style="margin-left: 25%;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="btn btn-danger btn-sm pull-right" data-dismiss="modal" aria-label="Fermer">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="loadingModalLabel">&nbsp; Traitement en cours</h4>
+				</div>
+				<div class="modal-body">
+					<p>
+						<span class="glyphicon glyphicon-repeat infinite-spin" aria-hidden="true"></span>
+						&nbsp; Chargement de données…
+					</p>
+				</div>
+				<div class="modal-footer">
+					<!-- FIX: pas d'onclick showLoading ici -->
+					<button type="button" class="btn btn-warning" id="cancelBtn">Annuler</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<?php if ($droit->isResendAllowed) { ?>
+	<div id="fenetre-access-action-group" class="modal fade" role="dialog" tabindex='-1'>
+		<div class="modal-dialog" >
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">&times;</button>
+					<h4 id="fenetre-access-action-title" class="modal-title">Supprimer les suivis des déclarations DOCAPOSTE</h4>
+				</div>
+				<div class="modal-body">
+					<form id="delDocapostMonitoringGrpForm" name="delDocapostMonitoringGrpForm" action="DocapostDeclarationSet.php" method="post">
+						<input id="delGrpTypeAction" name="delGrpTypeAction" type="hidden" value=""/>
+						<div class="formulaire">
+							<input class="form-control" id="idListToDelete" name="idListToDelete" type="hidden" value=""/>
+							<span id ="actionBatchMessage"></span>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer" style="text-align: center;">
+					<button id="button_action_batch" class="btn btn-success round-button" style="width: 40%;"><span class="glyphicon glyphicon-trash"></span>&nbsp;Supprimer</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php } ?>
+
+	<!-- Fin bloc base -->
+	<footer class="footer navbar-fixed-bottom">
+    	<div class="container-fluid">
+	     	<div class="navbar navbar-nav-custom navbar-center">
+	     		<ul style="text-align: center"><?php include 'footer.php'; ?></ul>
+	     	</div>
+		</div>
+	</footer>
+</body>
+</html>
