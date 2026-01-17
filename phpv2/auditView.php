@@ -37,6 +37,9 @@ var isFireDrillData = false;
 // Garde-fou : évite les refresh en cascade pendant le chargement serveur de la table
 let isTableLoading = false;
 
+// Loading modal : compteur pour éviter double show/hide et cas "page inclicable"
+let loadingCount = 0;
+
 if (!String.prototype.startsWith) {
 	String.prototype.startsWith = function(searchString, position) {
 		position = position || 0;
@@ -181,7 +184,7 @@ function exportAudit(typeExport,fromDetailPanel) {
 		dataType : 'text',
 		data : { fileName : String },
 		success : function(data) {
-			masquerloading();
+			hideLoading(true);
 			if (data.startsWith("fileName=")) {
 				var result = data.split('=');
 				location.href = 'ExportToCsv.php?exportFileName='+ result[1]+"&directory=<?php echo urlencode(sys_get_temp_dir()); ?>" + "&exportType=AuditExport&fileExtension=" +fileExtension ;
@@ -190,7 +193,7 @@ function exportAudit(typeExport,fromDetailPanel) {
 			}
 		},
 		error : function(result, statut, error) {
-			masquerloading();
+			hideLoading(true);
 		}
 	});
 }
@@ -431,12 +434,27 @@ function addNewCriteria() {
 	panel.innerHTML = panel.innerHTML + createCriteriaPanelWithoutValue();
 }
 
+// Loading modal : versions "safe" (compteur + nettoyage)
 function showLoading(){
-	$('#loadingModal').modal('show');
+	loadingCount++;
+	if (loadingCount === 1) {
+		$('#loadingModal').modal({ backdrop: 'static', keyboard: false, show: true });
+	}
 }
 
-function hideLoading(){
-	$('#loadingModal').modal('hide');
+function hideLoading(force = false){
+	if (force) {
+		loadingCount = 0;
+	} else {
+		loadingCount = Math.max(0, loadingCount - 1);
+	}
+	if (loadingCount === 0) {
+		$('#loadingModal').modal('hide');
+		setTimeout(function () {
+			$('.modal-backdrop').remove();
+			$('body').removeClass('modal-open');
+		}, 0);
+	}
 }
 
 function initDateRangePicker(resetDate = false){
@@ -553,6 +571,12 @@ $(document).ready(function(){
 		document.getElementById('prettyPrintXMLBtn').innerHTML="Format XML";
 	});
 
+	// Focus rendu quand le loading modal est réellement fermé
+	$('#loadingModal').on('hidden.bs.modal', function () {
+		const btn = document.getElementById('searchBtn');
+		if (btn) btn.focus();
+	});
+
 	load_status();
 	currentAuditId="";
 
@@ -599,6 +623,7 @@ $(document).ready(function(){
 	}
 
 	// --- FIX: soumission safe + anti-concurrence + refresh protégé
+	// IMPORTANT: on ne pilote PLUS le loading ici (pilotage unique via bootstrap-table)
 	document.getElementById('auditform').addEventListener("submit", function(e) {
 		e.preventDefault();
 
@@ -613,8 +638,6 @@ $(document).ready(function(){
 
 		let fd = new FormData(this);
 		currentXHR = new XMLHttpRequest();
-
-		showLoading();
 
 		let filetredFlows = flowList.filter(flow => selectedFlows.includes(flow.flowName));
 		let flows = filetredFlows.map(flow => flow.projects.join(";"));
@@ -632,23 +655,18 @@ $(document).ready(function(){
 						$('#auditTable').bootstrapTable('refresh');
 					}
 				}
-			} catch (e) {
-				hideLoading();
 			} finally {
-				hideLoading();
 				if (searchBtn) searchBtn.removeAttribute('disabled');
 				currentXHR = null;
 			}
 		};
 
 		currentXHR.onerror = function(){
-			hideLoading();
 			if (searchBtn) searchBtn.removeAttribute('disabled');
 			currentXHR = null;
 		};
 
 		currentXHR.onabort = function(){
-			hideLoading();
 			if (searchBtn) searchBtn.removeAttribute('disabled');
 			currentXHR = null;
 		};
@@ -656,18 +674,16 @@ $(document).ready(function(){
 		currentXHR.send(fd);
 	});
 
-	// --- FIX: Annuler ne doit pas relancer showLoading; il doit annuler l'XHR
+	// --- FIX: Annuler = annule l'XHR + force fermeture loading (sans casser le compteur)
 	document.getElementById('cancelBtn').addEventListener("click", function(){
 		if (currentXHR) {
-			hideLoading();
 			try { currentXHR.abort(); } catch (_) {}
 			currentXHR = null;
-		} else {
-			hideLoading();
 		}
+		hideLoading(true);
 	});
 
-	// --- FIX: tracking du chargement de table pour éviter refresh en cascade
+	// --- FIX: tracking du chargement de table (pilotage unique du loading)
 	$('#auditTable').on('pre-body.bs.table', function () {
 		isTableLoading = true;
 		showLoading();
@@ -680,7 +696,7 @@ $(document).ready(function(){
 
 	$('#auditTable').on('load-error.bs.table', function () {
 		isTableLoading = false;
-		hideLoading();
+		hideLoading(true);
 	});
 
 	$('#auditTable').on('load-success.bs.table', function (e, data) {
@@ -890,7 +906,6 @@ function clearFormInput(){
   // 2) Vider la liste de tags Flux (UI + état)
   let fluxList = document.getElementById("flux-list");
   if (fluxList) {
-    // plus robuste que remove span par span
     fluxList.innerHTML = "";
   }
   selectedFlows = [];
@@ -905,19 +920,14 @@ function clearFormInput(){
   // 4) DateRangePicker : reset propre + mettre J 00:00 -> 23:59
   const $dr = $('input[name="daterange"]');
 
-  // IMPORTANT: éviter empilement d'instances/handlers
   $dr.off('apply.daterangepicker');
   if ($dr.data('daterangepicker')) {
     $dr.data('daterangepicker').remove();
     $dr.removeData('daterangepicker');
   }
 
-  // Ré-instancie avec tes options via ta fonction existante (qui doit maintenant être "clean")
-  // Si tu as déjà appliqué le fix dans initDateRangePicker (off/remove), tu peux juste appeler initDateRangePicker(true)
-  // Ici, on le fait explicitement: on remet le champ sur "Aujourd'hui 00:00 - 23:59" juste après.
   initDateRangePicker(true);
 
-  // Forcer la valeur à aujourd'hui 00:00 - 23:59 (ce que tu veux exactement)
   const start = moment().startOf('day');
   const end = moment().endOf('day');
   $dr.val(start.format('DD-MM-YYYY HH:mm') + " - " + end.format('DD-MM-YYYY HH:mm'));
@@ -1240,7 +1250,6 @@ $(document).on('click', '.close-tag', function() {
 					</p>
 				</div>
 				<div class="modal-footer">
-					<!-- FIX: pas d'onclick showLoading ici -->
 					<button type="button" class="btn btn-warning" id="cancelBtn">Annuler</button>
 				</div>
 			</div>
