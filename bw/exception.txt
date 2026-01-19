@@ -1,1 +1,5 @@
 Cannot instantiate class: com.sun.jndi.fscontext.RefFSContextFactory [Root exception is java.lang.ClassNotFoundException: com.sun.jndi.fscontext.RefFSContextFactory
+
+
+java.naming.factory.initial=com.tibco.tibjms.naming.TibjmsInitialContextFactory
+java.naming.provider.url=tcp://host:7222
