@@ -6,3 +6,6 @@ java.naming.provider.url=tcp://host:7222
 
 
 com/fasterxml/jackson/annotation/JsonKeyjava.lang.NoClassDefFoundError: com/fasterxml/jackson/annotation/JsonKey 
+
+
+moreCaused by: com.ibm.mq.jmqi.JmqiException: CC=2;RC=2397;AMQ9204: Connexion à l'hôte rejetée. [1=com.ibm.mq.jmqi.JmqiException[CC=2;RC=2397;AMQ9771: L'établissement de la liaison SSL a échoué. [1=javax.net.ssl.SSLHandshakeException[PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
