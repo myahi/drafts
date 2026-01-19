@@ -3,3 +3,6 @@ Cannot instantiate class: com.sun.jndi.fscontext.RefFSContextFactory [Root excep
 
 java.naming.factory.initial=com.tibco.tibjms.naming.TibjmsInitialContextFactory
 java.naming.provider.url=tcp://host:7222
+
+
+com/fasterxml/jackson/annotation/JsonKeyjava.lang.NoClassDefFoundError: com/fasterxml/jackson/annotation/JsonKey 
