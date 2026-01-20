@@ -1,3 +1,7 @@
+export CATALINA_OPTS="$CATALINA_OPTS \
+  -Dhawtio.role=GGS_EAI_HAWTIO_ADMIN \
+  -Dhawtio.readonly.roles=GGS_EAI_HAWTIO_READ"
+
 Base DN : OU=Utilisateurs,DC=f1nom0a,DC=local
 User Search Filter : objectclass=user
 Group Search Filter : (vide)
