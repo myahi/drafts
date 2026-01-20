@@ -220,3 +220,143 @@ Je peux te fournir :
 
 
 Dis-moi 👍
+
+
+Bonne question — dans ce que je t’ai proposé tel quel : NON, il n’y a qu’un seul rôle (hawtio) donc tout le monde a les droits admin.
+
+👉 Pour avoir 2 rôles (admin / read-only), il faut les définir explicitement et dire à Hawtio quoi faire avec chacun.
+
+Voici la version correcte et complète avec LDAP + 2 rôles.
+
+
+---
+
+🎯 Objectif
+
+hawtio-admin → droits complets
+
+hawtio-read → lecture seule (pas d’opérations JMX)
+
+
+
+---
+
+1️⃣ Définir les rôles dans web.xml
+
+📄 /opt/tomcat/webapps/hawtio/WEB-INF/web.xml
+
+<security-constraint>
+  <web-resource-collection>
+    <web-resource-name>Hawtio Admin</web-resource-name>
+    <url-pattern>/*</url-pattern>
+  </web-resource-collection>
+  <auth-constraint>
+    <role-name>hawtio-admin</role-name>
+    <role-name>hawtio-read</role-name>
+  </auth-constraint>
+</security-constraint>
+
+<login-config>
+  <auth-method>BASIC</auth-method>
+  <realm-name>Hawtio</realm-name>
+</login-config>
+
+<security-role>
+  <role-name>hawtio-admin</role-name>
+</security-role>
+<security-role>
+  <role-name>hawtio-read</role-name>
+</security-role>
+
+
+---
+
+2️⃣ Mapper les groupes LDAP vers les rôles Tomcat
+
+Dans LDAP / AD :
+
+Groupe hawtio-admin
+
+Groupe hawtio-read
+
+
+📄 /opt/tomcat/conf/context.xml
+
+<Realm className="org.apache.catalina.realm.JAASRealm"
+       appName="hawtio"
+       userClassNames="com.sun.security.auth.module.LdapLoginModule"
+       roleClassNames="com.sun.security.auth.module.LdapLoginModule" />
+
+(Le mapping groupe → rôle est fait par le LDAP)
+
+
+---
+
+3️⃣ Dire à Hawtio ce qui est READ-ONLY
+
+Hawtio gère ça via une propriété système.
+
+📄 /opt/tomcat/bin/setenv.sh
+
+export CATALINA_OPTS="
+ -Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf
+ -Dhawtio.roles=hawtio-admin,hawtio-read
+ -Dhawtio.role=hawtio-admin
+ -Dhawtio.readonly.roles=hawtio-read
+"
+
+Ce que ça fait
+
+hawtio-admin → droits complets
+
+hawtio-read → lecture seule
+
+Impossible d’exécuter :
+
+opérations JMX
+
+write attributes
+
+actions Camel/JMS/MBeans
+
+
+
+
+---
+
+4️⃣ Résultat final
+
+Utilisateur LDAP	Groupe	Droits
+
+user1	hawtio-admin	Admin
+user2	hawtio-read	Read-only
+autre	aucun	❌ refusé
+
+
+
+---
+
+🔒 Bonnes pratiques
+
+Jamais utiliser un rôle unique en prod
+
+Séparer clairement admin / read
+
+Restreindre IP côté firewall
+
+Auditer les logs Tomcat
+
+
+
+---
+
+Tu veux que je t’aide à :
+
+adapter ça à Active Directory (groupes AD + LDAP filter)
+
+limiter certains MBeans seulement
+
+brancher Hawtio sur BW 5 / IBM MQ proprement
+
+
+Dis-moi 👍
