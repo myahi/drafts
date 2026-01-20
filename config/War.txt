@@ -359,4 +359,42 @@ limiter certains MBeans seulement
 brancher Hawtio sur BW 5 / IBM MQ proprement
 
 
+export CATALINA_OPTS="
+ -Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf
+ -Dhawtio.roles=GGS_EAI_HAWTIO_ADMIN,GGS_EAI_HAWTIO_READ
+ -Dhawtio.role=GGS_EAI_HAWTIO_ADMIN
+ -Dhawtio.readonly.roles=GGS_EAI_HAWTIO_READ
+"
+
+<!-- ========================= -->
+<!-- Security constraints -->
+<!-- ========================= -->
+
+<security-constraint>
+  <web-resource-collection>
+    <web-resource-name>Hawtio Protected Area</web-resource-name>
+    <url-pattern>/*</url-pattern>
+  </web-resource-collection>
+
+  <auth-constraint>
+    <role-name>GGS_EAI_HAWTIO_ADMIN</role-name>
+    <role-name>GGS_EAI_HAWTIO_READ</role-name>
+  </auth-constraint>
+</security-constraint>
+
+<login-config>
+  <auth-method>BASIC</auth-method>
+  <realm-name>Hawtio</realm-name>
+</login-config>
+
+<!-- Declare application roles -->
+<security-role>
+  <role-name>GGS_EAI_HAWTIO_ADMIN</role-name>
+</security-role>
+
+<security-role>
+  <role-name>GGS_EAI_HAWTIO_READ</role-name>
+</security-role>
+
+
 Dis-moi 👍
