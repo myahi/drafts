@@ -1,0 +1,222 @@
+Parfait — voici une procédure complète, propre et exploitable en PROD pour installer Hawtio sur Tomcat, avec SSL et authentification LDAP, sous Linux.
+
+Je te la donne pas à pas, sans raccourci.
+
+
+---
+
+🧩 Architecture cible
+
+Navigateur
+   ↓ HTTPS
+Tomcat (SSL + LDAP)
+   ↓
+Hawtio (WAR)
+   ↓
+JMX (BW, JVM, IBM MQ, etc.)
+
+
+---
+
+1️⃣ Prérequis
+
+Linux
+
+Java 11 ou 17 (Java 8 possible mais moins recommandé)
+
+Tomcat 9.x (idéal)
+
+Accès à un LDAP / Active Directory
+
+Ports ouverts :
+
+8443 (HTTPS Tomcat)
+
+ports JMX cibles
+
+
+
+
+---
+
+2️⃣ Installation de Tomcat
+
+useradd -r -m -U -d /opt/tomcat -s /bin/false tomcat
+cd /opt
+wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.xx/bin/apache-tomcat-9.0.xx.tar.gz
+tar xzf apache-tomcat-9.0.xx.tar.gz
+ln -s apache-tomcat-9.0.xx tomcat
+chown -R tomcat:tomcat apache-tomcat-9.0.xx tomcat
+
+
+---
+
+3️⃣ Générer le keystore SSL
+
+keytool -genkeypair \
+  -alias tomcat \
+  -keyalg RSA \
+  -keysize 2048 \
+  -keystore /opt/tomcat/conf/tomcat.jks \
+  -validity 825
+
+
+---
+
+4️⃣ Activer HTTPS dans Tomcat
+
+Éditer :
+/opt/tomcat/conf/server.xml
+
+Ajouter :
+
+<Connector
+  port="8443"
+  protocol="org.apache.coyote.http11.Http11NioProtocol"
+  maxThreads="150"
+  SSLEnabled="true">
+
+  <SSLHostConfig>
+    <Certificate
+      certificateKeystoreFile="conf/tomcat.jks"
+      certificateKeystorePassword="changeit"
+      type="RSA" />
+  </SSLHostConfig>
+</Connector>
+
+
+---
+
+5️⃣ Télécharger et déployer Hawtio WAR
+
+cd /opt/tomcat/webapps
+wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.x.y/hawtio-default-2.x.y.war
+mv hawtio-default-2.x.y.war hawtio.war
+chown tomcat:tomcat hawtio.war
+
+
+---
+
+6️⃣ Configuration LDAP (JAAS)
+
+6.1 Créer le fichier JAAS
+
+📄 /opt/tomcat/conf/jaas.conf
+
+hawtio {
+  com.sun.security.auth.module.LdapLoginModule required
+  userProvider="ldap://ldap.example.com:389/ou=users,dc=example,dc=com"
+  authIdentity="{USERNAME}"
+  useSSL=false
+  debug=false;
+};
+
+(Si LDAPS, mets useSSL=true et port 636)
+
+
+---
+
+6.2 Déclarer JAAS dans Tomcat
+
+📄 /opt/tomcat/bin/setenv.sh
+
+export CATALINA_OPTS="
+ -Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf
+"
+
+
+---
+
+7️⃣ Sécuriser Hawtio par LDAP
+
+📄 /opt/tomcat/webapps/hawtio/WEB-INF/web.xml
+
+Ajouter avant </web-app> :
+
+<security-constraint>
+  <web-resource-collection>
+    <web-resource-name>Hawtio</web-resource-name>
+    <url-pattern>/*</url-pattern>
+  </web-resource-collection>
+  <auth-constraint>
+    <role-name>hawtio</role-name>
+  </auth-constraint>
+</security-constraint>
+
+<login-config>
+  <auth-method>BASIC</auth-method>
+  <realm-name>hawtio</realm-name>
+</login-config>
+
+<security-role>
+  <role-name>hawtio</role-name>
+</security-role>
+
+
+---
+
+8️⃣ Mapper LDAP → rôle Hawtio
+
+📄 /opt/tomcat/conf/context.xml
+
+<Realm className="org.apache.catalina.realm.JAASRealm"
+       appName="hawtio"
+       userClassNames="com.sun.security.auth.module.LdapLoginModule"
+       roleClassNames="com.sun.security.auth.module.LdapLoginModule" />
+
+
+---
+
+9️⃣ Démarrer Tomcat
+
+su - tomcat
+/opt/tomcat/bin/startup.sh
+
+Accès :
+
+https://<host>:8443/hawtio
+
+
+---
+
+🔐 10️⃣ Sécurité JMX (important)
+
+Sur les JVM cibles (BW, MQ, etc.) :
+
+-Dcom.sun.management.jmxremote
+-Dcom.sun.management.jmxremote.port=9010
+-Dcom.sun.management.jmxremote.rmi.port=9010
+-Dcom.sun.management.jmxremote.authenticate=true
+-Dcom.sun.management.jmxremote.ssl=false
+
+➡️ Utilise le même LDAP ou un autre mécanisme JMX sécurisé.
+
+
+---
+
+✅ Checklist finale PROD
+
+✔️ HTTPS actif
+✔️ LDAP obligatoire
+✔️ Pas d’accès HTTP
+✔️ Firewall IP
+✔️ Comptes LDAP restreints
+✔️ Logs Tomcat surveillés
+
+
+---
+
+Tu veux aller plus loin ?
+
+Je peux te fournir :
+
+🔒 version LDAPS + truststore
+
+🧰 version Nginx → Tomcat → Hawtio
+
+🧠 config Hawtio pour BW 5 / IBM MQ
+
+📋 checklist audit sécurité
+
+
+Dis-moi 👍
