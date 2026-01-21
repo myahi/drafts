@@ -91,3 +91,6 @@ ava.lang.ClassNotFoundException: org.slf4j.LoggerFactory
                 at io.hawt.web.auth.SessionExpiryFilter.doFilter(SessionExpiryFilter.java:60)
                 at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
                 at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+
+
+POST /hawtio/auth/login HTTP/1.1" 403
