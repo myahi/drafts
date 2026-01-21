@@ -1,41 +1,19 @@
-hawtio {
-  org.apache.karaf.jaas.modules.ldap.LDAPLoginModule required
-    connection.url="ldap://f1nom0a.local:389"
-    connection.username="CN=USR_SVC_EAI_LDAPS,OU=Comptes de service,OU=Administration,DC=f1nom0a,DC=local"
-    connection.password="TOTO"
-    user.base.dn="OU=Utilisateurs,DC=f1nom0a,DC=local"
-    user.filter="(sAMAccountName=%u)"
-    user.search.subtree=true
-    role.base.dn="OU=Groupes applicatifs,OU=Groupes,DC=f1nom0a,DC=local"
-    role.filter="(member=%fqdn)"
-    role.name.attribute="cn"
-    role.search.subtree=true
-    authentication="simple"
-    ignorePartialResultException=true
-    debug=true;
-};
 
-
-Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC -Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf -Dhawtio.realm=hawtio -Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ -Dhawtio.role=GGS_EAI_HAWTIO_HORS_PROD_ADMIN -Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ"
-
-
-
-CATALINA_OPTS="-Xms512M -Xmx1024M -server -XX:+UseParallelGC \
--Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf \
--Dhawtio.realm=hawtio \
--Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ \
--Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ"
-
-
-CATALINA_OPTS="
--Xms512M -Xmx1024M -server -XX:+UseParallelGC
--Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf
--Dhawtio.realm=hawtio
--Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ
--Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ
--Dhawtio.userPrincipalClasses=org.apache.karaf.jaas.boot.principal.UserPrincipal
--Dhawtio.rolePrincipalClasses=org.apache.karaf.jaas.boot.principal.RolePrincipal,io.hawt.web.auth.RolePrincipal
-"
-
-no main manifest attribute, in camel-eai-rgv-1.0.0-SNAPSHOT.jar
-
+logging.file.name=../logs/eai-bofi-rgv.log
+audit.error.logging.include-stacktrace=true
+#logging.pattern.console=%d{HH:mm:ss.SSS} %highlight{%-5level} [%thread] %logger{36} - %X{correlationId} - %msg%n
+logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n
+logging.level.root=INFO
+logging.level.fr.lbp=INFO
+logging.level.fr.lbp.lib.audit=INFO
+logging.level.fr.lbp.lib.error=ERROR
+logging.level.fr.lbp.lib.ems=INFO
+logging.level.fr.lbp.routes=INFO
+logging.level.org.apache.camel=INFO
+logging.level.org.apache.cxf=INFO
+logging.level.org.springframework=WARN
+logging.level.org.hibernate=WARN
+logging.level.com.zaxxer.hikari=WARN
+logging.logback.rollingpolicy.max-file-size=50MB
+logging.logback.rollingpolicy.max-history=30
+logging.logback.rollingpolicy.total-size-cap=1GB
