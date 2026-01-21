@@ -4,3 +4,7 @@ Initial proxy allowlist: [localhost, 127.0.0.1, 10.112.177.36, sdv4ems01.f2nom0a
 
 
 export CATALINA_OPTS="$CATALINA_OPTS -Dhawtio.authenticationEnabled=false"
+
+
+
+Login failed due to: Login Failure: all modules ignored
