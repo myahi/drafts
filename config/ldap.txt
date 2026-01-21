@@ -15,3 +15,5 @@ hawtio {
     debug=true;
 };
 
+
+Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC -Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf -Dhawtio.realm=hawtio -Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ -Dhawtio.role=GGS_EAI_HAWTIO_HORS_PROD_ADMIN -Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ"
