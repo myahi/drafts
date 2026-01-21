@@ -61,3 +61,33 @@ ava.lang.ClassNotFoundException: org.slf4j.LoggerFactory
 
 
 -Dhawtio.realm=hawtio \
+
+
+==> localhost.2026-01-21.log <==
+21-Jan-2026 15:40:16.735 SEVERE [https-jsse-nio-9443-exec-16] org.apache.catalina.core.StandardWrapperValve.invoke Servlet.service() for servlet [login] in context with path [/hawtio] threw exception [Servlet execution threw an exception] with root cause
+        java.lang.ClassNotFoundException: org.apache.karaf.jaas.boot.principal.UserPrincipal
+                at org.apache.karaf.jaas.modules.ldap.LDAPLoginModule.doLogin(LDAPLoginModule.java:148)
+                at org.apache.karaf.jaas.modules.ldap.LDAPLoginModule.login(LDAPLoginModule.java:53)
+                at java.base/javax.security.auth.login.LoginContext.invoke(LoginContext.java:755)
+                at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:679)
+                at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:677)
+                at java.base/java.security.AccessController.doPrivileged(AccessController.java:712)
+                at java.base/javax.security.auth.login.LoginContext.invokePriv(LoginContext.java:677)
+                at java.base/javax.security.auth.login.LoginContext.login(LoginContext.java:587)
+                at io.hawt.system.Authenticator.login(Authenticator.java:270)
+                at io.hawt.system.Authenticator.doAuthenticate(Authenticator.java:245)
+                at io.hawt.system.Authenticator.authenticate(Authenticator.java:216)
+                at io.hawt.web.auth.LoginServlet.doPost(LoginServlet.java:70)
+                at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)
+                at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+                at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+                at io.hawt.web.auth.ClientRouteRedirectFilter.doFilter(ClientRouteRedirectFilter.java:144)
+                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+                at io.hawt.web.filters.ResponseHeadersFilter.doFilter(ResponseHeadersFilter.java:63)
+                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+                at io.hawt.web.auth.SessionExpiryFilter.process(SessionExpiryFilter.java:105)
+                at io.hawt.web.auth.SessionExpiryFilter.doFilter(SessionExpiryFilter.java:60)
+                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+                at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
