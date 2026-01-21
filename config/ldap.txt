@@ -25,3 +25,15 @@ CATALINA_OPTS="-Xms512M -Xmx1024M -server -XX:+UseParallelGC \
 -Dhawtio.realm=hawtio \
 -Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ \
 -Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ"
+
+
+CATALINA_OPTS="
+-Xms512M -Xmx1024M -server -XX:+UseParallelGC
+-Djava.security.auth.login.config=/opt/tomcat/conf/jaas.conf
+-Dhawtio.realm=hawtio
+-Dhawtio.roles=GGS_EAI_HAWTIO_HORS_PROD_ADMIN,GGS_EAI_HAWTIO_HORS_PROD_READ
+-Dhawtio.readonly.roles=GGS_EAI_HAWTIO_HORS_PROD_READ
+-Dhawtio.userPrincipalClasses=org.apache.karaf.jaas.boot.principal.UserPrincipal
+-Dhawtio.rolePrincipalClasses=org.apache.karaf.jaas.boot.principal.RolePrincipal,io.hawt.web.auth.RolePrincipal
+"
+
