@@ -59,3 +59,5 @@ hawtio {
 
 ava.lang.ClassNotFoundException: org.slf4j.LoggerFactory
 
+
+-Dhawtio.realm=hawtio \
