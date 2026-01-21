@@ -56,3 +56,6 @@ hawtio {
 12:43:08 INFO {https-jsse-nio-9443-exec-5} : Hawtio login is using 1800 sec. HttpSession timeout
 12:43:08 WARN {https-jsse-nio-9443-exec-5} : Login failed due to: No LoginModule found for org.apache.karaf.jaas.modules.ldap.LDAPLoginModule
 
+
+ava.lang.ClassNotFoundException: org.slf4j.LoggerFactory
+
