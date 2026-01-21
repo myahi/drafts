@@ -36,3 +36,8 @@ hawtio {
   ;
 };
 
+
+Hawtio login is using 1800 sec. HttpSession timeout
+                [LdapLoginModule] search-first mode; SSL enabled
+                [LdapLoginModule] aborted authentication
+12:23:33 WARN {https-jsse-nio-9443-exec-4} : Login failed due to: Unable to locate the LDAP directory service
