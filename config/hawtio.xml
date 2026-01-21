@@ -1,0 +1,15 @@
+<Context>
+  <Realm className="org.apache.catalina.realm.JNDIRealm"
+    connectionURL="ldap://f1nom0a.local:389"
+    connectionName="CN=USR_SVC_EAI_LDAPS,OU=Comptes de service,OU=Administration,DC=f1nom0a,DC=local"
+    connectionPassword="8G?wbudY:J9l-!KF?4dah5"
+    userBase="OU=Utilisateurs,DC=f1nom0a,DC=local"
+    userSearch="(sAMAccountName={0})"
+    userSubtree="true"
+    roleBase="OU=Groupes applicatifs,OU=Groupes,DC=f1nom0a,DC=local"
+    roleSearch="(member={0})"
+    roleSubtree="true"
+    roleName="cn"
+    referrals="follow"
+    />
+</Context>
