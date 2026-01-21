@@ -1,96 +1,17 @@
-org.xml.sax.SAXParseException; lineNumber: 10; columnNumber: 19; The entity name must immediately follow the '&' in the entity reference.
-
-Initial proxy allowlist: [localhost, 127.0.0.1, 10.112.177.36, sdv4ems01.f2nom0a.local, 10.200.177.36, sdv4ems01.svg.f2nom0a.local, 10.113.177.36, sdv4ems01.f1nom0a.local]
-
-
-export CATALINA_OPTS="$CATALINA_OPTS -Dhawtio.authenticationEnabled=false"
-
-
-
-Login failed due to: Login Failure: all modules ignored
-
-
 hawtio {
   org.apache.karaf.jaas.modules.ldap.LDAPLoginModule required
     connection.url="ldap://f1nom0a.local:389"
-
-    # Compte technique pour faire les recherches LDAP (optionnel si LDAP autorise bind anonyme)
     connection.username="CN=USR_SVC_EAI_LDAPS,OU=Comptes de service,OU=Administration,DC=f1nom0a,DC=local"
-    connection.password="***REMPLACE_PAR_UN_SECRET***"
-
-    # Recherche user
+    connection.password="TOTO"
     user.base.dn="OU=Utilisateurs,DC=f1nom0a,DC=local"
     user.filter="(sAMAccountName=%u)"
     user.search.subtree=true
-
-    # Recherche roles (= groupes AD)
     role.base.dn="OU=Groupes applicatifs,OU=Groupes,DC=f1nom0a,DC=local"
     role.filter="(member=%fqdn)"
     role.name.attribute="cn"
     role.search.subtree=true
-
     authentication="simple"
-
-    # Très utile avec AD (referrals / résultats partiels)
     ignorePartialResultException=true
-  ;
-};
-
-
-Hawtio login is using 1800 sec. HttpSession timeout
-                [LdapLoginModule] search-first mode; SSL enabled
-                [LdapLoginModule] aborted authentication
-12:23:33 WARN {https-jsse-nio-9443-exec-4} : Login failed due to: Unable to locate the LDAP directory service
-
-
-hawtio {
-  com.sun.security.auth.module.LdapLoginModule required
-    userProvider="ldap://f1nom0a.local:389/OU=Utilisateurs,DC=f1nom0a,DC=local"
-    authIdentity="CN={USERNAME},OU=Utilisateurs,DC=f1nom0a,DC=local"
-    useSSL=false
     debug=true;
 };
 
-
-==> catalina.out <==
-12:43:08 INFO {https-jsse-nio-9443-exec-5} : Hawtio login is using 1800 sec. HttpSession timeout
-12:43:08 WARN {https-jsse-nio-9443-exec-5} : Login failed due to: No LoginModule found for org.apache.karaf.jaas.modules.ldap.LDAPLoginModule
-
-
-ava.lang.ClassNotFoundException: org.slf4j.LoggerFactory
-
-
--Dhawtio.realm=hawtio \
-
-
-==> localhost.2026-01-21.log <==
-21-Jan-2026 15:40:16.735 SEVERE [https-jsse-nio-9443-exec-16] org.apache.catalina.core.StandardWrapperValve.invoke Servlet.service() for servlet [login] in context with path [/hawtio] threw exception [Servlet execution threw an exception] with root cause
-        java.lang.ClassNotFoundException: org.apache.karaf.jaas.boot.principal.UserPrincipal
-                at org.apache.karaf.jaas.modules.ldap.LDAPLoginModule.doLogin(LDAPLoginModule.java:148)
-                at org.apache.karaf.jaas.modules.ldap.LDAPLoginModule.login(LDAPLoginModule.java:53)
-                at java.base/javax.security.auth.login.LoginContext.invoke(LoginContext.java:755)
-                at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:679)
-                at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:677)
-                at java.base/java.security.AccessController.doPrivileged(AccessController.java:712)
-                at java.base/javax.security.auth.login.LoginContext.invokePriv(LoginContext.java:677)
-                at java.base/javax.security.auth.login.LoginContext.login(LoginContext.java:587)
-                at io.hawt.system.Authenticator.login(Authenticator.java:270)
-                at io.hawt.system.Authenticator.doAuthenticate(Authenticator.java:245)
-                at io.hawt.system.Authenticator.authenticate(Authenticator.java:216)
-                at io.hawt.web.auth.LoginServlet.doPost(LoginServlet.java:70)
-                at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)
-                at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
-                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
-                at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
-                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
-                at io.hawt.web.auth.ClientRouteRedirectFilter.doFilter(ClientRouteRedirectFilter.java:144)
-                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
-                at io.hawt.web.filters.ResponseHeadersFilter.doFilter(ResponseHeadersFilter.java:63)
-                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
-                at io.hawt.web.auth.SessionExpiryFilter.process(SessionExpiryFilter.java:105)
-                at io.hawt.web.auth.SessionExpiryFilter.doFilter(SessionExpiryFilter.java:60)
-                at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
-                at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
-
-
-POST /hawtio/auth/login HTTP/1.1" 403
