@@ -37,3 +37,5 @@ CATALINA_OPTS="
 -Dhawtio.rolePrincipalClasses=org.apache.karaf.jaas.boot.principal.RolePrincipal,io.hawt.web.auth.RolePrincipal
 "
 
+no main manifest attribute, in camel-eai-rgv-1.0.0-SNAPSHOT.jar
+
