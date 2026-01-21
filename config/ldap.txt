@@ -1,1 +1,3 @@
 org.xml.sax.SAXParseException; lineNumber: 10; columnNumber: 19; The entity name must immediately follow the '&' in the entity reference.
+
+Initial proxy allowlist: [localhost, 127.0.0.1, 10.112.177.36, sdv4ems01.f2nom0a.local, 10.200.177.36, sdv4ems01.svg.f2nom0a.local, 10.113.177.36, sdv4ems01.f1nom0a.local]
