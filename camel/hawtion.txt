@@ -1,1 +1,7 @@
-Error - fetching JMX tree: java.lang.Exception java.lang.Exception : Secure origin https://sdv4ems01.web.dev.marches.intra.laposte.fr should not be processed over HTTP undefined
+management.server.port=8082
+
+management.server.ssl.enabled=true
+management.server.ssl.key-store=/opt/eai-bofi-rgv/certs/management.p12
+management.server.ssl.key-store-type=PKCS12
+management.server.ssl.key-store-password=changeit
+management.server.ssl.key-alias=eai-bofi-rgv
