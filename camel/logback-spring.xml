@@ -1,3 +1,6 @@
+java -jar tonapp.jar --logging.config=classpath:logback-spring.xml > ../logs/eai-bofi-rgv.log 2>&1
+java -jar tonapp.jar --logging.config=classpath:logback-spring.xml > ../logs/stdout-stderr.log 2>&1
+
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
