@@ -1,0 +1,1 @@
+Session EVT >>> Already disconnected: Socket exception (/192.168.13.5:1080): javax.net.ssl.SSLException: Improper close state: Status = OK HandshakeStatus = NEED_WRAP
