@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Récupère la propriété Spring Boot -->
+    <springProperty scope="context" name="LOG_FILE" source="logging.file.name"/>
+
+    <!-- Valeur par défaut si jamais logging.file.name n'est pas défini -->
+    <property name="LOG_FILE" value="${LOG_FILE:-../logs/eai-bofi-rgv.log}"/>
+
+    <!-- Pattern fichier : reprend le tien -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"/>
+
+    <!-- Rolling file appender -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- ex: eai-bofi-rgv.2026-01-22.1.log.gz -->
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- IMPORTANT : pas d'appender CONSOLE -->
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <!-- Niveaux spécifiques (reprend tes niveaux) -->
+    <logger name="fr.lbp" level="INFO"/>
+    <logger name="fr.lbp.lib.audit" level="INFO"/>
+    <logger name="fr.lbp.lib.error" level="ERROR"/>
+    <logger name="fr.lbp.lib.ems" level="INFO"/>
+    <logger name="fr.lbp.routes" level="INFO"/>
+    <logger name="org.apache.camel" level="INFO"/>
+    <logger name="org.apache.cxf" level="INFO"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+
+</configuration>
