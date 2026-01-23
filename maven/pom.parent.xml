@@ -1,0 +1,168 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>fr.labanquepostale.marches.eai</groupId>
+  <artifactId>eai-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>eai-parent</name>
+
+  <properties>
+    <java.version>17</java.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <spring.boot.version>3.3.3</spring.boot.version>
+    <camel.version>4.7.0</camel.version>
+
+    <jolokia.version>2.1.2</jolokia.version>
+    <ojdbc.version>19.3</ojdbc.version>
+    <tibco.ems.version>10.0.0</tibco.ems.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- BOM Spring Boot -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- BOM Camel Spring Boot (versions Camel starters & Camel core) -->
+      <dependency>
+        <groupId>org.apache.camel.springboot</groupId>
+        <artifactId>camel-spring-boot-bom</artifactId>
+        <version>${camel.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Versions figées (souvent hors BOM) -->
+      <dependency>
+        <groupId>org.jolokia</groupId>
+        <artifactId>jolokia-support-spring</artifactId>
+        <version>${jolokia.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.oracle</groupId>
+        <artifactId>ojdbc8</artifactId>
+        <version>${ojdbc.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.tibco.ems</groupId>
+        <artifactId>tibjms-jakarta</artifactId>
+        <version>${tibco.ems.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <!-- ✅ Dépendances communes à TOUS les projets enfants -->
+  <dependencies>
+
+    <!-- Actuator (utile pour Jolokia/monitoring & pratiques standard) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- JDBC -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- Jolokia (Boot 3) -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-support-spring</artifactId>
+    </dependency>
+
+    <!-- Camel management (JMX/monitoring Camel, utile avec Hawtio standalone) -->
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-management-starter</artifactId>
+    </dependency>
+
+    <!-- JMS (Camel + Spring Boot starter JMS) -->
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-jms</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-jms-starter</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.messaginghub</groupId>
+      <artifactId>pooled-jms</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.tibco.ems</groupId>
+      <artifactId>tibjms-jakarta</artifactId>
+    </dependency>
+
+    <!-- Logging / utils -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Oracle -->
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>ojdbc8</artifactId>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+          <configuration>
+            <release>${java.version}</release>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring.boot.version}</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>repackage</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+</project>
