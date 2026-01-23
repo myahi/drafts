@@ -1,3 +1,26 @@
+
+import java.util.regex.Pattern;
+
+public class FixMasker {
+
+    // remplace la valeur des tags 9,10,34,52 par XX, séparateur |
+    public static String maskTags(String fix) {
+        if (fix == null || fix.isEmpty()) return fix;
+
+        // 1) cas "en début de chaîne"
+        fix = fix.replaceFirst("^(9|10|34|52)=[^|]*\\|", "$1=XX|");
+
+        // 2) cas "au milieu" (précédé par |)
+        fix = fix.replaceAll("\\|(9|10|34|52)=[^|]*\\|", "|$1=XX|");
+
+        // 3) cas "en fin de chaîne" (si le message ne se termine pas par |)
+        fix = fix.replaceAll("\\|(9|10|34|52)=[^|]*$", "|$1=XX");
+
+        return fix;
+    }
+}
+
+
 52=2026012XX-00:00:0XX.XX88
 20260123-00:00:03.388
 
