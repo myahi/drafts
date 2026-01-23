@@ -25,7 +25,7 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- BOM Spring Boot -->
+      <!-- BOM Spring Boot (inclut Logback par défaut via spring-boot-starter-logging) -->
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -34,7 +34,7 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- BOM Camel Spring Boot (versions Camel starters & Camel core) -->
+      <!-- BOM Camel Spring Boot -->
       <dependency>
         <groupId>org.apache.camel.springboot</groupId>
         <artifactId>camel-spring-boot-bom</artifactId>
@@ -43,7 +43,7 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- Versions figées (souvent hors BOM) -->
+      <!-- Versions figées / hors BOM -->
       <dependency>
         <groupId>org.jolokia</groupId>
         <artifactId>jolokia-support-spring</artifactId>
@@ -64,10 +64,10 @@
     </dependencies>
   </dependencyManagement>
 
-  <!-- ✅ Dépendances communes à TOUS les projets enfants -->
+  <!-- ✅ Dépendances communes (Logback implicite via Spring Boot starters) -->
   <dependencies>
 
-    <!-- Actuator (utile pour Jolokia/monitoring & pratiques standard) -->
+    <!-- Actuator (souvent requis pour monitoring + jolokia endpoint) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -79,19 +79,19 @@
       <artifactId>spring-boot-starter-jdbc</artifactId>
     </dependency>
 
-    <!-- Jolokia (Boot 3) -->
+    <!-- Jolokia -->
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-support-spring</artifactId>
     </dependency>
 
-    <!-- Camel management (JMX/monitoring Camel, utile avec Hawtio standalone) -->
+    <!-- Camel management (JMX/monitoring Camel -> utile avec Hawtio standalone) -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-management-starter</artifactId>
     </dependency>
 
-    <!-- JMS (Camel + Spring Boot starter JMS) -->
+    <!-- JMS / EMS -->
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-jms</artifactId>
@@ -112,17 +112,13 @@
       <artifactId>tibjms-jakarta</artifactId>
     </dependency>
 
-    <!-- Logging / utils -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-    </dependency>
-
+    <!-- Utils -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
 
+    <!-- Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
