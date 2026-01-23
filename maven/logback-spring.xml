@@ -11,12 +11,15 @@
     <property name="FILE_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"/>
 
+    <!-- Pattern console (tu peux reprendre ton ancien pattern console commenté) -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} %highlight{%-5level} [%thread] %logger{36} - %X{correlationId} - %msg%n"/>
+
     <!-- Rolling file appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_FILE}</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- ex: eai-bofi-rgv.2026-01-22.1.log.gz -->
             <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
@@ -28,10 +31,31 @@
         </encoder>
     </appender>
 
-    <!-- IMPORTANT : pas d'appender CONSOLE -->
-    <root level="INFO">
-        <appender-ref ref="FILE"/>
-    </root>
+    <!-- Appender console (utilisé uniquement en local) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ========================= -->
+    <!-- ROOT LOGGER SELON PROFIL -->
+    <!-- ========================= -->
+
+    <!-- Profil local : console + fichier -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- Tous les autres profils : fichier uniquement (comme aujourd'hui) -->
+    <springProfile name="!local">
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
 
     <!-- Niveaux spécifiques (reprend tes niveaux) -->
     <logger name="fr.lbp" level="INFO"/>
