@@ -1,1 +1,1 @@
-'dependencies.dependency.version' for org.apache.camel:camel-jms:jar is missing.
+[1;31mExecution default of goal org.springframework.boot:spring-boot-maven-plugin:3.3.3:repackage failed: Unable to find main class[m
