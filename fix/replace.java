@@ -1,3 +1,4 @@
+52=2026012XX-00:00:0XX.XX88
 20260123-00:00:03.388
 
   String replaceHeaderField(String fixContent){
