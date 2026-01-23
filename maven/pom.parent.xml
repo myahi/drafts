@@ -1,6 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>fr.labanquepostale.marches.eai</groupId>
@@ -9,6 +11,9 @@
   <packaging>pom</packaging>
   <name>eai-parent</name>
 
+  <!-- ========================================================= -->
+  <!-- Versions centralisées -->
+  <!-- ========================================================= -->
   <properties>
     <java.version>17</java.version>
     <maven.compiler.source>17</maven.compiler.source>
@@ -23,9 +28,13 @@
     <tibco.ems.version>10.0.0</tibco.ems.version>
   </properties>
 
+  <!-- ========================================================= -->
+  <!-- Dependency Management -->
+  <!-- ========================================================= -->
   <dependencyManagement>
     <dependencies>
-      <!-- BOM Spring Boot (inclut Logback par défaut via spring-boot-starter-logging) -->
+
+      <!-- Spring Boot BOM (inclut Logback par défaut) -->
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -34,7 +43,16 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- BOM Camel Spring Boot -->
+      <!-- Camel core BOM (org.apache.camel:camel-*) -->
+      <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-bom</artifactId>
+        <version>${camel.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Camel Spring Boot BOM (camel-*-starter) -->
       <dependency>
         <groupId>org.apache.camel.springboot</groupId>
         <artifactId>camel-spring-boot-bom</artifactId>
@@ -43,7 +61,7 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- Versions figées / hors BOM -->
+      <!-- Versions figées hors BOM -->
       <dependency>
         <groupId>org.jolokia</groupId>
         <artifactId>jolokia-support-spring</artifactId>
@@ -61,31 +79,33 @@
         <artifactId>tibjms-jakarta</artifactId>
         <version>${tibco.ems.version}</version>
       </dependency>
+
     </dependencies>
   </dependencyManagement>
 
-  <!-- ✅ Dépendances communes (Logback implicite via Spring Boot starters) -->
+  <!-- ========================================================= -->
+  <!-- Dépendances communes à TOUS les projets -->
+  <!-- ========================================================= -->
   <dependencies>
 
-    <!-- Actuator (souvent requis pour monitoring + jolokia endpoint) -->
+    <!-- Spring Boot / monitoring -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
-    <!-- JDBC -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jdbc</artifactId>
     </dependency>
 
-    <!-- Jolokia -->
+    <!-- Jolokia (pour Hawtio standalone) -->
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-support-spring</artifactId>
     </dependency>
 
-    <!-- Camel management (JMX/monitoring Camel -> utile avec Hawtio standalone) -->
+    <!-- Camel monitoring / JMX -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-management-starter</artifactId>
@@ -118,14 +138,13 @@
       <artifactId>commons-lang3</artifactId>
     </dependency>
 
-    <!-- Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!-- Oracle -->
+    <!-- Oracle JDBC -->
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>ojdbc8</artifactId>
@@ -133,9 +152,13 @@
 
   </dependencies>
 
+  <!-- ========================================================= -->
+  <!-- Plugins -->
+  <!-- ========================================================= -->
   <build>
     <pluginManagement>
       <plugins>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
@@ -157,6 +180,7 @@
             </execution>
           </executions>
         </plugin>
+
       </plugins>
     </pluginManagement>
   </build>
