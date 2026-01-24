@@ -1,0 +1,155 @@
+Tu veux un **build Maven qui produit plusieurs JAR** et qui **hérite** d’un parent `eai-camel-parent` tout en **dépendant** de `eai-camel-core`. La façon “propre” de faire ça en Maven, c’est un **projet multi-modules** : un POM “agrégateur” (packaging `pom`) + un module par JAR (packaging `jar`). Chaque module peut référencer le parent commun et dépendre de `eai-camel-core`.
+
+Voici une recette qui marche bien.
+
+---
+
+## 1) Structure recommandée
+
+```
+eai-camel-bundle/
+  pom.xml                 <-- agrégateur (packaging pom)
+  module-a/
+    pom.xml               <-- JAR A
+    src/main/java/...
+  module-b/
+    pom.xml               <-- JAR B
+    src/main/java/...
+```
+
+---
+
+## 2) POM agrégateur (à la racine) : génère “plusieurs JAR” via les modules
+
+**`eai-camel-bundle/pom.xml`**
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Tu hériteras du parent commun ici -->
+  <parent>
+    <groupId>com.yourcompany.eai</groupId>
+    <artifactId>eai-camel-parent</artifactId>
+    <version>1.2.3</version>
+    <!-- si ton parent n'est pas dans le repo mais en relatif -->
+    <!-- <relativePath>../eai-camel-parent/pom.xml</relativePath> -->
+  </parent>
+
+  <groupId>com.yourcompany.eai</groupId>
+  <artifactId>eai-camel-bundle</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>module-a</module>
+    <module>module-b</module>
+  </modules>
+
+  <!-- Optionnel: centraliser les versions des deps des modules -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.yourcompany.eai</groupId>
+        <artifactId>eai-camel-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>
+```
+
+✅ Ce POM ne produit pas de JAR lui-même : il **orchestre** le build des modules, chacun produisant son propre JAR.
+
+---
+
+## 3) POM d’un module JAR : hérite du parent + dépend de `eai-camel-core`
+
+**`module-a/pom.xml`**
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- IMPORTANT: le parent du module = le POM agrégateur (pas forcément eai-camel-parent) -->
+  <!-- Comme l'agrégateur hérite déjà de eai-camel-parent, tu récupères la config/versions -->
+  <parent>
+    <groupId>com.yourcompany.eai</groupId>
+    <artifactId>eai-camel-bundle</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>module-a</artifactId>
+  <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.yourcompany.eai</groupId>
+      <artifactId>eai-camel-core</artifactId>
+      <!-- si géré dans dependencyManagement, pas besoin de version -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+Même chose pour `module-b/pom.xml`, en changeant juste `<artifactId>`.
+
+---
+
+## 4) Build : obtenir tous les JAR
+
+Depuis la racine :
+
+```bash
+mvn clean package
+```
+
+Tu obtiens :
+
+* `module-a/target/module-a-1.0.0.jar`
+* `module-b/target/module-b-1.0.0.jar`
+
+---
+
+## 5) Cas particuliers utiles
+
+### A) Si tu veux **un JAR “bundle”** en plus (fat jar, ou jar qui agrège)
+
+Tu peux ajouter un module `distribution/` avec `maven-shade-plugin` (fat jar) ou `maven-assembly-plugin`.
+
+### B) Si `eai-camel-core` est aussi dans le même repo
+
+Tu peux le mettre en module aussi :
+
+```
+modules:
+  eai-camel-core
+  module-a
+  module-b
+```
+
+Et alors les versions se pilotent toutes ensemble.
+
+### C) Si tu veux publier tout ça dans Nexus/Artifactory
+
+`mvn deploy` à la racine déploie tous les artifacts.
+
+---
+
+## Le point clé
+
+➡️ **Un seul projet Maven ne “produit pas plusieurs JAR” dans un même module** (en tout cas pas proprement).
+La solution standard est : **multi-modules** → *1 module = 1 JAR*.
+
+---
+
+Si tu me donnes :
+
+* les `groupId/artifactId/version` réels de `eai-camel-parent` et `eai-camel-core`
+* et si `eai-camel-core` est local (même repo) ou externe (repo Nexus)
+
+…je te renvoie des POM prêts à copier-coller pour ton cas exact (y compris `dependencyManagement`, plugins, et BOM si besoin).
