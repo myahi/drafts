@@ -9,12 +9,13 @@ import javax.jms.ConnectionFactory;
 @Configuration
 public class JmsCamelConfig {
 
-    @Bean(name = "mqJms")
-    public JmsComponent mqJms(ConnectionFactory mqConnectionFactory) {
-        // Auto-ack (le plus simple)
-        return JmsComponent.jmsComponentAutoAcknowledge(mqConnectionFactory);
+    @Bean(name = "mqA")
+    public JmsComponent mqA(@javax.annotation.Resource(name = "mqConnectionFactoryA") ConnectionFactory cf) {
+        return JmsComponent.jmsComponentAutoAcknowledge(cf);
+    }
 
-        // Si tu veux des transactions JMS plus tard :
-        // return JmsComponent.jmsComponentTransacted(mqConnectionFactory);
+    @Bean(name = "mqB")
+    public JmsComponent mqB(@javax.annotation.Resource(name = "mqConnectionFactoryB") ConnectionFactory cf) {
+        return JmsComponent.jmsComponentAutoAcknowledge(cf);
     }
 }
