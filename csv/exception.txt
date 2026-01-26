@@ -5,3 +5,10 @@ CSVParser parser = CSVParser.parse(
     reader,
     CSVFormat.DEFAULT.withDelimiter(options.getDelimiter())
 );
+
+CSVFormat format = CSVFormat.DEFAULT
+        .builder()
+        .setDelimiter(options.getDelimiter())
+        .build();
+
+CSVParser parser = CSVParser.parse(reader, format);
