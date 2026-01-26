@@ -1,0 +1,371 @@
+D’accord — je refais tout proprement, sans Jenkinsfile, puisque tu veux tout coller dans Jenkins UI.
+
+L’objectif : 1 job pipeline + paramètres GUI Active Choices + déploiement SSH + versions depuis Artifactory + résolution VM dans le pipeline.
+
+
+---
+
+0) Pré-requis (infra)
+
+Flux réseau :
+
+Jenkins → VMs : TCP/22
+
+Jenkins → Artifactory : TCP/443
+
+
+Sur chaque VM applicative :
+
+user deploy
+
+sshd actif
+
+clé publique Jenkins dans ~deploy/.ssh/authorized_keys
+
+sudo minimal pour systemctl restart <service>
+
+
+
+
+---
+
+1) Jenkins : variables globales (1 seule fois)
+
+📍 Manage Jenkins → System → Global properties → Environment variables
+
+Ajoute :
+
+ARTIFACTORY_URL=https://artifactory.mycompany.com/artifactory
+ARTIFACTORY_REPO=libs-release-local
+ARTIFACTORY_GROUP_PATH=com/mycompany/eai
+ARTIFACTORY_USER=jenkins-read
+ARTIFACTORY_TOKEN=XXXXXXXXXXXX
+DEPLOY_USER=deploy
+
+
+---
+
+2) Créer le job Jenkins
+
+📍 New Item → Pipeline
+Coche : This project is parameterized
+
+
+---
+
+3) Paramètres GUI
+
+3.1 APP (Choice Parameter)
+
+Type : Choice Parameter
+
+Exemple :
+
+app1
+app2
+app3
+
+
+---
+
+3.2 ENV (Choice Parameter)
+
+Type : Choice Parameter
+
+recette
+preprod
+prod
+
+
+---
+
+3.3 COULEUR (Active Choices Reactive Parameter)
+
+Type : Active Choices Reactive Parameter
+Referenced parameters : APP,ENV
+
+Colle ce script Groovy :
+
+def matrix = [
+  "app1": [
+    "recette": ["blue","green"],
+    "preprod": ["blue"],
+    "prod":   ["blue","green"]
+  ],
+  "app2": [
+    "recette": ["blue"],
+    "preprod": ["blue"],
+    "prod":    ["blue"]
+  ],
+  "app3": [
+    "recette": ["yellow","blue"]
+  ]
+]
+
+return matrix[APP]?.get(ENV) ?: []
+
+
+---
+
+3.4 VERSION (Active Choices Reactive Parameter)
+
+Type : Active Choices Reactive Parameter
+Referenced parameters : APP
+
+Colle ce script Groovy (Artifactory AQL) :
+
+import groovy.json.JsonSlurper
+import java.util.Base64
+
+def app = APP
+
+def repo      = System.getenv("ARTIFACTORY_REPO")
+def baseUrl   = System.getenv("ARTIFACTORY_URL")
+def groupPath = System.getenv("ARTIFACTORY_GROUP_PATH")
+def user      = System.getenv("ARTIFACTORY_USER")
+def token     = System.getenv("ARTIFACTORY_TOKEN")
+
+// Sécurité basique : si pas de variables, on renvoie vide
+if (!repo || !baseUrl || !groupPath || !user || !token) {
+  return []
+}
+
+// Maven layout : <groupPath>/<artifactId>/<version>/...jar
+def aql = """
+items.find({
+  "repo": "${repo}",
+  "path": {"\$match":"${groupPath}/${app}/*"},
+  "name": {"\$match":"${app}-*.jar"}
+}).include("path")
+"""
+
+def url = new URL("${baseUrl}/api/search/aql")
+def conn = url.openConnection()
+conn.setRequestMethod("POST")
+conn.setDoOutput(true)
+
+def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
+conn.setRequestProperty("Authorization", "Basic ${auth}")
+conn.setRequestProperty("Content-Type", "text/plain")
+
+conn.outputStream.withWriter("UTF-8") { it << aql }
+
+def json = new JsonSlurper().parse(conn.inputStream)
+def prefix = "${groupPath}/${app}/"
+
+// Extrait la version depuis le path: groupPath/app/<version>
+def versions = json.results.collect { r ->
+  def p = r.path as String
+  if (p != null && p.startsWith(prefix)) {
+    return p.substring(prefix.length()).split("/")[0]
+  }
+  return null
+}.findAll { it != null }.unique()
+
+return versions.sort().reverse()
+
+⚠️ Ensuite : Manage Jenkins → In-process Script Approval → approuver.
+
+
+---
+
+4) Pipeline (collé dans Jenkins UI)
+
+📍 Dans le job : Pipeline → Definition = Pipeline script
+Colle ce pipeline complet.
+
+✅ Il fait :
+
+validation params
+
+résolution VM via map dans le pipeline
+
+téléchargement JAR depuis Artifactory
+
+scp vers VM
+
+restart service
+
+applique la logique de config “commun → env → couleur” via SPRING_PROFILES_ACTIVE (si ton service l’utilise)
+
+
+pipeline {
+  agent any
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  environment {
+    ART_URL   = "${env.ARTIFACTORY_URL}"
+    ART_REPO  = "${env.ARTIFACTORY_REPO}"
+    ART_GRP   = "${env.ARTIFACTORY_GROUP_PATH}"
+    ART_USER  = "${env.ARTIFACTORY_USER}"
+    ART_TOKEN = "${env.ARTIFACTORY_TOKEN}"
+    DEPLOY_USR = "${env.DEPLOY_USER ?: 'deploy'}"
+  }
+
+  stages {
+
+    stage("Validate") {
+      steps {
+        script {
+          if (!params.APP?.trim())     error("APP is required")
+          if (!params.ENV?.trim())     error("ENV is required")
+          if (!params.COULEUR?.trim()) error("COULEUR is required")
+          if (!params.VERSION?.trim()) error("VERSION is required")
+
+          if (!env.ART_URL || !env.ART_REPO || !env.ART_GRP || !env.ART_USER || !env.ART_TOKEN) {
+            error("Missing Artifactory env vars in Jenkins global properties")
+          }
+        }
+      }
+    }
+
+    stage("Resolve target VM") {
+      steps {
+        script {
+          // ✅ MAP A ADAPTER (APP + ENV + COULEUR -> host/path/service)
+          def targets = [
+            "app1": [
+              "recette": [
+                "blue" : [host:"rec-app1-blue.mycorp",  path:"/opt/app1", service:"app1"],
+                "green": [host:"rec-app1-green.mycorp", path:"/opt/app1", service:"app1"]
+              ],
+              "preprod": [
+                "blue": [host:"preprod-app1-blue.mycorp", path:"/opt/app1", service:"app1"]
+              ],
+              "prod": [
+                "blue" : [host:"prod-app1-blue.mycorp",  path:"/opt/app1", service:"app1"],
+                "green": [host:"prod-app1-green.mycorp", path:"/opt/app1", service:"app1"]
+              ]
+            ],
+            "app2": [
+              "recette": [
+                "blue": [host:"rec-app2-blue.mycorp", path:"/opt/app2", service:"app2"]
+              ],
+              "prod": [
+                "blue": [host:"prod-app2-blue.mycorp", path:"/opt/app2", service:"app2"]
+              ]
+            ]
+          ]
+
+          def cfg = targets[params.APP]?.get(params.ENV)?.get(params.COULEUR)
+          if (cfg == null) {
+            error("No mapping found for APP=${params.APP}, ENV=${params.ENV}, COULEUR=${params.COULEUR}")
+          }
+
+          env.TARGET_HOST = cfg.host
+          env.TARGET_PATH = cfg.path
+          env.SVC_NAME    = cfg.service
+
+          echo "Resolved: host=${env.TARGET_HOST}, path=${env.TARGET_PATH}, service=${env.SVC_NAME}"
+        }
+      }
+    }
+
+    stage("Download artifact") {
+      steps {
+        script {
+          def jarName = "${params.APP}-${params.VERSION}.jar"
+          def jarUrl  = "${env.ART_URL}/${env.ART_REPO}/${env.ART_GRP}/${params.APP}/${params.VERSION}/${jarName}"
+
+          env.JAR_NAME = jarName
+          env.JAR_URL  = jarUrl
+
+          sh """
+            set -euo pipefail
+            rm -f "${JAR_NAME}"
+            curl -fsSL -u "${ART_USER}:${ART_TOKEN}" -o "${JAR_NAME}" "${JAR_URL}"
+            test -s "${JAR_NAME}"
+          """
+        }
+      }
+    }
+
+    stage("Deploy (scp)") {
+      steps {
+        sh """
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} "mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/config"
+
+          # Backup si déjà présent
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} '
+            if [ -f "${TARGET_PATH}/bin/app.jar" ]; then
+              cp "${TARGET_PATH}/bin/app.jar" "${TARGET_PATH}/bin/app.jar.bak.$(date +%Y%m%d%H%M%S)"
+            fi
+          '
+
+          scp -o StrictHostKeyChecking=no "${JAR_NAME}" ${DEPLOY_USR}@${TARGET_HOST}:"${TARGET_PATH}/bin/app.jar"
+        """
+      }
+    }
+
+    stage("Restart service") {
+      steps {
+        // On suppose que le service systemd utilise SPRING_PROFILES_ACTIVE=ENV,COULEUR
+        // Exemple systemd: Environment="SPRING_PROFILES_ACTIVE=recette,blue"
+        sh """
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} "
+            sudo systemctl restart ${SVC_NAME} &&
+            sudo systemctl is-active --quiet ${SVC_NAME}
+          "
+        """
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "DEPLOY DONE: APP=${params.APP} ENV=${params.ENV} COULEUR=${params.COULEUR} VERSION=${params.VERSION} HOST=${env.TARGET_HOST}"
+    }
+  }
+}
+
+
+---
+
+5) Script Approval (si Jenkins bloque)
+
+📍 Manage Jenkins → In-process Script Approval
+Approuve :
+
+JsonSlurper
+
+URL.openConnection
+
+Base64
+
+etc.
+
+
+
+---
+
+6) Test recette
+
+Choisis APP=app1, ENV=recette, COULEUR=blue, VERSION=...
+
+Lance
+
+Vérifie :
+
+jar téléchargé
+
+copié
+
+service redémarré
+
+
+
+
+---
+
+Si tu me donnes :
+
+ton repo Artifactory exact (libs-release-local ?)
+
+ton groupId (chemin)
+
+ton pattern de nom du jar (toujours artifactId-version.jar ?) je te renverrai les scripts AQL + pipeline 100% alignés avec ton Artifactory réel.
