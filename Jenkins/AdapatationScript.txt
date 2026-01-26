@@ -1,0 +1,18 @@
+stage("Restart") {
+  steps {
+    sh """
+      set -euo pipefail
+
+      # Vérifier scripts
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} '
+        test -x "${BIN_DIR}/restart.sh" || (echo "Missing executable restart.sh" && exit 1)
+      '
+
+      # Restart
+      ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} '
+        cd "${BIN_DIR}"
+        ./restart.sh
+      '
+    """
+  }
+}
