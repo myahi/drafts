@@ -1,2 +1,7 @@
  CSVParser parser =
                      new CSVParser(reader, CSVFormat.DEFAULT.withDelimiter(options.getDelimiter())))
+
+CSVParser parser = CSVParser.parse(
+    reader,
+    CSVFormat.DEFAULT.withDelimiter(options.getDelimiter())
+);
