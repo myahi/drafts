@@ -12,3 +12,5 @@ CSVFormat format = CSVFormat.DEFAULT
         .build();
 
 CSVParser parser = CSVParser.parse(reader, format);
+
+The resource type CSVFormat does not implement java.lang.AutoCloseable
