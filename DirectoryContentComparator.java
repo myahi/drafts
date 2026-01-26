@@ -13,19 +13,31 @@ public class DirectoryContentComparator {
 
         Set<String> hashesB = computeDirectoryHashes(dirB);
 
-        for (Path fileA : Files.walk(dirA).filter(Files::isRegularFile).toList()) {
-            String hashA = hashFile(fileA);
-            if (!hashesB.contains(hashA)) {
-                System.out.println("Fichier manquant (contenu unique) : " + fileA);
-            }
-        }
+        Files.walk(dirA)
+                .filter(Files::isRegularFile)
+                .forEach(fileA -> {
+                    try {
+                        String hashA = hashFile(fileA);
+                        if (!hashesB.contains(hashA)) {
+                            System.out.println("Fichier manquant (contenu unique) : " + fileA);
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private static Set<String> computeDirectoryHashes(Path dir) throws Exception {
         Set<String> hashes = new HashSet<>();
-        for (Path file : Files.walk(dir).filter(Files::isRegularFile).toList()) {
-            hashes.add(hashFile(file));
-        }
+        Files.walk(dir)
+                .filter(Files::isRegularFile)
+                .forEach(file -> {
+                    try {
+                        hashes.add(hashFile(file));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
         return hashes;
     }
 
