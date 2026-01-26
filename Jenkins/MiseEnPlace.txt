@@ -1,0 +1,479 @@
+Voici le runbook final (step-by-step) pour ton setup :
+
+1 job Jenkins (Pipeline collé dans l’UI)
+
+GUI Active Choices (APP/ENV/COULEUR + VERSION jar + CONF_REF conf)
+
+2 repos : APP (code) et APP-conf (conf)
+
+1 branche par env dans APP-conf : dev/recette/preprod/prod
+
+empilement Spring : application.properties → application-ENV.properties → application-ENV-COULEUR.properties
+
+chemin conf VM : /serveur_apps/<APP>/config
+
+
+
+---
+
+0) Pré-requis réseau & VM
+
+Réseau
+
+Autoriser Jenkins → VM : TCP/22
+
+Autoriser Jenkins → Artifactory : TCP/443
+
+Autoriser Jenkins → Git : TCP/22 (si URL SSH) ou 443 (si HTTPS)
+
+
+VMs applicatives (Linux)
+
+Créer user deploy
+
+sshd actif
+
+Ajouter la clé publique Jenkins dans : /home/deploy/.ssh/authorized_keys
+
+Autoriser restart service (sudo minimal recommandé), ex sudoers :
+
+deploy ALL=NOPASSWD: /bin/systemctl restart eai-camel-rgv, /bin/systemctl is-active eai-camel-rgv
+
+
+
+
+---
+
+1) Convention Git (repo conf)
+
+Pour une application eai-camel-rgv :
+
+repo code : eai-camel-rgv
+
+repo conf : eai-camel-rgv-conf
+
+
+Branches conf
+
+dev, recette, preprod, prod
+
+
+Contenu attendu dans eai-camel-rgv-conf (même répertoire, comme tu préfères)
+
+Sur la branche recette par ex :
+
+application.properties
+application-recette.properties
+application-recette-blue.properties
+application-recette-green.properties
+
+(Et idem sur les autres branches.)
+
+
+---
+
+2) Jenkins : variables globales (1 seule fois)
+
+📍 Manage Jenkins → System → Global properties → Environment variables
+
+ARTIFACTORY_URL=https://artifactory.mycompany.com/artifactory
+ARTIFACTORY_REPO=libs-release-local
+ARTIFACTORY_GROUP_PATH=com/mycompany/eai
+ARTIFACTORY_USER=jenkins-read
+ARTIFACTORY_TOKEN=XXXXXXXX
+
+GIT_BASE_URL=ssh://git@mon-git.mycorp:7999/PROJ
+GIT_CREDENTIALS_ID=git-ssh-jenkins
+
+DEPLOY_USER=deploy
+
+> GIT_BASE_URL doit permettre de former : ${GIT_BASE_URL}/${APP}-conf.git
+
+
+
+
+---
+
+3) Jenkins : créer le job
+
+📍 New Item → Pipeline
+Cocher : This project is parameterized
+
+
+---
+
+4) GUI : paramètres
+
+4.1 APP (Choice Parameter)
+
+Ex :
+
+eai-camel-rgv
+eai-camel-x
+eai-camel-y
+
+4.2 ENV (Choice Parameter)
+
+dev
+recette
+preprod
+prod
+
+4.3 COULEUR (Active Choices Reactive Parameter)
+
+Type : Active Choices Reactive Parameter
+
+Referenced parameters : APP,ENV
+
+Script Groovy (exemple) :
+
+
+def matrix = [
+  "eai-camel-rgv": [
+    "dev":     ["blue"],
+    "recette": ["blue","green"],
+    "preprod": ["blue"],
+    "prod":    ["blue","green"]
+  ]
+]
+return matrix[APP]?.get(ENV) ?: []
+
+4.4 VERSION (Active Choices Reactive Parameter) — versions JAR depuis Artifactory
+
+Referenced parameters : APP
+
+Script Groovy (AQL Artifactory) :
+
+
+import groovy.json.JsonSlurper
+import java.util.Base64
+
+def app = APP
+def repo      = System.getenv("ARTIFACTORY_REPO")
+def baseUrl   = System.getenv("ARTIFACTORY_URL")
+def groupPath = System.getenv("ARTIFACTORY_GROUP_PATH")
+def user      = System.getenv("ARTIFACTORY_USER")
+def token     = System.getenv("ARTIFACTORY_TOKEN")
+if (!repo || !baseUrl || !groupPath || !user || !token) return []
+
+def aql = """
+items.find({
+  "repo": "${repo}",
+  "path": {"\$match":"${groupPath}/${app}/*"},
+  "name": {"\$match":"${app}-*.jar"}
+}).include("path")
+"""
+
+def conn = new URL("${baseUrl}/api/search/aql").openConnection()
+conn.setRequestMethod("POST")
+conn.setDoOutput(true)
+def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
+conn.setRequestProperty("Authorization", "Basic ${auth}")
+conn.setRequestProperty("Content-Type", "text/plain")
+conn.outputStream.withWriter("UTF-8") { it << aql }
+
+def json = new JsonSlurper().parse(conn.inputStream)
+def prefix = "${groupPath}/${app}/"
+
+def versions = json.results.collect { r ->
+  def p = r.path as String
+  p?.startsWith(prefix) ? p.substring(prefix.length()).split("/")[0] : null
+}.findAll { it != null }.unique()
+
+return versions.sort().reverse()
+
+4.5 CONF_REF (Active Choices Reactive Parameter) — tag conf ou “latest”
+
+But : permettre rollback conf “propre”.
+
+Referenced parameters : APP,ENV
+
+Valeur par défaut : latest
+
+Liste des tags Git : nécessite que git soit installé sur le contrôleur Jenkins et qu’il puisse exécuter git ls-remote.
+
+
+Script Groovy :
+
+def base = System.getenv("GIT_BASE_URL")
+def app = APP
+def env = ENV
+if (!base || !app || !env) return ["latest"]
+
+def repoUrl = "${base}/${app}-conf.git"
+
+// Récupère les tags distants
+def p = new ProcessBuilder("bash","-lc","git ls-remote --tags ${repoUrl} | awk '{print \$2}' | sed 's#refs/tags/##' | sed 's#\\^\\{\\}##'").start()
+def out = p.inputStream.getText("UTF-8")
+p.waitFor()
+
+def tags = out.readLines().findAll { it?.trim() }
+
+// Reco: tags nommés avec l'env (ex: recette-2026.01.27-01)
+// Filtrage optionnel par ENV :
+def filtered = tags.findAll { it.startsWith(env + "-") }
+
+// On renvoie latest + tags filtrés (sinon tous les tags)
+def list = ["latest"]
+list.addAll((filtered ? filtered : tags).unique().sort().reverse())
+return list
+
+> Recommandation tag : recette-YYYY.MM.DD-NN, prod-YYYY.MM.DD-NN, etc.
+
+
+
+✅ Ensuite : Manage Jenkins → In-process Script Approval (si Jenkins le demande), approuver.
+
+4.6 DEPLOY_MODE (Choice Parameter)
+
+Pour livrer jar, conf, ou rollback facilement :
+
+FULL
+CONF_ONLY
+JAR_ONLY
+
+
+---
+
+5) Pipeline (à coller dans Jenkins UI)
+
+📍 Job → Pipeline → Definition : Pipeline script
+Colle ceci (à adapter uniquement sur la map des hosts/services) :
+
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    ART_URL   = "${env.ARTIFACTORY_URL}"
+    ART_REPO  = "${env.ARTIFACTORY_REPO}"
+    ART_GRP   = "${env.ARTIFACTORY_GROUP_PATH}"
+    ART_USER  = "${env.ARTIFACTORY_USER}"
+    ART_TOKEN = "${env.ARTIFACTORY_TOKEN}"
+
+    DEPLOY_USR = "${env.DEPLOY_USER ?: 'deploy'}"
+    GIT_BASE   = "${env.GIT_BASE_URL}"
+    GIT_CREDS  = "${env.GIT_CREDENTIALS_ID}"
+  }
+
+  stages {
+
+    stage("Validate") {
+      steps {
+        script {
+          ["APP","ENV","COULEUR","VERSION","DEPLOY_MODE","CONF_REF"].each { p ->
+            if (!params[p]?.trim()) error("${p} is required")
+          }
+          if (!env.ART_URL || !env.ART_REPO || !env.ART_GRP || !env.ART_USER || !env.ART_TOKEN) {
+            error("Missing Artifactory env vars")
+          }
+          if (!env.GIT_BASE || !env.GIT_CREDS) {
+            error("Missing Git env vars")
+          }
+        }
+      }
+    }
+
+    stage("Resolve target VM") {
+      steps {
+        script {
+          // ✅ A ADAPTER
+          def targets = [
+            "eai-camel-rgv": [
+              "dev": [
+                "blue": [host:"dev-rgv.mycorp", service:"eai-camel-rgv"]
+              ],
+              "recette": [
+                "blue" : [host:"rec-rgv-blue.mycorp",  service:"eai-camel-rgv"],
+                "green": [host:"rec-rgv-green.mycorp", service:"eai-camel-rgv"]
+              ],
+              "preprod": [
+                "blue": [host:"preprod-rgv-blue.mycorp", service:"eai-camel-rgv"]
+              ],
+              "prod": [
+                "blue" : [host:"prod-rgv-blue.mycorp",  service:"eai-camel-rgv"],
+                "green": [host:"prod-rgv-green.mycorp", service:"eai-camel-rgv"]
+              ]
+            ]
+          ]
+
+          def cfg = targets[params.APP]?.get(params.ENV)?.get(params.COULEUR)
+          if (!cfg) error("No mapping for APP=${params.APP}, ENV=${params.ENV}, COULEUR=${params.COULEUR}")
+
+          env.TARGET_HOST = cfg.host
+          env.SVC_NAME    = cfg.service
+
+          env.CONF_DIR = "/serveur_apps/${params.APP}/config"
+          env.BIN_DIR  = "/serveur_apps/${params.APP}/bin"
+
+          echo "Resolved host=${env.TARGET_HOST}, confDir=${env.CONF_DIR}, binDir=${env.BIN_DIR}, service=${env.SVC_NAME}"
+        }
+      }
+    }
+
+    stage("Checkout config repo") {
+      when { expression { params.DEPLOY_MODE in ["FULL","CONF_ONLY"] } }
+      steps {
+        script {
+          def confRepoUrl = "${env.GIT_BASE}/${params.APP}-conf.git"
+
+          dir("conf") {
+            deleteDir()
+            def ref = params.CONF_REF?.trim()
+            if (ref == "latest") {
+              // Branche = ENV
+              checkout([
+                $class: 'GitSCM',
+                userRemoteConfigs: [[url: confRepoUrl, credentialsId: env.GIT_CREDS]],
+                branches: [[name: "*/${params.ENV}"]]
+              ])
+            } else {
+              // Tag explicite
+              checkout([
+                $class: 'GitSCM',
+                userRemoteConfigs: [[url: confRepoUrl, credentialsId: env.GIT_CREDS]],
+                branches: [[name: "refs/tags/${ref}"]]
+              ])
+            }
+          }
+
+          // Vérifier les 3 couches (commune/env/couleur)
+          sh """
+            set -euo pipefail
+            test -f conf/application.properties
+            test -f conf/application-${ENV}.properties
+            test -f conf/application-${ENV}-${COULEUR}.properties
+          """
+        }
+      }
+    }
+
+    stage("Download JAR") {
+      when { expression { params.DEPLOY_MODE in ["FULL","JAR_ONLY"] } }
+      steps {
+        script {
+          def jarName = "${params.APP}-${params.VERSION}.jar"
+          def jarUrl  = "${env.ART_URL}/${env.ART_REPO}/${env.ART_GRP}/${params.APP}/${params.VERSION}/${jarName}"
+          env.JAR_NAME = jarName
+
+          sh """
+            set -euo pipefail
+            rm -f "${jarName}"
+            curl -fsSL -u "${ART_USER}:${ART_TOKEN}" -o "${jarName}" "${jarUrl}"
+            test -s "${jarName}"
+          """
+        }
+      }
+    }
+
+    stage("Deploy CONF") {
+      when { expression { params.DEPLOY_MODE in ["FULL","CONF_ONLY"] } }
+      steps {
+        sh """
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} "mkdir -p '${CONF_DIR}'"
+
+          scp -o StrictHostKeyChecking=no conf/application.properties \
+              ${DEPLOY_USR}@${TARGET_HOST}:"${CONF_DIR}/application.properties"
+
+          scp -o StrictHostKeyChecking=no conf/application-${ENV}.properties \
+              ${DEPLOY_USR}@${TARGET_HOST}:"${CONF_DIR}/application-${ENV}.properties"
+
+          scp -o StrictHostKeyChecking=no conf/application-${ENV}-${COULEUR}.properties \
+              ${DEPLOY_USR}@${TARGET_HOST}:"${CONF_DIR}/application-${ENV}-${COULEUR}.properties"
+        """
+      }
+    }
+
+    stage("Deploy JAR") {
+      when { expression { params.DEPLOY_MODE in ["FULL","JAR_ONLY"] } }
+      steps {
+        sh """
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} "mkdir -p '${BIN_DIR}'"
+
+          # backup simple
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} '
+            if [ -f "'"${BIN_DIR}"'/app.jar" ]; then
+              cp "'"${BIN_DIR}"'/app.jar" "'"${BIN_DIR}"'/app.jar.bak.$(date +%Y%m%d%H%M%S)"
+            fi
+          '
+
+          scp -o StrictHostKeyChecking=no "${JAR_NAME}" \
+              ${DEPLOY_USR}@${TARGET_HOST}:"${BIN_DIR}/app.jar"
+        """
+      }
+    }
+
+    stage("Restart service") {
+      steps {
+        sh """
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USR}@${TARGET_HOST} "
+            sudo systemctl restart ${SVC_NAME} &&
+            sudo systemctl is-active --quiet ${SVC_NAME}
+          "
+        """
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "DONE: APP=${params.APP} ENV=${params.ENV} COULEUR=${params.COULEUR} VERSION=${params.VERSION} CONF_REF=${params.CONF_REF} MODE=${params.DEPLOY_MODE} HOST=${env.TARGET_HOST}"
+    }
+  }
+}
+
+
+---
+
+6) Côté service systemd (pour que Spring lise la conf)
+
+Assure-toi que l’appli charge bien /serveur_apps/<APP>/config :
+
+Dans l’unité systemd, ajoute par exemple :
+
+Environment="SPRING_CONFIG_ADDITIONAL_LOCATION=/serveur_apps/eai-camel-rgv/config/"
+
+✅ Spring appliquera automatiquement l’empilement standard :
+
+application.properties
+
+application-recette.properties
+
+application-recette-blue.properties (surcharge finale)
+
+
+
+---
+
+7) Rollback (simple)
+
+Rollback = rejouer le job en choisissant :
+
+VERSION jar précédente (depuis Artifactory)
+
+CONF_REF = tag précédent (ou latest si tu as revert la branche)
+
+DEPLOY_MODE selon besoin (FULL / CONF_ONLY / JAR_ONLY)
+
+
+
+---
+
+8) Checklist de validation (recette)
+
+CONF_ONLY : la conf se copie + restart OK
+
+JAR_ONLY : jar se copie + restart OK
+
+FULL : les deux + restart OK
+
+rollback : tag N-1 + version N-1 OK
+
+
+
+---
+
+Si tu me confirmes juste le format de tes tags (ex: recette-2026.01.27-01), je peux aussi te donner une version du script CONF_REF qui filtre uniquement les tags de l’ENV proprement (sans tomber sur des tags globaux).
