@@ -1,3 +1,7 @@
+Failed to bind properties under 'spring.datasource.password' to java.lang.String:
+
+    Reason: org.springframework.boot.context.properties.bind.BindException: Failed to bind properties under 'spring.datasource.password' to java.lang.String
+
 Parfait 👍
 Bonne séquence : dépendances → config → chiffrement → déploiement.
 
