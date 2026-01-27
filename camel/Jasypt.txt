@@ -1,5 +1,7 @@
 management.server.ssl.key-store-password
 
+management.server.ssl.key-store-password=ENC(XXX)
+
 Failed to bind properties under 'spring.datasource.password' to java.lang.String:
 
     Reason: org.springframework.boot.context.properties.bind.BindException: Failed to bind properties under 'spring.datasource.password' to java.lang.String
