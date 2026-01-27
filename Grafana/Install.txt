@@ -1,0 +1,251 @@
+Yes 👍
+Voici la checklist complète Prometheus + HTTPS natif + Grafana, de A à Z sur RHEL 9, sans Nginx, avec auth uniquement dans Grafana.
+
+Je te la donne dans l’ordre logique, prête à dérouler.
+
+
+---
+
+✅ Checklist complète — Prometheus + HTTPS natif + Grafana (RHEL 9)
+
+
+---
+
+🔵 PARTIE 1 — PROMETHEUS (HTTPS NATIF)
+
+(Identique à ce qu’on a validé, je la remets pour continuité)
+
+1️⃣ Pré-requis
+
+sudo dnf update -y
+
+
+---
+
+2️⃣ Utilisateur Prometheus
+
+sudo useradd --no-create-home --shell /sbin/nologin prometheus
+
+
+---
+
+3️⃣ Répertoires
+
+sudo mkdir -p /etc/prometheus /var/lib/prometheus /etc/prometheus/tls
+sudo chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus
+
+
+---
+
+4️⃣ Télécharger Prometheus
+
+cd /tmp
+curl -LO https://github.com/prometheus/prometheus/releases/latest/download/prometheus-linux-amd64.tar.gz
+tar xvf prometheus-linux-amd64.tar.gz
+cd prometheus-linux-amd64
+
+
+---
+
+5️⃣ Installer binaires
+
+sudo cp prometheus promtool /usr/local/bin/
+sudo chown prometheus:prometheus /usr/local/bin/prometheus /usr/local/bin/promtool
+
+
+---
+
+6️⃣ Config Prometheus
+
+sudo cp prometheus.yml /etc/prometheus/
+sudo cp -r consoles console_libraries /etc/prometheus/
+sudo chown -R prometheus:prometheus /etc/prometheus
+
+/etc/prometheus/prometheus.yml
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+promtool check config /etc/prometheus/prometheus.yml
+
+
+---
+
+7️⃣ HTTPS natif Prometheus
+
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/prometheus/tls/prometheus.key \
+  -out /etc/prometheus/tls/prometheus.crt
+
+sudo chmod 600 /etc/prometheus/tls/prometheus.key
+sudo chown -R prometheus:prometheus /etc/prometheus/tls
+
+
+---
+
+8️⃣ web.yml
+
+sudo vi /etc/prometheus/web.yml
+
+tls_server_config:
+  cert_file: /etc/prometheus/tls/prometheus.crt
+  key_file: /etc/prometheus/tls/prometheus.key
+
+sudo chown prometheus:prometheus /etc/prometheus/web.yml
+sudo chmod 600 /etc/prometheus/web.yml
+
+
+---
+
+9️⃣ Service systemd Prometheus
+
+sudo vi /etc/systemd/system/prometheus.service
+
+[Service]
+User=prometheus
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/prometheus \
+  --web.config.file=/etc/prometheus/web.yml
+
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl restart prometheus
+
+
+---
+
+🔥 10️⃣ Firewall Prometheus
+
+👉 Autoriser uniquement Grafana
+
+sudo firewall-cmd --add-rich-rule='rule family="ipv4" source address="IP_GRAFANA" port port="9090" protocol="tcp" accept' --permanent
+sudo firewall-cmd --reload
+
+
+---
+
+🟢 PARTIE 2 — GRAFANA
+
+
+---
+
+1️⃣ Installer Grafana (repo officiel)
+
+sudo tee /etc/yum.repos.d/grafana.repo <<'EOF'
+[grafana]
+name=Grafana
+baseurl=https://rpm.grafana.com
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+EOF
+
+sudo dnf install -y grafana
+
+
+---
+
+2️⃣ Démarrer Grafana
+
+sudo systemctl daemon-reload
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+sudo systemctl status grafana-server
+
+
+---
+
+3️⃣ Firewall Grafana
+
+sudo firewall-cmd --add-port=3000/tcp --permanent
+sudo firewall-cmd --reload
+
+
+---
+
+4️⃣ Accès initial Grafana
+
+Navigateur :
+
+http://<serveur-grafana>:3000
+
+Login par défaut :
+
+admin / admin
+
+➡️ changement de mot de passe obligatoire
+
+
+---
+
+5️⃣ Ajouter Prometheus comme datasource
+
+Grafana → Connections → Data sources → Add data source → Prometheus
+
+URL
+
+
+https://<serveur-prometheus>:9090
+
+TLS
+
+☑ Skip TLS verify (cert auto-signé)
+
+ou importer le CA interne
+
+
+
+👉 Save & Test → OK
+
+
+---
+
+6️⃣ Dashboard de test
+
+Import rapide :
+
+Dashboard ID : 1860 (Node Exporter Full)
+
+Ou test simple :
+
+
+up
+
+
+---
+
+🔐 Bonnes pratiques finales
+
+✔ Prometheus HTTPS natif
+✔ Prometheus non exposé publiquement
+✔ Auth centralisée Grafana
+✔ Firewall restrictif
+✔ Architecture simple
+
+
+---
+
+➕ Prochaines étapes possibles
+
+Node Exporter
+
+HTTPS Grafana
+
+LDAP / OAuth / Keycloak
+
+mTLS Grafana ↔ Prometheus
+
+Déploiement Ansible
+
+
+Si tu veux, dis-moi : 👉 Grafana et Prometheus sur la même VM ou séparées ?
+Je t’adapte la conf réseau / sécurité au poil 🧠💡
