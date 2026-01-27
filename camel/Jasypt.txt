@@ -1,0 +1,113 @@
+Parfait 👍
+Bonne séquence : dépendances → config → chiffrement → déploiement.
+
+Voici la liste minimale et propre des dépendances Maven à importer pour Spring Boot + Camel + Jasypt, sans surplus.
+
+
+---
+
+✅ Dépendances Maven à ajouter
+
+🔐 1️⃣ Jasypt (obligatoire pour le chiffrement)
+
+<dependency>
+  <groupId>com.github.ulisesbocchio</groupId>
+  <artifactId>jasypt-spring-boot-starter</artifactId>
+  <version>3.0.5</version>
+</dependency>
+
+
+---
+
+🐪 2️⃣ Camel Spring Boot (selon ton projet)
+
+(exemples usuels)
+
+<dependency>
+  <groupId>org.apache.camel.springboot</groupId>
+  <artifactId>camel-spring-boot-starter</artifactId>
+</dependency>
+
+Ajoute ensuite les starters Camel dont tu as besoin (HTTP, JMS, FIX, etc.).
+
+
+---
+
+🌱 3️⃣ Spring Boot Actuator (optionnel mais courant)
+
+(utile si tu as déjà Prometheus / monitoring)
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+
+---
+
+🔎 Exemple de pom.xml minimal (extrait)
+
+<dependencies>
+
+  <!-- Spring Boot -->
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+  </dependency>
+
+  <!-- Camel -->
+  <dependency>
+    <groupId>org.apache.camel.springboot</groupId>
+    <artifactId>camel-spring-boot-starter</artifactId>
+  </dependency>
+
+  <!-- Jasypt -->
+  <dependency>
+    <groupId>com.github.ulisesbocchio</groupId>
+    <artifactId>jasypt-spring-boot-starter</artifactId>
+    <version>3.0.5</version>
+  </dependency>
+
+</dependencies>
+
+👉 Pas besoin de configuration Java supplémentaire pour Jasypt.
+
+
+---
+
+⚠️ Points d’attention
+
+Si tu es en Spring Boot 3.x :
+
+Java 17 minimum
+
+Jasypt 3.0.5 est OK
+
+
+Si tu es en Spring Boot 2.x :
+
+Java 8+
+
+même dépendance OK
+
+
+
+
+---
+
+🧪 Étape suivante (quand tu veux)
+
+Une fois les dépendances importées, la prochaine étape logique est :
+
+👉 Configurer application.properties / application.yml
+👉 Chiffrer un premier mot de passe de test
+👉 Démarrer l’app avec JASYPT_ENCRYPTOR_PASSWORD
+
+Quand tu as fini l’import Maven, dis-moi :
+
+ta version Spring Boot
+
+ta version Camel
+
+
+Je te donnerai la config exacte adaptée à ton stack (copier-coller).
