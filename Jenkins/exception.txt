@@ -1,3 +1,6 @@
+mvn deploy \
+  -DaltDeploymentRepository=ArtifactoryEaiMavenRepository::default::https://ARTIFACTORY_HOST/artifactory/TON_REPO
+
 <servers>
 	<server>
 		<id>ArtifactoryEaiMavenRepository</id>		
