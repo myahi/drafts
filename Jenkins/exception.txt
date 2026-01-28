@@ -1,1 +1,2 @@
+/api/v4/projects/bfi-mar-tpma%2Feai-marches
 java.io.IOException: Server returned HTTP response code: 422 for URL: https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/api/search/aql
