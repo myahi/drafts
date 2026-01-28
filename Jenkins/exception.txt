@@ -1,1 +1,1 @@
-No such property: APP for class: groovy.lang.Binding
+java.io.IOException: Server returned HTTP response code: 422 for URL: https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/api/search/aql
