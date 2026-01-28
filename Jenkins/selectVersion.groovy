@@ -5,9 +5,8 @@ import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
 def baseUrl = "https://gitlab.pop.sf.intra.laposte.fr"
-def projectPath = "bfi-mar-tpma/eai-marches/eai-camel-rgv"
-def app = "eai-camel-rgv"
 def CRED_ID = "usr_gitlab_eai"
+def searchTerm = "eai-camel-rgv"   // tu peux aussi tester "eai-marches"
 
 def creds = CredentialsProvider.lookupCredentials(
   StandardUsernamePasswordCredentials,
@@ -17,7 +16,6 @@ def creds = CredentialsProvider.lookupCredentials(
 ).find { it.id == CRED_ID }
 
 if (!creds) return ["(credential not found)"]
-
 def token = creds.password?.plainText
 if (!token) return ["(empty token)"]
 
@@ -30,44 +28,24 @@ def apiGet = { String path ->
   conn.setRequestProperty("Authorization", "Bearer ${token}")
   conn.setRequestProperty("Accept", "application/json")
   conn.connect()
-
   int code = conn.responseCode
-  if (code >= 200 && code < 300) {
-    return slurper.parse(conn.inputStream)
-  }
+  if (code >= 200 && code < 300) return slurper.parse(conn.inputStream)
   def err = conn.errorStream ? conn.errorStream.getText("UTF-8") : ""
   return [__code: code, __err: err]
 }
 
-// 1) Test auth simple
-def ver = apiGet("/api/v4/version")
-if (ver.__code) {
-  return ["(AUTH FAIL ${ver.__code})"]
+def q = URLEncoder.encode(searchTerm, "UTF-8")
+def results = apiGet("/api/v4/projects?search=${q}&simple=true&per_page=50")
+
+if (results instanceof Map && results.__code) {
+  return ["(SEARCH FAIL ${results.__code})"]
 }
 
-// 2) Récupération projet
-def encodedPath = URLEncoder.encode(projectPath, "UTF-8")
-def project = apiGet("/api/v4/projects/${encodedPath}")
-if (project.__code) {
-  return ["(PROJECT FAIL ${project.__code})"]
-}
-def projectId = project.id
-
-// 3) Liste packages Maven
-def pkgs = apiGet("/api/v4/projects/${projectId}/packages?package_type=maven&per_page=5")
-if (pkgs.__code) {
-  return ["(PACKAGES FAIL ${pkgs.__code})"]
+if (!(results instanceof List) || results.isEmpty()) {
+  return ["(no visible projects matching '${searchTerm}' for this token)"]
 }
 
-if (!(pkgs instanceof List) || pkgs.isEmpty()) {
-  return ["(OK auth/project — no Maven packages)"]
-}
-
-// 4) Versions
-def versions = pkgs.findAll { it.name == app && it.version }
-                  .collect { it.version }
-                  .unique()
-                  .sort()
-                  .reverse()
-
-return versions ?: ["(OK auth/project — no versions for ${app})"]
+// Affiche ce que le token “voit”
+return results.take(20).collect { r ->
+  "${r.path_with_namespace}  (id=${r.id})"
+} 
