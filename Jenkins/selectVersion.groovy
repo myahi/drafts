@@ -25,13 +25,20 @@ def apiGet = { String path ->
   conn.connect()
   int code = conn.responseCode
   if (code >= 200 && code < 300) return slurper.parse(conn.inputStream)
-  return [__code: code]
+  def err = conn.errorStream ? conn.errorStream.getText("UTF-8") : ""
+  return [__code: code, __err: err]
 }
 
-// projets dont le user est membre
-def projects = apiGet("/api/v4/projects?membership=true&simple=true&per_page=20")
-if (projects.__code) return ["(FAIL ${projects.__code})"]
+def projects = apiGet("/api/v4/projects?membership=true&per_page=20") // <-- sans simple=true
+if (projects instanceof Map && projects.__code) return ["(FAIL ${projects.__code}) ${projects.__err?.take(120)}"]
+if (!(projects instanceof List) || projects.isEmpty()) return ["(no projects)"]
 
-if (!(projects instanceof List) || projects.isEmpty()) return ["(no membership projects for this token)"]
-
-return projects.collect { it.path_with_namespace as String }
+// Affiche des champs robustes
+return projects.take(20).collect { p ->
+  def id = p?.id
+  def name = p?.name
+  def path = p?.path
+  def pwn = p?.path_with_namespace
+  def web = p?.web_url
+  "${id} | ${pwn ?: '(no pwn)'} | ${path ?: '(no path)'} | ${name ?: '(no name)'} | ${web ?: '(no web_url)'}"
+}
