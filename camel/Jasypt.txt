@@ -1,3 +1,12 @@
+management.server.port=8443
+management.server.ssl.enabled=true
+management.server.ssl.bundle=mgmt
+
+spring.ssl.bundle.jks.mgmt.keystore.location=file:../config/sdv4eai02.f1nom0a.local.p12
+spring.ssl.bundle.jks.mgmt.keystore.type=PKCS12
+spring.ssl.bundle.jks.mgmt.keystore.password=ENC(XXX)
+spring.ssl.bundle.jks.mgmt.key.password=ENC(XXX)
+
 export JASYPT_ENCRYPTOR_PASSWORD='Eai_Dev_C@mel'
 
 Caused by: java.lang.IllegalStateException: Could not load store from '../config/sdv4eai02.f1nom0a.local.p12'
