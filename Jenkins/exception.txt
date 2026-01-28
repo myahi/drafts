@@ -1,1 +1,4 @@
+mvn deploy \
+  -DaltDeploymentRepository=snapshots::default::https://TON_REPO/repository/maven-snapshots/
+
 [ERROR] Failed to execute goal org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy (default-deploy) on project eai-camel-parent: Deployment failed: repository element was not specified in the POM inside distributionManagement element or in -DaltDeploymentRepository=id::layout::url parameter
