@@ -6,7 +6,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 
 // === Paramètres (idéalement APP et PROJECT_PATH viennent de la GUI) ===
 def app = "eai-camel-rgv"  // ou: (binding.variables.get('APP') ?: '').trim()
-def baseUrl = (binding.variables.get('EAI_ARTIFACTORY_URL') ?: '').trim() // renomme si possible en GITLAB_URL
+def baseUrl = "https://gitlab.pop.sf.intra.laposte.fr/"
 def projectPath = (binding.variables.get('PROJECT_PATH') ?: 'bfi-mar-tpma/eai-marches').trim()
 
 def CRED_ID = "usr_gitlab_eai"   // Jenkins credential (username/password) contenant le token en "password"
