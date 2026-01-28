@@ -1,3 +1,5 @@
+export JASYPT_ENCRYPTOR_PASSWORD='Eai_Dev_C@mel'
+
 Caused by: java.lang.IllegalStateException: Could not load store from '../config/sdv4eai02.f1nom0a.local.p12'
 	at org.springframework.boot.ssl.jks.JksSslStoreBundle.loadKeyStore(JksSslStoreBundle.java:123)
 	at org.springframework.boot.ssl.jks.JksSslStoreBundle.createKeyStore(JksSslStoreBundle.java:89)
