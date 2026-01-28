@@ -1,3 +1,7 @@
+Error outputting keys and certificates
+00BE7D34607F0000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:355:Global default library context, Algorithm (RC2-40-CBC : 0), Properties ()
+
+
 openssl pkcs12 -in /chemin/absolu/config/sdv4eai02.f1nom0a.local.p12 -nocerts -nodes
 
 ork.boot.ssl.DefaultSslBundleRegistry]: Factory method 'sslBundleRegistry' threw exception with message: Unable to register SSL bundle 'mgmt'
