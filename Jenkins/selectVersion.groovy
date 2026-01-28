@@ -1,19 +1,21 @@
 import groovy.json.JsonSlurper
-import java.util.Base64
+import java.net.URLEncoder
 import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def app      = "eai-camel-rgv"
-def baseUrl  = binding.variables.get('EAI_ARTIFACTORY_URL') ?: ''
-def groupPath = "fr/labanquepostale/marches/eai"
+// === Paramètres (idéalement APP et PROJECT_PATH viennent de la GUI) ===
+def app = "eai-camel-rgv"  // ou: (binding.variables.get('APP') ?: '').trim()
+def baseUrl = (binding.variables.get('EAI_ARTIFACTORY_URL') ?: '').trim() // renomme si possible en GITLAB_URL
+def projectPath = (binding.variables.get('PROJECT_PATH') ?: 'bfi-mar-tpma/eai-marches').trim()
 
-def CRED_ID = "usr_gitlab_eai"              // <= TON ID DE CREDENTIAL
+def CRED_ID = "usr_gitlab_eai"   // Jenkins credential (username/password) contenant le token en "password"
 
-if (!app) return ["(missing APP param)"]
+if (!app) return ["(missing APP)"]
+if (!baseUrl) return ["(missing GitLab baseUrl)"]
+if (!projectPath) return ["(missing PROJECT_PATH)"]
 
-if (!baseUrl) return ["(missing baseUrl param)"]
-
+// --- Credentials Jenkins
 def creds = CredentialsProvider.lookupCredentials(
   StandardUsernamePasswordCredentials,
   Jenkins.instance,
@@ -23,35 +25,51 @@ def creds = CredentialsProvider.lookupCredentials(
 
 if (!creds) return ["(credential not found: ${CRED_ID})"]
 
-def user = creds.username
 def token = creds.password?.plainText
-if (!user || !token) return ["(empty credential)"]
+if (!token) return ["(empty token)"]
 
-def aql = """
-items.find({
-  "path": {"\\\$match":"${groupPath}/${app}/*"},
-  "name": {"\\\$match":"${app}-*.jar"}
-}).include("path")
-"""
+def slurper = new JsonSlurper()
 
-def url = new URL("${baseUrl}/api/search/aql")
-def conn = url.openConnection()
-conn.setRequestMethod("POST")
-conn.setDoOutput(true)
+def apiGet = { String path ->
+  def url = new URL("${baseUrl}${path}")
+  def conn = url.openConnection()
+  conn.setRequestProperty("PRIVATE-TOKEN", token)         // GitLab auth
+  conn.setRequestProperty("Accept", "application/json")
+  conn.connect()
+  int code = conn.responseCode
+  if (code >= 200 && code < 300) {
+    return slurper.parse(conn.inputStream)
+  }
+  def err = conn.errorStream ? conn.errorStream.getText("UTF-8") : ""
+  throw new RuntimeException("GitLab API error ${code} on ${path} :: ${err}")
+}
 
-def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
-conn.setRequestProperty("Authorization", "Basic ${auth}")
-conn.setRequestProperty("Content-Type", "text/plain")
+// 1) récupérer l'ID projet depuis son path
+def encodedPath = URLEncoder.encode(projectPath, "UTF-8")
+def project = apiGet("/api/v4/projects/${encodedPath}")
+def projectId = project?.id
+if (!projectId) return ["(project not found: ${projectPath})"]
 
-conn.outputStream.withWriter("UTF-8") { it << aql }
+// 2) lister les packages Maven et extraire les versions pour name == app
+def versions = [] as Set
+int page = 1
+int perPage = 100
 
-def json = new JsonSlurper().parse(conn.inputStream)
-def prefix = "${groupPath}/${app}/"
+while (true) {
+  def pkgs = apiGet("/api/v4/projects/${projectId}/packages?package_type=maven&per_page=${perPage}&page=${page}")
+  if (!(pkgs instanceof List) || pkgs.isEmpty()) break
 
-def versions = (json?.results ?: []).collect { r ->
-  def p = r.path as String
-  if (p && p.startsWith(prefix)) p.substring(prefix.length()).split("/")[0] else null
-}.findAll { it }.unique()
+  pkgs.each { p ->
+    if ((p?.name as String) == app && p?.version) {
+      versions << (p.version as String)
+    }
+  }
 
-// tri simple (alphabétique). Si tu veux semver, je te le fais.
-return versions.sort().reverse()
+  if (pkgs.size() < perPage) break
+  page++
+}
+
+if (versions.isEmpty()) return ["(no versions found for ${app})"]
+
+// tri simple (alphabétique). Si tu veux semver propre, je te l’ajuste.
+return versions.toList().sort().reverse()
