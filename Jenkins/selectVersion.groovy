@@ -1,24 +1,36 @@
 import groovy.json.JsonSlurper
 import java.util.Base64
+import jenkins.model.Jenkins
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def app = APP
+def app      = binding.variables.get('APP') ?: ''
+def baseUrl  = binding.variables.get('EAI_ARTIFACTORY_URL') ?: ''
+def repo     = binding.variables.get('EAI_ARTIFACTORY_REPO') ?: ''
+def groupPath = "fr/labanquepostale/marches/eai"   // <= en / (pas en .)
 
-def baseUrl   = System.getenv("EAI_ARTIFACTORY_URL")
-def groupPath = "fr.labanquepostale.marches.eai"
-def user      = System.getenv("ARTIFACTORY_USER")
-def token     = System.getenv("ARTIFACTORY_TOKEN")
+def CRED_ID = "artifactory-creds-id"              // <= TON ID DE CREDENTIAL
 
-// Sécurité basique : si pas de variables, on renvoie vide
-if (!baseUrl || !groupPath || !user || !token) {
-  return []
-}
+if (!app || !baseUrl || !repo) return ["(missing params)"]
 
-// Maven layout : <groupPath>/<artifactId>/<version>/...jar
+def creds = CredentialsProvider.lookupCredentials(
+  StandardUsernamePasswordCredentials,
+  Jenkins.instance,
+  null,
+  null
+).find { it.id == CRED_ID }
+
+if (!creds) return ["(credential not found: ${CRED_ID})"]
+
+def user = creds.username
+def token = creds.password?.plainText
+if (!user || !token) return ["(empty credential)"]
+
 def aql = """
 items.find({
   "repo": "${repo}",
-  "path": {"\$match":"${groupPath}/${app}/*"},
-  "name": {"\$match":"${app}-*.jar"}
+  "path": {"\\\$match":"${groupPath}/${app}/*"},
+  "name": {"\\\$match":"${app}-*.jar"}
 }).include("path")
 """
 
@@ -36,13 +48,10 @@ conn.outputStream.withWriter("UTF-8") { it << aql }
 def json = new JsonSlurper().parse(conn.inputStream)
 def prefix = "${groupPath}/${app}/"
 
-// Extrait la version depuis le path: groupPath/app/<version>
-def versions = json.results.collect { r ->
+def versions = (json?.results ?: []).collect { r ->
   def p = r.path as String
-  if (p != null && p.startsWith(prefix)) {
-    return p.substring(prefix.length()).split("/")[0]
-  }
-  return null
-}.findAll { it != null }.unique()
+  if (p && p.startsWith(prefix)) p.substring(prefix.length()).split("/")[0] else null
+}.findAll { it }.unique()
 
+// tri simple (alphabétique). Si tu veux semver, je te le fais.
 return versions.sort().reverse()
