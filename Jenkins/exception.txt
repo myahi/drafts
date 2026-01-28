@@ -1,3 +1,5 @@
+java.lang.RuntimeException: GitLab API error 404 on /api/v4/projects/bfi-mar-tpma%2Feai-marches%2Feai-camel-rgv :: {"message":"404 Project Not Found"}
+
 https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/eai-camel-rgv
 
 /api/v4/projects/bfi-mar-tpma%2Feai-marches
