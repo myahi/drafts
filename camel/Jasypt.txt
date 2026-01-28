@@ -1,3 +1,60 @@
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory$DependencyObjectProvider.getIfAvailable(DefaultListableBeanFactory.java:2112)
+        at org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration.servletWebServerFactoryCustomizer(ServletWebServerFactoryAutoConfiguration.java:81)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+        at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:146)
+        ... 41 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.boot.ssl.DefaultSslBundleRegistry]: Factory method 'sslBundleRegistry' threw exception with message: Unable to register SSL bundle 'mgmt'
+        at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:178)
+        at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:644)
+        ... 59 common frames omitted
+Caused by: java.lang.IllegalStateException: Unable to register SSL bundle 'mgmt'
+        at org.springframework.boot.autoconfigure.ssl.SslPropertiesBundleRegistrar.lambda$registerBundles$2(SslPropertiesBundleRegistrar.java:69)
+        at java.base/java.util.LinkedHashMap.forEach(LinkedHashMap.java:721)
+        at org.springframework.boot.autoconfigure.ssl.SslPropertiesBundleRegistrar.registerBundles(SslPropertiesBundleRegistrar.java:58)
+        at org.springframework.boot.autoconfigure.ssl.SslPropertiesBundleRegistrar.registerBundles(SslPropertiesBundleRegistrar.java:53)
+        at org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration.lambda$sslBundleRegistry$0(SslAutoConfiguration.java:59)
+        at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)
+        at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+        at java.base/java.util.stream.SortedOps$RefSortingSink.end(SortedOps.java:395)
+        at java.base/java.util.stream.Sink$ChainedReference.end(Sink.java:258)
+        at java.base/java.util.stream.Sink$ChainedReference.end(Sink.java:258)
+        at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510)
+        at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+        at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)
+        at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)
+        at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+        at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+        at org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration.sslBundleRegistry(SslAutoConfiguration.java:59)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+        at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:146)
+        ... 60 common frames omitted
+Caused by: java.lang.IllegalStateException: Unable to create key store: Could not load store from 'file:../config/sdv4eai02.f1nom0a.local.p12'
+        at org.springframework.boot.ssl.jks.JksSslStoreBundle.createKeyStore(JksSslStoreBundle.java:94)
+        at org.springframework.boot.ssl.jks.JksSslStoreBundle.<init>(JksSslStoreBundle.java:57)
+        at org.springframework.boot.autoconfigure.ssl.PropertiesSslBundle.asSslStoreBundle(PropertiesSslBundle.java:138)
+        at org.springframework.boot.autoconfigure.ssl.PropertiesSslBundle.get(PropertiesSslBundle.java:131)
+        at org.springframework.boot.autoconfigure.ssl.SslPropertiesBundleRegistrar.lambda$registerBundles$0(SslPropertiesBundleRegistrar.java:59)
+        at org.springframework.boot.autoconfigure.ssl.SslPropertiesBundleRegistrar.lambda$registerBundles$2(SslPropertiesBundleRegistrar.java:61)
+        ... 81 common frames omitted
+Caused by: java.lang.IllegalStateException: Could not load store from 'file:../config/sdv4eai02.f1nom0a.local.p12'
+        at org.springframework.boot.ssl.jks.JksSslStoreBundle.loadKeyStore(JksSslStoreBundle.java:123)
+        at org.springframework.boot.ssl.jks.JksSslStoreBundle.createKeyStore(JksSslStoreBundle.java:89)
+        ... 86 common frames omitted
+Caused by: java.io.IOException: keystore password was incorrect
+        at java.base/sun.security.pkcs12.PKCS12KeyStore.engineLoad(PKCS12KeyStore.java:2159)
+        at java.base/sun.security.util.KeyStoreDelegator.engineLoad(KeyStoreDelegator.java:221)
+        at java.base/java.security.KeyStore.load(KeyStore.java:1473)
+        at org.springframework.boot.ssl.jks.JksSslStoreBundle.loadKeyStore(JksSslStoreBundle.java:119)
+        ... 87 common frames omitted
+Caused by: java.security.UnrecoverableKeyException: failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded. Such issues can arise if a bad key is used during decryption.
+
+
 management.server.port=8443
 management.server.ssl.enabled=true
 management.server.ssl.bundle=mgmt
