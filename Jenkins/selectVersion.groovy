@@ -4,14 +4,15 @@ import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def app      = binding.variables.get('APP') ?: ''
+def app      = "eai-camel-rgv"
 def baseUrl  = binding.variables.get('EAI_ARTIFACTORY_URL') ?: ''
-def repo     = binding.variables.get('EAI_ARTIFACTORY_REPO') ?: ''
-def groupPath = "fr/labanquepostale/marches/eai"   // <= en / (pas en .)
+def groupPath = "fr/labanquepostale/marches/eai"
 
-def CRED_ID = "artifactory-creds-id"              // <= TON ID DE CREDENTIAL
+def CRED_ID = "usr_gitlab_eai"              // <= TON ID DE CREDENTIAL
 
-if (!app || !baseUrl || !repo) return ["(missing params)"]
+if (!app) return ["(missing APP param)"]
+
+if (!baseUrl) return ["(missing baseUrl param)"]
 
 def creds = CredentialsProvider.lookupCredentials(
   StandardUsernamePasswordCredentials,
@@ -28,7 +29,6 @@ if (!user || !token) return ["(empty credential)"]
 
 def aql = """
 items.find({
-  "repo": "${repo}",
   "path": {"\\\$match":"${groupPath}/${app}/*"},
   "name": {"\\\$match":"${app}-*.jar"}
 }).include("path")
