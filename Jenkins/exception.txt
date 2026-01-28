@@ -1,8 +1,1 @@
-https://dlu.pop.sf.intra.laposte.fr/
-
-java.lang.RuntimeException: GitLab API error 404 on /api/v4/projects/bfi-mar-tpma%2Feai-marches%2Feai-camel-rgv :: {"message":"404 Project Not Found"}
-
-https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/eai-camel-rgv
-
-/api/v4/projects/bfi-mar-tpma%2Feai-marches
-java.io.IOException: Server returned HTTP response code: 422 for URL: https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/api/search/aql
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy (default-deploy) on project eai-camel-parent: Deployment failed: repository element was not specified in the POM inside distributionManagement element or in -DaltDeploymentRepository=id::layout::url parameter
