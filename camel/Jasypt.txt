@@ -1,3 +1,5 @@
+openssl pkcs12 -in /chemin/absolu/config/sdv4eai02.f1nom0a.local.p12 -nocerts -nodes
+
 ork.boot.ssl.DefaultSslBundleRegistry]: Factory method 'sslBundleRegistry' threw exception with message: Unable to register SSL bundle 'mgmt'
         at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:607)
         at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
