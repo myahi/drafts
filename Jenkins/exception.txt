@@ -1,3 +1,14 @@
+<distributionManagement>
+  <repository>
+    <id>ArtifactoryEaiMavenRepository</id>
+    <url>https://ARTIFACTORY_HOST/artifactory/TON_REPO_RELEASES</url>
+  </repository>
+  <snapshotRepository>
+    <id>ArtifactoryEaiMavenRepository</id>
+    <url>https://ARTIFACTORY_HOST/artifactory/TON_REPO_SNAPSHOTS</url>
+  </snapshotRepository>
+</distributionManagement>
+
 mvn deploy \
   -DaltDeploymentRepository=ArtifactoryEaiMavenRepository::default::https://ARTIFACTORY_HOST/artifactory/TON_REPO
 
