@@ -1,4 +1,47 @@
-mvn deploy \
-  -DaltDeploymentRepository=snapshots::default::https://TON_REPO/repository/maven-snapshots/
-
-[ERROR] Failed to execute goal org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy (default-deploy) on project eai-camel-parent: Deployment failed: repository element was not specified in the POM inside distributionManagement element or in -DaltDeploymentRepository=id::layout::url parameter
+<servers>
+	<server>
+		<id>ArtifactoryEaiMavenRepository</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryGenericLocalSasRepository</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryMavenLocalSasRepository</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryMavenLocalSasPlugins</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryMavenCentralMirror</id>
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryJcenterBintrayPlugins</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryGradlePlugins</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryApachePlugins</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+	<server>
+		<id>ArtifactoryOssPlugins</id>		
+		<username>${eai.build.artifact.username}</username>
+		<password>${eai.build.artifact.password}</password>
+	</server>
+  </servers>
