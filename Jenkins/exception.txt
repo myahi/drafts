@@ -1,22 +1,24 @@
+
+mon zip conf est la https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-rgv-conf/1.0.0-SNAPSHOT/eai-camel-rgv-conf-1.0.0-20260129.080736-1.zip
+
 import groovy.json.JsonSlurper
 import java.util.Base64
 import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def app       = "eai-camel-rgv"
+def app = binding.variables.get('APP')+'-config'
 def groupPath = "fr/labanquepostale/marches/eai"
 
-// ✅ ICI: le repo où tu sais que ça existe
+
 def repos = [
-  "eai-marches-0002775-maven-local-sas"
-  // Ajoute ici un repo release si tu en as un (ex: "...-maven-local")
+  "eai-marches-0002775-maven-local-sas",
+  "https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/"
 ]
 
-def baseUrl = System.getenv("EAI_ARTIFACTORY_URL")
-        ?: "https://dlu.pop.sf.intra.laposte.fr/artifactory"
+def baseUrl = binding.variables.get('EAI_ARTIFACTORY_URL')
 
-def CRED_ID = "usr_gitlab_eai"
+def CRED_ID = "eai-marches-0002775-tech-ci-snapshot-user"
 
 if (!app || !baseUrl || !groupPath) return ["(missing params)"]
 
@@ -45,7 +47,7 @@ def fetchRepo = { String repo ->
 items.find({
   "repo": "${repo}",
   "path": {"${'$'}match":"${groupPath}/${app}/*"},
-  "name": {"${'$'}match":"${app}-*.jar"}
+  "name": {"${'$'}match":"${app}-*.zip"}
 }).include("repo","path","name")
 """
   def url = new URL("${baseUrl}/api/search/aql")
@@ -75,7 +77,7 @@ def results = repos.collectMany { fetchRepo(it) }
 def errors = results.findAll { it instanceof Map && it._error }.collect { it._error }
 if (errors) return errors
 
-// ✅ extraire la version depuis le DOSSIER (ex: 1.0.0-SNAPSHOT)
+
 def prefix = "${groupPath}/${app}/"
 def versions = results.collect { r ->
   def p = r.path as String
