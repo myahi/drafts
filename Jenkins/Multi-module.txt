@@ -1,3 +1,22 @@
+# ----- BIN scripts: sync from local ops repo on target VM -----
+OPS_ROOT="/serveur_apps/eai-camel-ops"
+OPS_BIN="${OPS_ROOT}/${PARENT_APP}/bin"
+
+if [[ -d "$OPS_BIN" ]]; then
+  mkdir -p "$BIN_DIR"
+  cp -f "$OPS_BIN/"*.sh "$BIN_DIR/" 2>/dev/null || true
+  chmod +x "$BIN_DIR/"*.sh 2>/dev/null || true
+
+  # optionnel: exposer la version des scripts si tu as un fichier VERSION
+  if [[ -f "${OPS_ROOT}/${PARENT_APP}/VERSION" ]]; then
+    SCRIPTS_VER="$(cat "${OPS_ROOT}/${PARENT_APP}/VERSION" | tr -d '\r\n')"
+    echo "info.scripts.version=$SCRIPTS_VER" >> "$CONFIG_DIR/deploy-info.properties"
+  fi
+else
+  echo "WARN: OPS bin introuvable: $OPS_BIN (scripts start/stop/restart non mis à jour)"
+fi
+
+
 /*
   Jenkinsfile (final) : mono-module + multi-module
   - Ne redéfinit PAS les parameters (utilise ceux déjà dans l’UI)
