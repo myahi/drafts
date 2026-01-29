@@ -1,3 +1,115 @@
+import groovy.json.JsonSlurper
+import java.util.Base64
+import jenkins.model.Jenkins
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
+
+// ---------- sanitize helpers ----------
+def sanitizeId = { Object v ->
+  def s = (v ?: '').toString()
+
+  // 1) enlever balises HTML éventuelles
+  s = s.replaceAll(/<[^>]*>/, '')
+
+  // 2) si jamais il reste un '<' (cas bizarre), couper
+  int idx = s.indexOf('<')
+  if (idx >= 0) s = s.substring(0, idx)
+
+  // 3) trim + ne garder que chars autorisés (évite casser AQL)
+  s = s.trim().replaceAll(/[^A-Za-z0-9._-]/, '')
+
+  return s
+}
+// -------------------------------------
+
+def appBaseRaw = binding.variables.get('APP')
+def appBase    = sanitizeId(appBaseRaw)
+
+// Ton artefact réel est ...-conf (pas ...-config)
+def artifactId = "${appBase}-conf"
+
+def groupPath = "fr/labanquepostale/marches/eai"
+
+// repo keys uniquement (pas d'URL)
+def repos = [
+  "eai-marches-0002775-maven-local-sas"
+]
+
+def baseUrl = sanitizeId(binding.variables.get('EAI_ARTIFACTORY_URL'))  // ⚠️ ici sanitizeId enlèverait :// ; donc on ne fait pas ça
+baseUrl = (binding.variables.get('EAI_ARTIFACTORY_URL') ?: '').toString().trim()
+
+def CRED_ID = "eai-marches-0002775-tech-ci-snapshot-user"
+
+if (!appBase || !artifactId || !baseUrl) return ["(missing params)"]
+
+if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
+if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
+
+// credentials
+def creds = CredentialsProvider.lookupCredentials(
+  StandardUsernamePasswordCredentials,
+  Jenkins.instance,
+  null,
+  null
+).find { it.id == CRED_ID }
+
+if (!creds) return ["(credential not found: ${CRED_ID})"]
+
+def user  = creds.username
+def token = creds.password?.plainText
+if (!user || !token) return ["(empty credential)"]
+
+def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
+
+def fetchRepo = { String repo ->
+  // AQL: attention à l'échappement de $match dans une GString => \\$match
+  def aql = """
+items.find({
+  "repo": "${repo}",
+  "path": {"\\$match":"${groupPath}/${artifactId}/*"},
+  "name": {"\\$match":"${artifactId}-*.zip"}
+}).include("repo","path","name")
+"""
+  def url = new URL("${baseUrl}/api/search/aql")
+  def conn = (HttpURLConnection) url.openConnection()
+  conn.setRequestMethod("POST")
+  conn.setDoOutput(true)
+  conn.setConnectTimeout(5000)
+  conn.setReadTimeout(15000)
+  conn.setRequestProperty("Authorization", "Basic ${auth}")
+  conn.setRequestProperty("Content-Type", "text/plain; charset=UTF-8")
+  conn.outputStream.withWriter("UTF-8") { it << aql }
+
+  int rc = conn.responseCode
+  def stream = (rc >= 200 && rc < 300) ? conn.inputStream : conn.errorStream
+  def payload = stream ? stream.getText("UTF-8") : ""
+
+  if (rc < 200 || rc >= 300) {
+    return [("(repo=${repo}) HTTP ${rc} ${payload?.take(250) ?: ''}".toString())]
+  }
+
+  def json = new JsonSlurper().parseText(payload)
+  return (json?.results ?: [])
+}
+
+def results = repos.collectMany { fetchRepo(it) }
+
+// erreurs éventuelles (strings)
+def errors = results.findAll { !(it instanceof Map) }.collect { it.toString() }
+
+// items valides
+def items = results.findAll { it instanceof Map && it.path != null && it.name != null }
+if (!items && errors) return errors
+
+def prefix = "${groupPath}/${artifactId}/"
+def versions = items.collect { r ->
+  def p = (r.path as String)
+  if (p.startsWith(prefix)) p.substring(prefix.length()).tokenize('/')[0] else null
+}.findAll { it }.unique()
+
+def out = versions.collect { it.toString() }.sort().reverse()
+return out ?: (errors ?: ["(no versions found)"])
+
 (repo=eai-marches-0002775-maven-local-sas) HTTP 400 Failed to parse query: 
 items.find({
   "repo": "eai-marches-0002775-maven-local-sas",
