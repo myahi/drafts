@@ -4,6 +4,7 @@ import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
+// ===== PARAMÈTRES =====
 def app       = "eai-camel-rgv"
 def groupPath = "fr/labanquepostale/marches/eai"
 def repo      = "libs-release-local"
@@ -12,13 +13,20 @@ def baseUrl = System.getenv("EAI_ARTIFACTORY_URL")
         ?: "https://dlu.pop.sf.intra.laposte.fr/artifactory"
 
 def CRED_ID = "usr_gitlab_eai"
+// ======================
 
-if (!app || !baseUrl) return ["(missing params)"]
+if (!app || !baseUrl || !repo || !groupPath) {
+  return ["(missing params)"]
+}
 
+// Normalisation baseUrl
 baseUrl = baseUrl.trim()
 if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
-if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
+if (!baseUrl.contains("/artifactory")) {
+  baseUrl = baseUrl + "/artifactory"
+}
 
+// Récupération credentials
 def creds = CredentialsProvider.lookupCredentials(
   StandardUsernamePasswordCredentials,
   Jenkins.instance,
@@ -32,15 +40,14 @@ def user  = creds.username
 def token = creds.password?.plainText
 if (!user || !token) return ["(empty credential)"]
 
-// ✅ AQL "canonique" : repo + path + name dans un $and (exigence permissions)
+// ✅ IMPORTANT : Artifactory exige que le résultat AQL contienne repo + path + name
+// ✅ IMPORTANT : ${'$'}match pour éviter que Groovy interprète $match comme une variable
 def aql = """
 items.find({
-  "${'$'}and": [
-    { "repo": "${repo}" },
-    { "path": { "${'$'}match": "${groupPath}/${app}/*" } },
-    { "name": { "${'$'}match": "${app}-*.jar" } }
-  ]
-}).include("path","name")
+  "repo": "${repo}",
+  "path": {"${'$'}match":"${groupPath}/${app}/*"},
+  "name": {"${'$'}match":"${app}-*.jar"}
+}).include("repo","path","name")
 """
 
 def url = new URL("${baseUrl}/api/search/aql")
@@ -66,6 +73,7 @@ if (!(rc >= 200 && rc < 300)) {
 
 def json = new JsonSlurper().parseText(payload)
 
+// Extraction version depuis group/app/<version>
 def prefix = "${groupPath}/${app}/"
 def versions = (json?.results ?: []).collect { r ->
   def p = r.path as String
@@ -73,3 +81,4 @@ def versions = (json?.results ?: []).collect { r ->
 }.findAll { it }.unique()
 
 return versions ? versions.sort().reverse() : ["(no versions found)"]
+```0
