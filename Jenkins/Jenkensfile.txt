@@ -1,3 +1,18 @@
+stage('Deploy on targets') {
+  steps {
+    script {
+      try {
+        sh 'ssh ... "bash /tmp/deploy_remote.sh ..."'
+      } catch (e) {
+        echo "❌ Erreur pendant le déploiement sur ${host}"
+        echo e.toString()
+        throw e   // IMPORTANT : pour marquer le build en FAILURE
+      }
+    }
+  }
+}
+
+
 stage('Resolve & validate') {
   steps {
     script {
