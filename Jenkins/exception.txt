@@ -4,24 +4,20 @@ import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def appBase = (binding.variables.get('APP') ?: '').toString().trim()
-def artifactId = "${appBase}-conf"          // <= IMPORTANT (pas -config)
+def appBase   = (binding.variables.get('APP') ?: '').toString().trim()
+def artifact  = "${appBase}-conf"   // IMPORTANT : -conf
 def groupPath = "fr/labanquepostale/marches/eai"
 
-// Mets ici UNIQUEMENT des repo keys Artifactory (pas d'URL)
+// repo keys uniquement (pas d'URL)
 def repos = [
   "eai-marches-0002775-maven-local-sas"
-  // ajoute un 2e repo key si tu en as un autre, ex:
-  // "libs-snapshot-local"
 ]
 
 def baseUrl = (binding.variables.get('EAI_ARTIFACTORY_URL') ?: '').toString().trim()
-
 def CRED_ID = "eai-marches-0002775-tech-ci-snapshot-user"
 
-if (!artifactId || !baseUrl || !groupPath) return ["(missing params)"]
+if (!artifact || !baseUrl) return ["(missing params)"]
 
-// normalisation baseUrl -> doit finir par /artifactory
 if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
 if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
 
@@ -45,8 +41,8 @@ def fetchRepo = { String repo ->
   def aql = """
 items.find({
   "repo": "${repo}",
-  "path": {"\\\$match":"${groupPath}/${artifactId}/*"},
-  "name": {"\\\$match":"${artifactId}-*.zip"}
+  "path": {"\\\$match":"${groupPath}/${artifact}/*"},
+  "name": {"\\\$match":"${artifact}-*.zip"}
 }).include("repo","path","name")
 """
   def url = new URL("${baseUrl}/api/search/aql")
@@ -64,118 +60,25 @@ items.find({
   def payload = stream ? stream.getText("UTF-8") : ""
 
   if (!(rc >= 200 && rc < 300)) {
-    return [[_error: "(repo=${repo}) HTTP ${rc} ${payload?.take(200) ?: ''}"]]
+    // IMPORTANT: retourner une liste de String, pas une Map
+    return ["(repo=${repo}) HTTP ${rc} ${payload?.take(200) ?: ''}"]
   }
+
   def json = new JsonSlurper().parseText(payload)
   return (json?.results ?: [])
 }
 
 def results = repos.collectMany { fetchRepo(it) }
 
-// erreurs éventuelles
-def errors = results.findAll { it instanceof Map && it._error }.collect { it._error }
-if (errors) return errors
+// Si fetchRepo a renvoyé des erreurs (Strings), results contiendra des Strings
+def errorStrings = results.findAll { it instanceof String } as List
+if (errorStrings) return errorStrings
 
-// versions = dossiers sous .../<artifactId>/<version>/...
-def prefix = "${groupPath}/${artifactId}/"
-def versions = results.collect { r ->
+def prefix = "${groupPath}/${artifact}/"
+def versions = (results ?: []).collect { r ->
   def p = r.path as String
-  if (p?.startsWith(prefix)) {
-    return p.substring(prefix.length()).tokenize('/')[0]
-  }
-  return null
+  if (p && p.startsWith(prefix)) p.substring(prefix.length()).tokenize('/')[0] else null
 }.findAll { it }.unique()
 
-return versions ? versions.sort().reverse() : ["(no versions found)"]
-
-
-
-mon zip conf est la https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-rgv-conf/1.0.0-SNAPSHOT/eai-camel-rgv-conf-1.0.0-20260129.080736-1.zip
-
-import groovy.json.JsonSlurper
-import java.util.Base64
-import jenkins.model.Jenkins
-import com.cloudbees.plugins.credentials.CredentialsProvider
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
-
-def app = binding.variables.get('APP')+'-config'
-def groupPath = "fr/labanquepostale/marches/eai"
-
-
-def repos = [
-  "eai-marches-0002775-maven-local-sas",
-  "https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/"
-]
-
-def baseUrl = binding.variables.get('EAI_ARTIFACTORY_URL')
-
-def CRED_ID = "eai-marches-0002775-tech-ci-snapshot-user"
-
-if (!app || !baseUrl || !groupPath) return ["(missing params)"]
-
-baseUrl = baseUrl.trim()
-if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
-if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
-
-// credentials
-def creds = CredentialsProvider.lookupCredentials(
-  StandardUsernamePasswordCredentials,
-  Jenkins.instance,
-  null,
-  null
-).find { it.id == CRED_ID }
-
-if (!creds) return ["(credential not found: ${CRED_ID})"]
-
-def user  = creds.username
-def token = creds.password?.plainText
-if (!user || !token) return ["(empty credential)"]
-
-def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
-
-def fetchRepo = { String repo ->
-  def aql = """
-items.find({
-  "repo": "${repo}",
-  "path": {"${'$'}match":"${groupPath}/${app}/*"},
-  "name": {"${'$'}match":"${app}-*.zip"}
-}).include("repo","path","name")
-"""
-  def url = new URL("${baseUrl}/api/search/aql")
-  def conn = (HttpURLConnection) url.openConnection()
-  conn.setRequestMethod("POST")
-  conn.setDoOutput(true)
-  conn.setConnectTimeout(5000)
-  conn.setReadTimeout(15000)
-  conn.setRequestProperty("Authorization", "Basic ${auth}")
-  conn.setRequestProperty("Content-Type", "text/plain; charset=UTF-8")
-  conn.outputStream.withWriter("UTF-8") { it << aql }
-
-  int rc = conn.responseCode
-  def stream = (rc >= 200 && rc < 300) ? conn.inputStream : conn.errorStream
-  def payload = stream ? stream.getText("UTF-8") : ""
-
-  if (!(rc >= 200 && rc < 300)) {
-    return [[_error: "(repo=${repo}) HTTP ${rc} ${payload?.take(200) ?: ''}"]]
-  }
-  def json = new JsonSlurper().parseText(payload)
-  return (json?.results ?: [])
-}
-
-def results = repos.collectMany { fetchRepo(it) }
-
-// erreurs éventuelles
-def errors = results.findAll { it instanceof Map && it._error }.collect { it._error }
-if (errors) return errors
-
-
-def prefix = "${groupPath}/${app}/"
-def versions = results.collect { r ->
-  def p = r.path as String
-  if (p?.startsWith(prefix)) {
-    return p.substring(prefix.length()).tokenize('/')[0]
-  }
-  return null
-}.findAll { it }.unique()
-
-return versions ? versions.sort().reverse() : ["(no versions found)"]
+def out = versions.collect { it.toString() }.sort().reverse()
+return out ?: ["(no versions found)"]
