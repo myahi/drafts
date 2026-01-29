@@ -1,1 +1,75 @@
-(Artifactory HTTP 400) For permissions reasons AQL demands the following fields: repo, path and name.
+import groovy.json.JsonSlurper
+import java.util.Base64
+import jenkins.model.Jenkins
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
+
+def app       = "eai-camel-rgv"
+def groupPath = "fr/labanquepostale/marches/eai"
+def repo      = "libs-release-local"
+
+def baseUrl = System.getenv("EAI_ARTIFACTORY_URL")
+        ?: "https://dlu.pop.sf.intra.laposte.fr/artifactory"
+
+def CRED_ID = "usr_gitlab_eai"
+
+if (!app || !baseUrl) return ["(missing params)"]
+
+baseUrl = baseUrl.trim()
+if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
+if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
+
+def creds = CredentialsProvider.lookupCredentials(
+  StandardUsernamePasswordCredentials,
+  Jenkins.instance,
+  null,
+  null
+).find { it.id == CRED_ID }
+
+if (!creds) return ["(credential not found: ${CRED_ID})"]
+
+def user  = creds.username
+def token = creds.password?.plainText
+if (!user || !token) return ["(empty credential)"]
+
+// ✅ AQL "canonique" : repo + path + name dans un $and (exigence permissions)
+def aql = """
+items.find({
+  "${'$'}and": [
+    { "repo": "${repo}" },
+    { "path": { "${'$'}match": "${groupPath}/${app}/*" } },
+    { "name": { "${'$'}match": "${app}-*.jar" } }
+  ]
+}).include("path","name")
+"""
+
+def url = new URL("${baseUrl}/api/search/aql")
+def conn = (HttpURLConnection) url.openConnection()
+conn.setRequestMethod("POST")
+conn.setDoOutput(true)
+conn.setConnectTimeout(5000)
+conn.setReadTimeout(15000)
+
+def auth = Base64.encoder.encodeToString("${user}:${token}".getBytes("UTF-8"))
+conn.setRequestProperty("Authorization", "Basic ${auth}")
+conn.setRequestProperty("Content-Type", "text/plain; charset=UTF-8")
+
+conn.outputStream.withWriter("UTF-8") { it << aql }
+
+int rc = conn.responseCode
+def stream = (rc >= 200 && rc < 300) ? conn.inputStream : conn.errorStream
+def payload = stream ? stream.getText("UTF-8") : ""
+
+if (!(rc >= 200 && rc < 300)) {
+  return ["(Artifactory HTTP ${rc}) ${payload?.take(400) ?: '(no body)'}"]
+}
+
+def json = new JsonSlurper().parseText(payload)
+
+def prefix = "${groupPath}/${app}/"
+def versions = (json?.results ?: []).collect { r ->
+  def p = r.path as String
+  if (p && p.startsWith(prefix)) p.substring(prefix.length()).split("/")[0] else null
+}.findAll { it }.unique()
+
+return versions ? versions.sort().reverse() : ["(no versions found)"]
