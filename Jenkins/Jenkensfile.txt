@@ -1,3 +1,6 @@
+illegal string body character after dollar sign;
+   solution: either escape a literal dollar sign "\$5" or bracket the value expression "${5}"
+
 import groovy.json.JsonSlurper
 import java.util.Base64
 
