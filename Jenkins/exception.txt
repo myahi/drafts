@@ -31,7 +31,3 @@ def aqlPost = { String aql ->
   sh "rm -f ${aqlFile} || true"
   return new JsonSlurper().parseText(body)
 }
-
-
-
-hudson.AbortException: Artifactory AQL HTTP 400: Failed to parse query: https://dlu.pop.sf.intra.laposte.fr/artifactory, it looks like there is syntax error near the following sub-query: https://dlu.pop.sf.intra.laposte.fr/artifactory
