@@ -1,1 +1,3 @@
+STAGE_DIR=\"/tmp/${params.APP}-conf-stage-${'$'}${'$'}\"
+
 STAGE_DIR=\\"/tmp/${params.APP}-conf-stage-$$\\"
