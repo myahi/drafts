@@ -1,0 +1,49 @@
+function execute_ssh {
+	typeset host="$1"
+	typeset failure=${server_failure}
+	[[ "$host" == "${cwb_server}" ]] && failure=${cwb_server_failure}
+ 
+	typeset -a instructions
+	if [[ "$#" -gt 0 ]]; then
+		shift 1
+		instructions=("$@")
+	else
+		log_error "${failure}No instruction specified"
+		return 1
+	fi
+	ssh -q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$(whoami)@${host}" "${instructions[@]}"
+}
+ 
+function execute_ssh_no_quiet {
+	typeset host="$1"
+	typeset failure=${server_failure}
+	[[ "$host" == "${cwb_server}" ]] && failure=${cwb_server_failure}
+ 
+	typeset -a instructions
+	if [[ "$#" -gt 0 ]]; then
+		shift 1
+		instructions=("$@")
+	else
+		log_error "${failure}No instruction specified"
+		return 1
+	fi
+	ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$(whoami)@${host}" "${instructions[@]}"
+}
+ 
+function execute_scp {
+	typeset host="$1"
+	typeset remote_dir="$2"
+ 
+	typeset failure=${server_failure}
+	[[ "$host" == "${cwb_server}" ]] && failure=${cwb_server_failure}
+ 
+	typeset -a files
+	if [[ "$#" -gt 2 ]]; then
+		shift 2
+		files=("$@")
+	else
+		log_error "${failure}No file specified"
+		return 1
+	fi
+	scp -q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 "${files[@]}" "$(whoami)@${host}:${remote_dir}"
+}
