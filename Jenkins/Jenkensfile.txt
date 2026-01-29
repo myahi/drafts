@@ -1,67 +1,20 @@
-def aqlPost = { String aql ->
-  def aqlFile = "aql_${UUID.randomUUID().toString()}.txt"
-  writeFile file: aqlFile, text: aql
-
-  // On récupère body + code HTTP (sur la dernière ligne)
-  def out = sh(
-    returnStdout: true,
-    script: """
-      set +x
-      set -euo pipefail
-      curl -sS -u "${ART_USER}:${ART_PASS}" \\
-        -H "Content-Type: text/plain; charset=UTF-8" \\
-        -H "Accept: application/json" \\
-        -X POST \\
-        --data-binary "@${aqlFile}" \\
-        "${env.ART_URL}/api/search/aql" \\
-        -w "\\n%{http_code}"
-    """
-  ).trim()
-
-  sh "rm -f ${aqlFile} || true"
-
-  def lines = out.readLines()
-  def httpCode = (lines[-1] ?: "0") as Integer
-  def body = (lines.size() > 1) ? lines[0..-2].join("\n") : ""
-
-  if (httpCode < 200 || httpCode >= 300) {
-    error("Artifactory AQL HTTP ${httpCode}: ${body?.take(500) ?: ''}")
-  }
-
-  return new JsonSlurper().parseText(body)
-}
-
-
-
-
-import groovy.json.JsonSlurper
-import java.util.Base64
-import java.nio.charset.StandardCharsets
-
 pipeline {
   agent any
   options { timestamps(); disableConcurrentBuilds() }
 
-  // IMPORTANT: pas de bloc parameters ici -> tu utilises ceux déjà définis dans l'UI Jenkins
+  // IMPORTANT: pas de bloc parameters -> tu utilises ceux déjà définis dans l'UI Jenkins
 
   environment {
-    // Artifactory
     ART_URL  = 'https://dlu.pop.sf.intra.laposte.fr/artifactory'
     ART_CRED = 'eai-marches-0002775-tech-ci-snapshot-user'
 
     GROUP_PATH = 'fr/labanquepostale/marches/eai'
 
-    // Repos Artifactory
     JAR_REPO  = 'eai-marches-0002775-maven-local-sas'
     CONF_REPO = 'eai-marches-0002775-maven-local-sas'
 
-    // Maven artifactId de la conf
-    CONF_ARTIFACT = 'eai-camel-rgv-conf'  // <APP>-conf
+    CONF_ARTIFACT = 'eai-camel-rgv-conf'
 
-    // Convention d'installation
-    APPS_BASE = '/serveur_apps'
-
-    // SSH
     SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
   }
 
@@ -70,7 +23,6 @@ pipeline {
     stage('Resolve & validate') {
       steps {
         script {
-          // Source de vérité: instances autorisées + VMs cibles
           def MATRIX = [
             "eai-camel-rgv": [
               dev:     [ mono: ['sdv4eai02'] ],
@@ -83,14 +35,14 @@ pipeline {
           def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
           def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
 
-          if (needsJar && !params.JAR_VERSION?.trim())   { error("JAR_VERSION requis pour ${params.DEPLOY_MODE}") }
-          if (needsConf && !params.CONF_VERSION?.trim()) { error("CONF_VERSION requis pour ${params.DEPLOY_MODE}") }
+          if (needsJar && !params.JAR_VERSION?.trim())   error("JAR_VERSION requis pour ${params.DEPLOY_MODE}")
+          if (needsConf && !params.CONF_VERSION?.trim()) error("CONF_VERSION requis pour ${params.DEPLOY_MODE}")
 
           env.NEEDS_JAR  = needsJar.toString()
           env.NEEDS_CONF = needsConf.toString()
 
           def envMap = MATRIX[params.APP]?.get(params.ENV)
-          if (!envMap) { error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}") }
+          if (!envMap) error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}")
 
           def allowed = envMap.keySet().toList().sort()
           if (!allowed.contains(params.INSTANCE)) {
@@ -98,12 +50,9 @@ pipeline {
           }
 
           def targets = envMap[params.INSTANCE]
-          if (!targets || targets.isEmpty()) {
-            error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
-          }
+          if (!targets || targets.isEmpty()) error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
 
-          env.TARGET_VMS   = targets.join(',')
-          env.INSTANCE_DIR = "${params.APP}-${params.INSTANCE}"
+          env.TARGET_VMS = targets.join(',')
 
           echo """
 ========== PLAN ==========
@@ -123,394 +72,6 @@ CONF_VERSION : ${params.CONF_VERSION}
     stage('Preflight SSH') {
       steps {
         script {
-          try {
-            def hosts = env.TARGET_VMS.split(',')
-            hosts.each { host ->
-              sh """
-                set -euo pipefail
-                ssh ${env.SSH_OPTS} "${host}" "echo OK: \$(hostname) as \$(whoami)"
-              """
-            }
-          } catch (e) {
-            echo "Erreur pendant le stage Preflight SSH"
-            echo e.toString()
-            throw e
-          }
-        }
-      }
-    }
-
-    stage('Prepare remote deploy script') {
-      steps {
-        script {
-          try {
-            // Script exécuté SUR LA VM CIBLE
-            def scriptText = '''#!/usr/bin/env bash
-set -euo pipefail
-
-APP="$1"
-ENV_NAME="$2"
-INSTANCE="$3"
-MODE="$4"
-JAR_VERSION_UI="${5:-}"
-CONF_VERSION_UI="${6:-}"
-
-APPS_BASE="/serveur_apps"
-APP_DIR="${APPS_BASE}/${APP}-${INSTANCE}"
-BIN_DIR="${APP_DIR}/bin"
-LIB_DIR="${APP_DIR}/lib"
-CONFIG_DIR="${APP_DIR}/config"
-
-COLOR=""
-if [[ "$INSTANCE" != "mono" ]]; then
-  COLOR="$INSTANCE"
-fi
-
-mkdir -p "$BIN_DIR" "$LIB_DIR" "$CONFIG_DIR"
-
-run_script() {
-  local s="$1"
-  if [[ -x "$BIN_DIR/$s" ]]; then
-    if [[ -z "$COLOR" ]]; then
-      "$BIN_DIR/$s" "$ENV_NAME"
-    else
-      "$BIN_DIR/$s" "$ENV_NAME" "$COLOR"
-    fi
-  fi
-}
-
-run_script stop.sh
-
-if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
-  if [[ ! -f /tmp/conf.zip ]]; then
-    echo "ERROR: /tmp/conf.zip absent sur la VM"
-    exit 2
-  fi
-
-  STAGE_DIR="$(mktemp -d "/tmp/${APP}-conf-stage-XXXXXX")"
-  unzip -o "/tmp/conf.zip" -d "$STAGE_DIR"
-
-  rm -rf "$CONFIG_DIR"/*
-  mkdir -p "$CONFIG_DIR"
-
-  cp -f "$STAGE_DIR/application.properties" "$CONFIG_DIR/" 2>/dev/null || true
-  cp -f "$STAGE_DIR/application-${ENV_NAME}.properties" "$CONFIG_DIR/" 2>/dev/null || true
-  if [[ -n "$COLOR" ]]; then
-    cp -f "$STAGE_DIR/application-${ENV_NAME}-${COLOR}.properties" "$CONFIG_DIR/" 2>/dev/null || true
-  fi
-
-  rm -rf "$STAGE_DIR"
-fi
-
-if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "BIN_ONLY" ]]; then
-  if [[ ! -f /tmp/app.jar ]]; then
-    echo "ERROR: /tmp/app.jar absent sur la VM"
-    exit 3
-  fi
-
-  mv -f "/tmp/app.jar" "$LIB_DIR/${APP}.jar"
-fi
-
-DEPLOYED_AT="$(date --iso-8601=seconds)"
-JAR_RESOLVED=""
-[[ -f /tmp/jar_resolved_name.txt ]] && JAR_RESOLVED="$(cat /tmp/jar_resolved_name.txt)"
-
-cat > "$APP_DIR/deployed.txt" <<EOF
-app=$APP
-instance=${APP}-${INSTANCE}
-env=$ENV_NAME
-color=$COLOR
-deployMode=$MODE
-jarVersion=$JAR_VERSION_UI
-jarResolved=$JAR_RESOLVED
-confVersion=$CONF_VERSION_UI
-deployedAt=$DEPLOYED_AT
-EOF
-
-cat > "$CONFIG_DIR/deploy-info.properties" <<EOF
-info.app=$APP
-info.instance=${APP}-${INSTANCE}
-info.env=$ENV_NAME
-info.color=$COLOR
-info.deploy.mode=$MODE
-info.jar.version=$JAR_VERSION_UI
-info.jar.resolved=$JAR_RESOLVED
-info.conf.version=$CONF_VERSION_UI
-info.deployed.at=$DEPLOYED_AT
-EOF
-
-if [[ -x "$BIN_DIR/restart.sh" ]]; then
-  run_script restart.sh
-else
-  run_script start.sh
-fi
-'''
-            writeFile file: 'deploy_remote.sh', text: scriptText
-            sh 'chmod +x deploy_remote.sh'
-          } catch (e) {
-            echo "Erreur pendant le stage Prepare remote deploy script"
-            echo e.toString()
-            throw e
-          }
-        }
-      }
-    }
-
-    stage('Download artifacts (AQL for SNAPSHOT)') {
-      steps {
-        script {
-          try {
-            // --- AQL POST robuste (corrige Stream closed) ---
-            def aqlPost = { String baseUrl, String user, String pass, String aql ->
-              def url = new URL("${baseUrl}/api/search/aql")
-              def conn = (HttpURLConnection) url.openConnection()
-
-              conn.setRequestMethod("POST")
-              conn.setDoOutput(true)
-              conn.setUseCaches(false)
-              conn.setConnectTimeout(5000)
-              conn.setReadTimeout(15000)
-
-              def auth = Base64.encoder.encodeToString("${user}:${pass}".getBytes(StandardCharsets.UTF_8))
-              conn.setRequestProperty("Authorization", "Basic ${auth}")
-              conn.setRequestProperty("Content-Type", "text/plain; charset=UTF-8")
-              conn.setRequestProperty("Accept", "application/json")
-
-              byte[] payload = aql.getBytes(StandardCharsets.UTF_8)
-              conn.setFixedLengthStreamingMode(payload.length)
-
-              conn.getOutputStream().withCloseable { os ->
-                os.write(payload)
-                os.flush()
-              }
-
-              int rc = conn.getResponseCode()
-              def stream = (rc >= 200 && rc < 300) ? conn.getInputStream() : conn.getErrorStream()
-              def body = stream ? stream.getText("UTF-8") : ""
-
-              if (rc < 200 || rc >= 300) {
-                error("Artifactory AQL HTTP ${rc}: ${body?.take(500) ?: ''}")
-              }
-              return new JsonSlurper().parseText(body)
-            }
-
-            def resolveLatestSnapshotPath = { String baseUrl, String user, String pass, String repo, String groupPath, String artifactId, String version, String ext ->
-              def baseVer = version.replaceAll(/-SNAPSHOT$/, "")
-              def aql = """
-items.find({
-  "repo": "${repo}",
-  "path": {"${'$'}match":"${groupPath}/${artifactId}/${version}"},
-  "name": {"${'$'}match":"${artifactId}-${baseVer}-*.${ext}"}
-}).include("repo","path","name","created").sort({"${'$'}desc":["created"]}).limit(1)
-"""
-              def json = aqlPost(baseUrl, user, pass, aql)
-              def r = (json?.results ?: []).find { it?.path && it?.name }
-              if (!r) return null
-              return "${r.path}/${r.name}"
-            }
-
-            withCredentials([usernamePassword(credentialsId: env.ART_CRED, usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
-              sh 'mkdir -p artifacts && rm -f artifacts/* || true'
-
-              if (env.NEEDS_CONF == "true") {
-                String confUrl
-                String confResolvedName
-
-                if (params.CONF_VERSION?.endsWith("-SNAPSHOT")) {
-                  def confPath = resolveLatestSnapshotPath(env.ART_URL, ART_USER, ART_PASS, env.CONF_REPO, env.GROUP_PATH, env.CONF_ARTIFACT, params.CONF_VERSION, "zip")
-                  if (!confPath) error("Aucun conf zip SNAPSHOT trouvé pour ${env.CONF_ARTIFACT} VERSION=${params.CONF_VERSION}")
-                  confResolvedName = confPath.tokenize('/').last()
-                  confUrl = "${env.ART_URL}/${env.CONF_REPO}/${confPath}"
-                } else {
-                  confResolvedName = "${env.CONF_ARTIFACT}-${params.CONF_VERSION}.zip"
-                  confUrl = "${env.ART_URL}/${env.CONF_REPO}/${env.GROUP_PATH}/${env.CONF_ARTIFACT}/${params.CONF_VERSION}/${confResolvedName}"
-                }
-
-                writeFile file: 'artifacts/conf_resolved_name.txt', text: confResolvedName + "\n"
-
-                sh """
-                  set -euo pipefail
-                  echo "Downloading conf: ${confUrl}"
-                  curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/conf.zip" "${confUrl}"
-                """
-              }
-
-              if (env.NEEDS_JAR == "true") {
-                String jarUrl
-                String jarResolvedName
-
-                if (params.JAR_VERSION?.endsWith("-SNAPSHOT")) {
-                  def jarPath = resolveLatestSnapshotPath(env.ART_URL, ART_USER, ART_PASS, env.JAR_REPO, env.GROUP_PATH, params.APP, params.JAR_VERSION, "jar")
-                  if (!jarPath) error("Aucun jar SNAPSHOT trouvé pour ${params.APP} VERSION=${params.JAR_VERSION}")
-                  jarResolvedName = jarPath.tokenize('/').last()
-                  jarUrl = "${env.ART_URL}/${env.JAR_REPO}/${jarPath}"
-                } else {
-                  jarResolvedName = "${params.APP}-${params.JAR_VERSION}.jar"
-                  jarUrl = "${env.ART_URL}/${env.JAR_REPO}/${env.GROUP_PATH}/${params.APP}/${params.JAR_VERSION}/${jarResolvedName}"
-                }
-
-                writeFile file: 'artifacts/jar_resolved_name.txt', text: jarResolvedName + "\n"
-
-                sh """
-                  set -euo pipefail
-                  echo "Downloading jar: ${jarUrl}"
-                  curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/app.jar" "${jarUrl}"
-                """
-              }
-
-              sh 'ls -lh artifacts || true'
-            }
-          } catch (e) {
-            echo "Erreur pendant le stage: Download artifacts (AQL for SNAPSHOT)"
-            echo e.toString()
-            throw e
-          }
-        }
-      }
-    }
-
-    stage('Copy to targets (/tmp)') {
-      steps {
-        script {
-          def hosts = env.TARGET_VMS.split(',')
-          hosts.each { host ->
-            sh """
-              set -euo pipefail
-              echo "=== Copy to ${host} ==="
-              scp ${env.SSH_OPTS} deploy_remote.sh "${host}:/tmp/deploy_remote.sh"
-              ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/app.jar \"${host}:/tmp/app.jar\"" : "true"}
-              ${env.NEEDS_CONF == "true" ? "scp ${env.SSH_OPTS} artifacts/conf.zip \"${host}:/tmp/conf.zip\"" : "true"}
-              ${fileExists('artifacts/jar_resolved_name.txt') ? "scp ${env.SSH_OPTS} artifacts/jar_resolved_name.txt \"${host}:/tmp/jar_resolved_name.txt\"" : "true"}
-            """
-          }
-        }
-      }
-    }
-
-    stage('Deploy on targets') {
-      steps {
-        script {
-          def hosts = env.TARGET_VMS.split(',')
-          hosts.each { host ->
-            sh """
-              set -euo pipefail
-              echo "=== Deploy on ${host} ==="
-              ssh ${env.SSH_OPTS} "${host}" "bash /tmp/deploy_remote.sh \
-                '${params.APP}' \
-                '${params.ENV}' \
-                '${params.INSTANCE}' \
-                '${params.DEPLOY_MODE}' \
-                '${params.JAR_VERSION ?: ''}' \
-                '${params.CONF_VERSION ?: ''}'"
-            """
-          }
-        }
-      }
-    }
-  }
-}
-```0
-
-
-
-
-import groovy.json.JsonSlurper
-import java.util.Base64
-
-pipeline {
-  agent any
-  options { timestamps(); disableConcurrentBuilds() }
-
-
-  environment {
-    // Artifactory
-    ART_URL  = 'https://dlu.pop.sf.intra.laposte.fr/artifactory'
-    ART_CRED = 'eai-marches-0002775-tech-ci-snapshot-user'
-
-    GROUP_PATH = 'fr/labanquepostale/marches/eai'
-
-    // Repos Artifactory
-    JAR_REPO  = 'eai-marches-0002775-maven-local-sas'
-    CONF_REPO = 'eai-marches-0002775-maven-local-sas'
-
-    // Maven artifactIds
-    CONF_ARTIFACT = 'eai-camel-rgv-conf'  // <APP>-conf
-
-    // Convention d'installation
-    APPS_BASE = '/serveur_apps'
-
-    // SSH 
-    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
-  }
-
-  stages {
-
-    stage('Resolve & validate') {
-  steps {
-    script {
-      // Source de vérité: instances autorisées + VMs cibles
-      def MATRIX = [
-            "eai-camel-rgv": [
-              dev: [
-                mono:  ['sdv4eai02']
-              ],
-              recette: [
-                mono:  ['src4eai02']
-              ],
-              preprod: [
-                mono:  ['spp4eai02']
-              ],
-              prod: [
-                mono:  ['spr4eai02']
-              ]
-            ]
-          ]
-
-      def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
-      def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
-
-      if (needsJar && !params.JAR_VERSION?.trim())  { error("JAR_VERSION requis pour ${params.DEPLOY_MODE}") }
-      if (needsConf && !params.CONF_VERSION?.trim()){ error("CONF_VERSION requis pour ${params.DEPLOY_MODE}") }
-
-      env.NEEDS_JAR  = needsJar.toString()
-      env.NEEDS_CONF = needsConf.toString()
-
-      def envMap = MATRIX[params.APP]?.get(params.ENV)
-      if (!envMap) { error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}") }
-
-      def allowed = envMap.keySet().toList().sort()
-      if (!allowed.contains(params.INSTANCE)) {
-        error("INSTANCE '${params.INSTANCE}' non autorisée pour ${params.APP}/${params.ENV}. Autorisées: ${allowed}")
-      }
-
-      def targets = envMap[params.INSTANCE]
-      if (!targets || targets.isEmpty()) {
-        error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
-      }
-
-      env.TARGET_VMS   = targets.join(',')
-      env.INSTANCE_DIR = "${params.APP}-${params.INSTANCE}"
-
-      echo """
-========== PLAN ==========
-APP          : ${params.APP}
-ENV          : ${params.ENV}
-INSTANCE     : ${params.INSTANCE}
-MODE         : ${params.DEPLOY_MODE}
-TARGETS      : ${env.TARGET_VMS}
-JAR_VERSION  : ${params.JAR_VERSION}
-CONF_VERSION : ${params.CONF_VERSION}
-========================
-"""
-    }
-  }
-}
-
-
-stage('Preflight SSH') {
-      steps {
-        script {
-		 try {
           def hosts = env.TARGET_VMS.split(',')
           hosts.each { host ->
             sh """
@@ -518,22 +79,16 @@ stage('Preflight SSH') {
               ssh ${env.SSH_OPTS} "${host}" "echo OK: \$(hostname) as \$(whoami)"
             """
           }
-        } catch (e) {
-			echo "Erreur pendant le stage Preflight SSH"
-			echo e.toString()
-			throw e 
-			}
-		}
+        }
       }
     }
 
     stage('Prepare remote deploy script') {
       steps {
         script {
-		try {
-		
-          // Script exécuté SUR LA VM CIBLE (pas de Groovy/bordel de $ à échapper dans Jenkinsfile)
-          // Il suppose que Jenkins a déjà copié /tmp/app.jar et/ou /tmp/conf.zip selon DEPLOY_MODE
+          // Script exécuté SUR LA VM CIBLE
+          // NOTE: on installe en conservant le nom "stable" (sans timestamp) :
+          // <artifactId>-<version>.jar et <artifactId>-<version>.zip
           def scriptText = '''#!/usr/bin/env bash
 set -euo pipefail
 
@@ -568,15 +123,11 @@ run_script() {
   fi
 }
 
-# Stop before overwrite
 run_script stop.sh
 
-# ----- CONF install (unzip -> prune) -----
+# ----- CONF install -----
 if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
-  if [[ ! -f /tmp/conf.zip ]]; then
-    echo "ERROR: /tmp/conf.zip absent sur la VM"
-    exit 2
-  fi
+  [[ -f /tmp/conf.zip ]] || { echo "ERROR: /tmp/conf.zip absent"; exit 2; }
 
   STAGE_DIR="$(mktemp -d "/tmp/${APP}-conf-stage-XXXXXX")"
   unzip -o "/tmp/conf.zip" -d "$STAGE_DIR"
@@ -584,10 +135,6 @@ if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
   rm -rf "$CONFIG_DIR"/*
   mkdir -p "$CONFIG_DIR"
 
-  # garder uniquement:
-  # - application.properties
-  # - application-<env>.properties
-  # - application-<env>-<color>.properties si color
   cp -f "$STAGE_DIR/application.properties" "$CONFIG_DIR/" 2>/dev/null || true
   cp -f "$STAGE_DIR/application-${ENV_NAME}.properties" "$CONFIG_DIR/" 2>/dev/null || true
   if [[ -n "$COLOR" ]]; then
@@ -597,21 +144,14 @@ if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
   rm -rf "$STAGE_DIR"
 fi
 
-# ----- JAR install (overwrite) -----
+# ----- JAR install (nom stable) -----
 if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "BIN_ONLY" ]]; then
-  if [[ ! -f /tmp/app.jar ]]; then
-    echo "ERROR: /tmp/app.jar absent sur la VM"
-    exit 3
-  fi
-
-  # overwrite (no local versioning)
-  mv -f "/tmp/app.jar" "$LIB_DIR/${APP}.jar"
+  [[ -f /tmp/app.jar ]] || { echo "ERROR: /tmp/app.jar absent"; exit 3; }
+  mv -f "/tmp/app.jar" "$LIB_DIR/${APP}-${JAR_VERSION_UI}.jar"
+  ln -sfn "$LIB_DIR/${APP}-${JAR_VERSION_UI}.jar" "$LIB_DIR/${APP}.jar"
 fi
 
-# ----- Deploy info (Hawtio/JMX via Actuator info.*) -----
 DEPLOYED_AT="$(date --iso-8601=seconds)"
-JAR_RESOLVED=""
-[[ -f /tmp/jar_resolved_name.txt ]] && JAR_RESOLVED="$(cat /tmp/jar_resolved_name.txt)"
 
 cat > "$APP_DIR/deployed.txt" <<EOF
 app=$APP
@@ -620,7 +160,6 @@ env=$ENV_NAME
 color=$COLOR
 deployMode=$MODE
 jarVersion=$JAR_VERSION_UI
-jarResolved=$JAR_RESOLVED
 confVersion=$CONF_VERSION_UI
 deployedAt=$DEPLOYED_AT
 EOF
@@ -632,12 +171,10 @@ info.env=$ENV_NAME
 info.color=$COLOR
 info.deploy.mode=$MODE
 info.jar.version=$JAR_VERSION_UI
-info.jar.resolved=$JAR_RESOLVED
 info.conf.version=$CONF_VERSION_UI
 info.deployed.at=$DEPLOYED_AT
 EOF
 
-# Restart / Start
 if [[ -x "$BIN_DIR/restart.sh" ]]; then
   run_script restart.sh
 else
@@ -647,141 +184,102 @@ fi
           writeFile file: 'deploy_remote.sh', text: scriptText
           sh 'chmod +x deploy_remote.sh'
         }
-		catch (e) {
-			echo "Erreur pendant le stage Prepare remote deploy script"
-			echo e.toString()
-			throw e 
-			}
-		}
       }
     }
 
-    stage('Download artifacts (AQL for SNAPSHOT)') {
+    stage('Download artifacts (metadata for SNAPSHOT)') {
       steps {
         script {
-		try{
-          def aqlPost = { String baseUrl, String user, String pass, String aql ->
-            def url = new URL("${baseUrl}/api/search/aql")
-            def conn = (HttpURLConnection) url.openConnection()
-            conn.setRequestMethod("POST")
-            conn.setDoOutput(true)
-
-            def auth = Base64.encoder.encodeToString("${user}:${pass}".getBytes("UTF-8"))
-            conn.setRequestProperty("Authorization", "Basic ${auth}")
-            conn.setRequestProperty("Content-Type", "text/plain; charset=UTF-8")
-
-            conn.outputStream.withWriter("UTF-8") { it << aql }
-
-            int rc = conn.responseCode
-            def stream = (rc >= 200 && rc < 300) ? conn.inputStream : conn.errorStream
-            def body = stream ? stream.getText("UTF-8") : ""
-            if (rc < 200 || rc >= 300) error("Artifactory AQL HTTP ${rc}: ${body?.take(300) ?: ''}")
-            return new JsonSlurper().parseText(body)
-          }
-
-          def resolveLatestSnapshotPath = { String baseUrl, String user, String pass, String repo, String groupPath, String artifactId, String version, String ext ->
-            def baseVer = version.replaceAll(/-SNAPSHOT$/, "")
-            def aql = """
-items.find({
-  "repo": "${repo}",
-  "path": {"${'$'}match":"${groupPath}/${artifactId}/${version}"},
-  "name": {"${'$'}match":"${artifactId}-${baseVer}-*.${ext}"}
-}).include("repo","path","name","created").sort({"${'$'}desc":["created"]}).limit(1)
-"""
-            def json = aqlPost(baseUrl, user, pass, aql)
-            def r = (json?.results ?: []).find { it?.path && it?.name }
-            if (!r) return null
-            return "${r.path}/${r.name}"
-          }
-
           withCredentials([usernamePassword(credentialsId: env.ART_CRED, usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+
             sh 'mkdir -p artifacts && rm -f artifacts/* || true'
 
-            // ----- CONF ZIP -----
-            if (env.NEEDS_CONF == "true") {
-              String confUrl
-              String confResolvedName
+            // Résolution d'un SNAPSHOT via maven-metadata.xml (sans AQL)
+            def resolveSnapshotFilename = { String repo, String groupPath, String artifactId, String version, String ext ->
+              def metaUrl = "${env.ART_URL}/${repo}/${groupPath}/${artifactId}/${version}/maven-metadata.xml"
 
-              if (params.CONF_VERSION?.endsWith("-SNAPSHOT")) {
-                def confPath = resolveLatestSnapshotPath(env.ART_URL, ART_USER, ART_PASS, env.CONF_REPO, env.GROUP_PATH, env.CONF_ARTIFACT, params.CONF_VERSION, "zip")
-                if (!confPath) error("Aucun conf zip SNAPSHOT trouvé pour ${env.CONF_ARTIFACT} VERSION=${params.CONF_VERSION}")
-                confResolvedName = confPath.tokenize('/').last()
-                confUrl = "${env.ART_URL}/${env.CONF_REPO}/${confPath}"
-              } else {
-                confResolvedName = "${env.CONF_ARTIFACT}-${params.CONF_VERSION}.zip"
-                confUrl = "${env.ART_URL}/${env.CONF_REPO}/${env.GROUP_PATH}/${env.CONF_ARTIFACT}/${params.CONF_VERSION}/${confResolvedName}"
+              def xml = sh(
+                returnStdout: true,
+                script: """
+                  set -euo pipefail
+                  curl -fsS -u "${ART_USER}:${ART_PASS}" "${metaUrl}"
+                """
+              ).trim()
+
+              // 1) snapshotVersions (le plus fiable)
+              def value = (xml =~ /<snapshotVersion>\\s*<extension>${ext}<\\/extension>\\s*(?:<classifier>[^<]+<\\/classifier>\\s*)?<value>([^<]+)<\\/value>/)
+              if (value.find()) {
+                def v = value.group(1)
+                return "${artifactId}-${v}.${ext}"
               }
 
-              writeFile file: 'artifacts/conf_resolved_name.txt', text: confResolvedName + "\n"
+              // 2) fallback timestamp/buildNumber
+              def ts = (xml =~ /<timestamp>([^<]+)<\\/timestamp>/)
+              def bn = (xml =~ /<buildNumber>([^<]+)<\\/buildNumber>/)
+              if (ts.find() && bn.find()) {
+                def baseVer = version.replaceAll(/-SNAPSHOT$/, "")
+                return "${artifactId}-${baseVer}-${ts.group(1)}-${bn.group(1)}.${ext}"
+              }
 
+              return null
+            }
+
+            def download = { String url, String outFile ->
               sh """
                 set -euo pipefail
-                echo "Downloading conf: ${confUrl}"
-                curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/conf.zip" "${confUrl}"
+                echo "Downloading: ${url}"
+                curl -f -u "${ART_USER}:${ART_PASS}" -o "${outFile}" "${url}"
               """
             }
 
-            // ----- JAR -----
-            if (env.NEEDS_JAR == "true") {
-              String jarUrl
-              String jarResolvedName
-
-              if (params.JAR_VERSION?.endsWith("-SNAPSHOT")) {
-                def jarPath = resolveLatestSnapshotPath(env.ART_URL, ART_USER, ART_PASS, env.JAR_REPO, env.GROUP_PATH, params.APP, params.JAR_VERSION, "jar")
-                if (!jarPath) error("Aucun jar SNAPSHOT trouvé pour ${params.APP} VERSION=${params.JAR_VERSION}")
-                jarResolvedName = jarPath.tokenize('/').last()
-                jarUrl = "${env.ART_URL}/${env.JAR_REPO}/${jarPath}"
+            // CONF (on garde conf.zip côté Jenkins/VM, mais la version UI reste dans deploy-info)
+            if (env.NEEDS_CONF == "true") {
+              def confResolved
+              if (params.CONF_VERSION.endsWith("-SNAPSHOT")) {
+                confResolved = resolveSnapshotFilename(env.CONF_REPO, env.GROUP_PATH, env.CONF_ARTIFACT, params.CONF_VERSION, "zip")
+                if (!confResolved) error("Impossible de résoudre le conf SNAPSHOT via maven-metadata.xml pour ${env.CONF_ARTIFACT} ${params.CONF_VERSION}")
               } else {
-                jarResolvedName = "${params.APP}-${params.JAR_VERSION}.jar"
-                jarUrl = "${env.ART_URL}/${env.JAR_REPO}/${env.GROUP_PATH}/${params.APP}/${params.JAR_VERSION}/${jarResolvedName}"
+                confResolved = "${env.CONF_ARTIFACT}-${params.CONF_VERSION}.zip"
               }
 
-              writeFile file: 'artifacts/jar_resolved_name.txt', text: jarResolvedName + "\n"
+              // download le zip réel puis on le renomme en conf.zip (stable)
+              def confUrl = "${env.ART_URL}/${env.CONF_REPO}/${env.GROUP_PATH}/${env.CONF_ARTIFACT}/${params.CONF_VERSION}/${confResolved}"
+              download(confUrl, "artifacts/conf.zip")
+            }
 
-              sh """
-                set -euo pipefail
-                echo "Downloading jar: ${jarUrl}"
-                curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/app.jar" "${jarUrl}"
-              """
+            // JAR (on supprime le timestamp: on renomme en <app>-<version>.jar avant copie)
+            if (env.NEEDS_JAR == "true") {
+              def jarResolved
+              if (params.JAR_VERSION.endsWith("-SNAPSHOT")) {
+                jarResolved = resolveSnapshotFilename(env.JAR_REPO, env.GROUP_PATH, params.APP, params.JAR_VERSION, "jar")
+                if (!jarResolved) error("Impossible de résoudre le jar SNAPSHOT via maven-metadata.xml pour ${params.APP} ${params.JAR_VERSION}")
+              } else {
+                jarResolved = "${params.APP}-${params.JAR_VERSION}.jar"
+              }
+
+              def jarUrl = "${env.ART_URL}/${env.JAR_REPO}/${env.GROUP_PATH}/${params.APP}/${params.JAR_VERSION}/${jarResolved}"
+              // On télécharge dans un nom stable sans timestamp (même pour SNAPSHOT)
+              def finalJar = "artifacts/${params.APP}-${params.JAR_VERSION}.jar"
+              download(jarUrl, finalJar)
             }
 
             sh 'ls -lh artifacts || true'
           }
-		}
-		catch (e) {
-			echo "Erreur pendant le stage: Download artifacts (AQL for SNAPSHOT)"
-			echo e.toString()
-			throw e 
-			}
-		}
+        }
       }
-	  }
+    }
 
     stage('Copy to targets (/tmp)') {
       steps {
         script {
           def hosts = env.TARGET_VMS.split(',')
-
           hosts.each { host ->
-            // On copie toujours le script + les fichiers présents selon le mode
-            def files = ['deploy_remote.sh']
-            if (env.NEEDS_JAR == "true")  files << 'artifacts/app.jar'
-            if (env.NEEDS_CONF == "true") files << 'artifacts/conf.zip'
-            // Pour info deploy-info: on copie le nom résolu (snapshot timestampé)
-            if (fileExists('artifacts/jar_resolved_name.txt'))  files << 'artifacts/jar_resolved_name.txt'
-
-            // scp vers /tmp avec des noms stables côté VM
-            // - app.jar
-            // - conf.zip
-            // - jar_resolved_name.txt
-            // - deploy_remote.sh
             sh """
               set -euo pipefail
               echo "=== Copy to ${host} ==="
               scp ${env.SSH_OPTS} deploy_remote.sh "${host}:/tmp/deploy_remote.sh"
-              ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/app.jar \"${host}:/tmp/app.jar\"" : "true"}
+              ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/${params.APP}-${params.JAR_VERSION}.jar \"${host}:/tmp/app.jar\"" : "true"}
               ${env.NEEDS_CONF == "true" ? "scp ${env.SSH_OPTS} artifacts/conf.zip \"${host}:/tmp/conf.zip\"" : "true"}
-              ${fileExists('artifacts/jar_resolved_name.txt') ? "scp ${env.SSH_OPTS} artifacts/jar_resolved_name.txt \"${host}:/tmp/jar_resolved_name.txt\"" : "true"}
             """
           }
         }
@@ -809,4 +307,4 @@ items.find({
       }
     }
   }
-} 
+}
