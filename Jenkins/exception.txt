@@ -32,12 +32,12 @@ def user  = creds.username
 def token = creds.password?.plainText
 if (!user || !token) return ["(empty credential)"]
 
-// ✅ $match est un opérateur AQL -> on échappe juste le $ pour Groovy
+// ✅ IMPORTANT : ${'$'}match => envoie "$match" à Artifactory sans que Groovy l’interprète
 def aql = """
 items.find({
   "repo": "${repo}",
-  "path": {"\\$match":"${groupPath}/${app}/*"},
-  "name": {"\\$match":"${app}-*.jar"}
+  "path": {"${'$'}match":"${groupPath}/${app}/*"},
+  "name": {"${'$'}match":"${app}-*.jar"}
 }).include("path")
 """
 
@@ -60,4 +60,4 @@ def versions = (json?.results ?: []).collect { r ->
   if (p && p.startsWith(prefix)) p.substring(prefix.length()).split("/")[0] else null
 }.findAll { it }.unique()
 
-return versions.sort().reverse()
+return versions ? versions.sort().reverse() : ["(no versions found)"] 
