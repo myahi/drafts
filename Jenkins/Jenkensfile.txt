@@ -1,3 +1,39 @@
+def aqlPost = { String aql ->
+  def aqlFile = "aql_${UUID.randomUUID().toString()}.txt"
+  writeFile file: aqlFile, text: aql
+
+  // On récupère body + code HTTP (sur la dernière ligne)
+  def out = sh(
+    returnStdout: true,
+    script: """
+      set +x
+      set -euo pipefail
+      curl -sS -u "${ART_USER}:${ART_PASS}" \\
+        -H "Content-Type: text/plain; charset=UTF-8" \\
+        -H "Accept: application/json" \\
+        -X POST \\
+        --data-binary "@${aqlFile}" \\
+        "${env.ART_URL}/api/search/aql" \\
+        -w "\\n%{http_code}"
+    """
+  ).trim()
+
+  sh "rm -f ${aqlFile} || true"
+
+  def lines = out.readLines()
+  def httpCode = (lines[-1] ?: "0") as Integer
+  def body = (lines.size() > 1) ? lines[0..-2].join("\n") : ""
+
+  if (httpCode < 200 || httpCode >= 300) {
+    error("Artifactory AQL HTTP ${httpCode}: ${body?.take(500) ?: ''}")
+  }
+
+  return new JsonSlurper().parseText(body)
+}
+
+
+
+
 import groovy.json.JsonSlurper
 import java.util.Base64
 import java.nio.charset.StandardCharsets
