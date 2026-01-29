@@ -1,1 +1,1 @@
- ssh -q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 sdv4eai02 'echo OK: sgl4shn04 as calypso'
+hudson.AbortException: script returned exit code 255
