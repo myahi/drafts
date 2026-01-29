@@ -1,0 +1,324 @@
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  parameters {
+    choice(name: 'APP', choices: ['eai-camel-rgv'], description: 'Application')
+    choice(name: 'ENV', choices: ['dev','recette','preprod','prod'], description: 'Environnement')
+
+    // INSTANCE = mono (sans couleur) OU une couleur (blue/green/...)
+    // L’UI peut être pilotée via Active Choices, mais le pipeline valide de toute façon.
+    choice(name: 'INSTANCE', choices: ['mono','blue','green'], description: 'Instance (mono ou couleur)')
+
+    choice(name: 'DEPLOY_MODE', choices: ['BIN_AND_CONF', 'CONF_ONLY', 'BIN_ONLY'], description: 'Quoi déployer ?')
+
+    string(name: 'JAR_VERSION',  defaultValue: '', description: 'Version jar (Artifactory) - requis si BIN_* (ex: 1.0.0-SNAPSHOT ou 1.0.0)')
+    string(name: 'CONF_VERSION', defaultValue: '', description: 'Version conf zip (Artifactory) - requis si *_CONF (ex: 1.0.0-SNAPSHOT ou 1.0.0)')
+  }
+
+  environment {
+    // Artifactory
+    ART_URL  = 'https://dlu.pop.sf.intra.laposte.fr/artifactory'
+    ART_CRED = 'artifactory-creds'
+
+    // Maven layout
+    GROUP_PATH = 'fr/labanquepostale/marches/eai'
+
+    // Jar repo
+    JAR_REPO = 'eai-marches-0002775-maven-local-sas'
+
+    // Conf zip (artefact Maven zip)
+    CONF_REPO = 'eai-marches-0002775-maven-local-sas' // adapte si repo dédié conf
+    CONF_ARTIFACT = 'eai-camel-rgv-conf'
+
+    // SSH
+    SSH_CRED = 'ssh-deploy-key'
+
+    // Convention d'installation
+    APPS_BASE = '/serveur_apps'
+  }
+
+  stages {
+
+    stage('Resolve & validate') {
+      steps {
+        script {
+          /*
+            MATRIX = source de vérité
+            - Les clés sous ENV définissent les instances autorisées (mono OU couleurs)
+            - Les valeurs sont les VMs cibles
+            Exemple: recette => multi-instance (blue/green), pas de mono
+                     prod    => mono uniquement
+          */
+          def MATRIX = [
+            "eai-camel-rgv": [
+              dev: [
+                mono:  ['dev-vm1']          // adapte
+                // blue/green possibles si tu veux: ajoute-les ici
+              ],
+              recette: [
+                blue:  ['rec-vm1'],         // adapte
+                green: ['rec-vm1']          // adapte
+              ],
+              preprod: [
+                mono:  ['pp-vm1']           // adapte
+              ],
+              prod: [
+                mono:  ['prod-vm1']         // adapte
+              ]
+            ]
+          ]
+
+          def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
+          def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
+
+          if (needsJar && !params.JAR_VERSION?.trim())  error("JAR_VERSION requis pour ${params.DEPLOY_MODE}")
+          if (needsConf && !params.CONF_VERSION?.trim()) error("CONF_VERSION requis pour ${params.DEPLOY_MODE}")
+
+          env.NEEDS_JAR  = needsJar.toString()
+          env.NEEDS_CONF = needsConf.toString()
+
+          def envMap = MATRIX[params.APP]?.get(params.ENV)
+          if (!envMap) error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}")
+
+          // Validation: si multi-instance => mono doit être absent; si mono-only => couleurs absentes
+          def allowedInstances = envMap.keySet().toList().sort()
+          if (!allowedInstances.contains(params.INSTANCE)) {
+            error("INSTANCE '${params.INSTANCE}' non autorisée pour ${params.APP}/${params.ENV}. Autorisées: ${allowedInstances}")
+          }
+
+          def targets = envMap[params.INSTANCE]
+          if (!targets || targets.isEmpty()) {
+            error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
+          }
+          env.TARGET_VMS = targets.join(',')
+
+          // Couleur effective = INSTANCE sauf si mono (pas de couleur)
+          env.COLOR_EFFECTIVE = (params.INSTANCE == 'mono') ? '' : params.INSTANCE
+
+          // Nom instance dir
+          env.INSTANCE_DIR = "${params.APP}-${params.INSTANCE}"
+
+          echo """
+========== PLAN DE DEPLOIEMENT ==========
+APP          : ${params.APP}
+ENV          : ${params.ENV}
+INSTANCE     : ${params.INSTANCE}
+INSTANCE_DIR : ${env.INSTANCE_DIR}
+TARGETS      : ${env.TARGET_VMS}
+MODE         : ${params.DEPLOY_MODE}
+JAR_VERSION  : ${params.JAR_VERSION}
+CONF_VERSION : ${params.CONF_VERSION}
+========================================
+"""
+        }
+      }
+    }
+
+    stage('Download artifacts') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: env.ART_CRED, usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+          sh '''
+            set -euo pipefail
+            mkdir -p artifacts
+            rm -f artifacts/* || true
+
+            # ---------------- CONF ZIP ----------------
+            if [ "${NEEDS_CONF}" = "true" ]; then
+              CONF_ZIP="${CONF_ARTIFACT}-${CONF_VERSION}.zip"
+              CONF_URL="${ART_URL}/${CONF_REPO}/${GROUP_PATH}/${CONF_ARTIFACT}/${CONF_VERSION}/${CONF_ZIP}"
+              echo "Downloading conf: $CONF_URL"
+              curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/${CONF_ZIP}" "$CONF_URL"
+            fi
+
+            # ---------------- JAR ----------------
+            # On télécharge toujours le jar sous un nom stable: artifacts/<app>.jar
+            # Et on capture le nom résolu réel pour l’info (snapshot timestampé)
+            if [ "${NEEDS_JAR}" = "true" ]; then
+              if echo "${JAR_VERSION}" | grep -q -- '-SNAPSHOT$'; then
+                BASE_VER="${JAR_VERSION%-SNAPSHOT}"
+
+                AQL=$(cat <<EOF
+items.find({
+  "repo": "${JAR_REPO}",
+  "path": {"$match":"${GROUP_PATH}/${APP}/${JAR_VERSION}"},
+  "name": {"$match":"${APP}-${BASE_VER}-*.jar"}
+}).include("repo","path","name","created").sort({"$desc":["created"]}).limit(1)
+EOF
+)
+                echo "Resolving latest SNAPSHOT jar via AQL..."
+                JSON=$(curl -s -u "${ART_USER}:${ART_PASS}" -X POST -H "Content-Type: text/plain" \
+                  "${ART_URL}/api/search/aql" -d "$AQL")
+
+                PY_OUT=$(python3 - <<'PY'
+import json,sys
+j=json.loads(sys.stdin.read() or "{}")
+res=(j.get("results") or [])
+if not res:
+  print("")
+  sys.exit(0)
+r=res[0]
+path=r.get("path","")
+name=r.get("name","")
+print(f"{path}/{name}")
+PY
+                <<< "$JSON")
+
+                if [ -z "$PY_OUT" ] || [ "$PY_OUT" = "/" ]; then
+                  echo "ERROR: Aucun jar snapshot trouvé pour APP=${APP} VERSION=${JAR_VERSION}"
+                  exit 2
+                fi
+
+                JAR_PATH="$PY_OUT"
+                JAR_RESOLVED_NAME="$(basename "$JAR_PATH")"
+                echo "$JAR_RESOLVED_NAME" > artifacts/jar_resolved_name.txt
+
+                JAR_URL="${ART_URL}/${JAR_REPO}/${JAR_PATH}"
+                echo "Downloading latest snapshot jar: $JAR_URL"
+                curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/${APP}.jar" "$JAR_URL"
+              else
+                JAR_NAME="${APP}-${JAR_VERSION}.jar"
+                echo "$JAR_NAME" > artifacts/jar_resolved_name.txt
+                JAR_URL="${ART_URL}/${JAR_REPO}/${GROUP_PATH}/${APP}/${JAR_VERSION}/${JAR_NAME}"
+                echo "Downloading jar: $JAR_URL"
+                curl -f -u "${ART_USER}:${ART_PASS}" -o "artifacts/${APP}.jar" "$JAR_URL"
+              fi
+            fi
+
+            ls -lh artifacts || true
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to targets') {
+      steps {
+        script {
+          def hosts = env.TARGET_VMS.split(',')
+          def appInstanceDir = "${env.APPS_BASE}/${env.INSTANCE_DIR}"
+          def binDir = "${appInstanceDir}/bin"
+          def libDir = "${appInstanceDir}/lib"
+          def configDir = "${appInstanceDir}/config"
+
+          withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+            hosts.each { host ->
+              sh """
+                set -euo pipefail
+                echo "=== Deploy on ${host} ==="
+
+                # Copie uniquement ce qui existe
+                if ls artifacts/* >/dev/null 2>&1; then
+                  scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no artifacts/* "\${SSH_USER}@${host}:/tmp/"
+                fi
+
+                ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no "\${SSH_USER}@${host}" 'bash -lc "
+                  set -euo pipefail
+
+                  APP=\\"${params.APP}\\"
+                  ENV=\\"${params.ENV}\\"
+                  INSTANCE=\\"${params.INSTANCE}\\"
+                  MODE=\\"${params.DEPLOY_MODE}\\"
+
+                  APP_DIR=\\"${appInstanceDir}\\"
+                  BIN_DIR=\\"${binDir}\\"
+                  LIB_DIR=\\"${libDir}\\"
+                  CONFIG_DIR=\\"${configDir}\\"
+
+                  mkdir -p \\"$APP_DIR\\" \\"$BIN_DIR\\" \\"$LIB_DIR\\" \\"$CONFIG_DIR\\"
+
+                  # color = instance sauf si mono
+                  COLOR=\\"\\"
+                  if [ \\"$INSTANCE\\" != \\"mono\\" ]; then
+                    COLOR=\\"$INSTANCE\\"
+                  fi
+
+                  # helper scripts (paramètre couleur uniquement si non mono)
+                  run_script() {
+                    local s=\\"$1\\"
+                    if [ -x \\"$BIN_DIR/$s\\" ]; then
+                      if [ -z \\"$COLOR\\" ]; then
+                        \\"$BIN_DIR/$s\\" \\"$ENV\\"
+                      else
+                        \\"$BIN_DIR/$s\\" \\"$ENV\\" \\"$COLOR\\"
+                      fi
+                    fi
+                  }
+
+                  # Stop
+                  run_script stop.sh
+
+                  # ---------------- CONF (unzip -> prune) ----------------
+                  if [ \\"$MODE\\" = \\"BIN_AND_CONF\\" ] || [ \\"$MODE\\" = \\"CONF_ONLY\\" ]; then
+                    STAGE_DIR=\\"/tmp/${params.APP}-conf-stage-$$\\"
+                    rm -rf \\"$STAGE_DIR\\"
+                    mkdir -p \\"$STAGE_DIR\\"
+                    unzip -o \\"/tmp/${env.CONF_ARTIFACT}-${params.CONF_VERSION}.zip\\" -d \\"$STAGE_DIR\\"
+
+                    rm -rf \\"$CONFIG_DIR\\"/*
+                    mkdir -p \\"$CONFIG_DIR\\"
+
+                    # Ne garder que:
+                    # - application.properties
+                    # - application-<env>.properties
+                    # - application-<env>-<color>.properties si color != mono
+                    cp -f \\"$STAGE_DIR/application.properties\\" \\"$CONFIG_DIR/\\" 2>/dev/null || true
+                    cp -f \\"$STAGE_DIR/application-${params.ENV}.properties\\" \\"$CONFIG_DIR/\\" 2>/dev/null || true
+                    if [ -n \\"$COLOR\\" ]; then
+                      cp -f \\"$STAGE_DIR/application-${params.ENV}-\${COLOR}.properties\\" \\"$CONFIG_DIR/\\" 2>/dev/null || true
+                    fi
+
+                    rm -rf \\"$STAGE_DIR\\"
+                  fi
+
+                  # ---------------- JAR overwrite atomique ----------------
+                  if [ \\"$MODE\\" = \\"BIN_AND_CONF\\" ] || [ \\"$MODE\\" = \\"BIN_ONLY\\" ]; then
+                    TMP_JAR=\\"$LIB_DIR/${params.APP}.jar.new\\"
+                    mv \\"/tmp/${params.APP}.jar\\" \\"$TMP_JAR\\"
+                    mv -f \\"$TMP_JAR\\" \\"$LIB_DIR/${params.APP}.jar\\"
+                  fi
+
+                  # ---------------- Deploy info (Hawtio/JMX via Actuator info.*) ----------------
+                  DEPLOYED_AT=\\"\\$(date --iso-8601=seconds)\\"
+                  JAR_RESOLVED=\\"\\"
+                  [ -f /tmp/jar_resolved_name.txt ] && JAR_RESOLVED=\\"\\$(cat /tmp/jar_resolved_name.txt)\\"
+
+                  cat > \\"$APP_DIR/deployed.txt\\" <<EOF
+app=$APP
+instance=${params.APP}-${params.INSTANCE}
+env=$ENV
+color=$COLOR
+deployMode=$MODE
+jarVersion=${params.JAR_VERSION ?: ''}
+jarResolved=$JAR_RESOLVED
+confVersion=${params.CONF_VERSION ?: ''}
+deployedAt=$DEPLOYED_AT
+EOF
+
+                  cat > \\"$CONFIG_DIR/deploy-info.properties\\" <<EOF
+info.app=$APP
+info.instance=${params.APP}-${params.INSTANCE}
+info.env=$ENV
+info.color=$COLOR
+info.deploy.mode=$MODE
+info.jar.version=${params.JAR_VERSION ?: ''}
+info.jar.resolved=$JAR_RESOLVED
+info.conf.version=${params.CONF_VERSION ?: ''}
+info.deployed.at=$DEPLOYED_AT
+EOF
+
+                  # Restart / Start
+                  if [ -x \\"$BIN_DIR/restart.sh\\" ]; then
+                    run_script restart.sh
+                  else
+                    run_script start.sh
+                  fi
+                "'
+              """
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```0
