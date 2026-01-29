@@ -1,3 +1,5 @@
+groovy.lang.MissingPropertyException: No such property: path for class: org.codehaus.groovy.runtime.GStringImpl
+
 import groovy.json.JsonSlurper
 import java.util.Base64
 import jenkins.model.Jenkins
