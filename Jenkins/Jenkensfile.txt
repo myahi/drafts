@@ -1,4 +1,1 @@
-ssh ${env.SSH_OPTS} "${'$'}(whoami)@${host}" 'bash -lc "
-
-
-ssh ${env.SSH_OPTS} "$(whoami)@${host}" 'bash -lc "
+local s=\\"$1\\"
