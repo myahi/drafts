@@ -1,4 +1,9 @@
-  sh """
+sh """
+  set -euo pipefail
+  ssh ${env.SSH_OPTS} "${'$'}(whoami)@${host}" "echo OK: ${'$'}(hostname) as ${'$'}(whoami)"
+"""
+
+sh """
               set -euo pipefail
               ssh ${env.SSH_OPTS} "$(whoami)@${host}" "echo OK: \$(hostname) as \$(whoami)"
             """
