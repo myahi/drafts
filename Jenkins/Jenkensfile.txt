@@ -1,3 +1,6 @@
+scp ${env.SSH_OPTS} artifacts/* "${'$'}(whoami)@${host}:/tmp/"
+
+
 scp ${env.SSH_OPTS} artifacts/* "$(whoami)@${host}:/tmp/"
 
 sh """
