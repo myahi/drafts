@@ -1,3 +1,30 @@
+stage('SSH debug') {
+  steps {
+    sh '''
+      set -euxo pipefail
+      echo "== CONTEXT =="
+      whoami
+      id
+      hostname
+      echo "HOME=$HOME"
+      echo "PWD=$(pwd)"
+      which ssh
+      ssh -V
+
+      echo "== SSH FILES =="
+      ls -ld "$HOME" || true
+      ls -ld "$HOME/.ssh" || true
+      ls -l  "$HOME/.ssh" || true
+      (test -f "$HOME/.ssh/config" && echo "--- ~/.ssh/config ---" && sed -n '1,200p' "$HOME/.ssh/config") || true
+
+      echo "== TRY SSH (verbose) =="
+      ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 sdv4eai02 'echo OK'
+    '''
+  }
+}
+
+
+
 stage('Deploy on targets') {
   steps {
     script {
