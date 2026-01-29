@@ -1,3 +1,8 @@
+  sh """
+              set -euo pipefail
+              ssh ${env.SSH_OPTS} "$(whoami)@${host}" "echo OK: \$(hostname) as \$(whoami)"
+            """
+
 illegal string body character after dollar sign;
    solution: either escape a literal dollar sign "\$5" or bracket the value expression "${5}"
 
