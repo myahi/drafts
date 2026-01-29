@@ -1,0 +1,10 @@
+def matrix = [
+  "eai-camel-rgv": [
+    "dev":     ["default","blue"],
+    "recette": ["default","blue","green"],
+    "preprod": ["default"],
+    "prod":    ["default"]
+  ]
+]
+
+return matrix[APP]?.get(ENV) ?: ["default"]
