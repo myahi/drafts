@@ -1,3 +1,76 @@
+@NonCPS
+def parseXmlText(String xmlText) {
+  return new XmlSlurper(false, false).parseText(xmlText)
+}
+
+@NonCPS
+def detectModulesFromPoms(String parentPomText, Map<String, String> modulePomTexts) {
+  def parent = parseXmlText(parentPomText)
+
+  def moduleDirs = parent.modules?.module?.collect { it.text().trim() }?.findAll { it } ?: []
+  if (!moduleDirs) return [modules: [], artifactIds: []]
+
+  def artifactIds = moduleDirs.collect { m ->
+    def mpomText = modulePomTexts[m]
+    if (!mpomText) throw new RuntimeException("pom.xml introuvable pour le module: ${m}")
+    def mpom = parseXmlText(mpomText)
+    def aid = mpom.artifactId?.text()?.trim()
+    if (!aid) throw new RuntimeException("artifactId introuvable dans pom du module: ${m}")
+    return aid
+  }.unique()
+
+  return [modules: moduleDirs, artifactIds: artifactIds]
+}
+
+stage('Detect modules (mono or multi)') {
+  steps {
+    script {
+      if (!fileExists('pom.xml')) {
+        env.MODULES = params.APP
+        echo "No pom.xml -> fallback mono: MODULES=${env.MODULES}"
+        return
+      }
+
+      // Lire les POMs en CPS (OK), parser en NonCPS (OK)
+      def parentPomText = readFile('pom.xml')
+
+      // On lit les noms de modules avec un mini parsing NonCPS du parent, puis on lit les pom.xml correspondants.
+      // Pour éviter un double parsing, on fait simple: on parse une première fois pour obtenir les moduleDirs.
+      def tmp = detectModulesFromPoms(parentPomText, [:])
+      def moduleDirs = tmp.modules
+
+      if (!moduleDirs || moduleDirs.isEmpty()) {
+        env.MODULES = params.APP
+        echo "Mono-module detected -> MODULES=${env.MODULES}"
+        return
+      }
+
+      def modulePomTexts = [:]
+      moduleDirs.each { m ->
+        def p = "${m}/pom.xml"
+        if (!fileExists(p)) error("pom.xml introuvable pour le module: ${m} (attendu: ${p})")
+        modulePomTexts[m] = readFile(p)
+      }
+
+      def res = detectModulesFromPoms(parentPomText, modulePomTexts)
+      def artifactIds = res.artifactIds
+
+      if (!artifactIds || artifactIds.isEmpty()) {
+        // fallback sûr
+        env.MODULES = params.APP
+        echo "Modules présents mais artifactIds vides -> fallback mono: MODULES=${env.MODULES}"
+        return
+      }
+
+      env.MODULES = artifactIds.join(',')
+      echo "Multi-module detected -> MODULES=${env.MODULES}"
+    }
+  }
+}
+
+
+
+
 pipeline {
   agent any
   options { timestamps(); disableConcurrentBuilds() }
