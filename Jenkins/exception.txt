@@ -1,1 +1,1 @@
-ERROR: Artifactory AQL HTTP 400: Failed to parse query: https://dlu.pop.sf.intra.laposte.fr/artifactory, it looks like there is syntax error near the following sub-query: https://dlu.pop.sf.intra.laposte.fr/artifactory
+stderr: remote: HTTP Basic: Access denied. If a password was provided for Git authentication, the password was incorrect or you're required to use a token instead of a password. If a token was provided, it was either incorrect, expired, or improperly scoped. See 
