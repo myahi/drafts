@@ -1,40 +1,42 @@
 stage('Resolve & validate') {
-      steps {
-        script {
-          // Source de vérité: instances autorisées + VMs cibles
-          def MATRIX = [
-            "eai-camel-rgv": [
-              dev:     [ mono:  ['dev-vm1'] ],
-              recette: [ blue:  ['rec-vm1'], green: ['rec-vm1'] ],
-              preprod: [ mono:  ['pp-vm1'] ],
-              prod:    [ mono:  ['prod-vm1'] ]
-            ]
-          ]
+  steps {
+    script {
+      // Source de vérité: instances autorisées + VMs cibles
+      def MATRIX = [
+        "eai-camel-rgv": [
+          dev:     [ mono:  ['dev-vm1'] ],
+          recette: [ blue:  ['rec-vm1'], green: ['rec-vm1'] ],
+          preprod: [ mono:  ['pp-vm1'] ],
+          prod:    [ mono:  ['prod-vm1'] ]
+        ]
+      ]
 
-          def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
-          def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
+      def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
+      def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
 
-          if (needsJar && !params.JAR_VERSION?.trim())   error("JAR_VERSION requis pour ${params.DEPLOY_MODE}")
-          if (needsConf && !params.CONF_VERSION?.trim()) error("CONF_VERSION requis pour ${params.DEPLOY_MODE}")
+      if (needsJar && !params.JAR_VERSION?.trim())  { error("JAR_VERSION requis pour ${params.DEPLOY_MODE}") }
+      if (needsConf && !params.CONF_VERSION?.trim()){ error("CONF_VERSION requis pour ${params.DEPLOY_MODE}") }
 
-          env.NEEDS_JAR  = needsJar.toString()
-          env.NEEDS_CONF = needsConf.toString()
+      env.NEEDS_JAR  = needsJar.toString()
+      env.NEEDS_CONF = needsConf.toString()
 
-          def envMap = MATRIX[params.APP]?.get(params.ENV)
-          if (!envMap) error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}")
+      def envMap = MATRIX[params.APP]?.get(params.ENV)
+      if (!envMap) { error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}") }
 
-          def allowed = envMap.keySet().toList().sort()
-          if (!allowed.contains(params.INSTANCE)) {
-            error("INSTANCE '${params.INSTANCE}' non autorisée pour ${params.APP}/${params.ENV}. Autorisées: ${allowed}")
-          }
+      def allowed = envMap.keySet().toList().sort()
+      if (!allowed.contains(params.INSTANCE)) {
+        error("INSTANCE '${params.INSTANCE}' non autorisée pour ${params.APP}/${params.ENV}. Autorisées: ${allowed}")
+      }
 
-          def targets = envMap[params.INSTANCE]
-          if (!targets || targets.isEmpty()) error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
+      def targets = envMap[params.INSTANCE]
+      if (!targets || targets.isEmpty()) {
+        error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
+      }
 
-          env.TARGET_VMS = targets.join(',')
-          env.INSTANCE_DIR = "${params.APP}-${params.INSTANCE}"
+      env.TARGET_VMS   = targets.join(',')
+      env.INSTANCE_DIR = "${params.APP}-${params.INSTANCE}"
 
-          echo """
+      echo """
 ========== PLAN ==========
 APP          : ${params.APP}
 ENV          : ${params.ENV}
@@ -45,6 +47,6 @@ JAR_VERSION  : ${params.JAR_VERSION}
 CONF_VERSION : ${params.CONF_VERSION}
 ========================
 """
-        }
-      }
     }
+  }
+}
