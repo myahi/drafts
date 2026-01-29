@@ -72,6 +72,25 @@ CONF_VERSION : ${params.CONF_VERSION}
       }
     }
 
+stage('Checkout source (Git)') {
+    steps {
+      script {
+        def branch = (params.ENV == 'prod') ? 'master' : 'develop'
+        def repoUrl = "git@gitlab.xxx:mon-groupe/${params.APP}.git"
+
+        echo "Checkout ${repoUrl} (branch=${branch})"
+
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: branch]],
+          userRemoteConfigs: [[
+            url: repoUrl,
+            credentialsId: 'GIT_CRED_ID'
+          ]]
+        ])
+      }
+    }
+  }
     stage('Checkout (for module detection)') {
       steps {
         // Nécessaire uniquement pour découvrir mono/multi-module via pom.xml
