@@ -1,1 +1,8 @@
+sh '''
+set -euxo pipefail
+ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+  -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+  sdv4eai02 'echo OK'
+'''
+
 hudson.AbortException: script returned exit code 255
