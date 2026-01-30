@@ -1,134 +1,3 @@
-Parfait — on fait minimal, chirurgical, sans refactor 👍
-👉 une seule ligne ajoutée + une micro-modif, rien d’autre.
-
-Tu ne touches pas :
-
-au parsing mono / multi
-
-à IS_MULTI
-
-à la structure des dossiers
-
-au Jenkinsfile (appel SSH)
-
-
-
----
-
-🎯 Objectif (rappel)
-
-Passer aux scripts :
-
-ENV
-
-APP-INSTANCE (ex : eai-camel-rgv-mono, eai-camel-rgv-blue) ✔️ que l’appli soit mono-module ou multi-module
-
-
-
----
-
-✅ PATCH MINIMAL (2 lignes max)
-
-1️⃣ Ajoute UNE ligne dans deploy_remote.sh
-
-Juste avant run_script() :
-
-APP_INSTANCE="${PARENT_APP}-${INSTANCE}"
-
-(on ne renomme rien, on ne touche pas au reste)
-
-
----
-
-2️⃣ Modifie UNE ligne dans run_script()
-
-Tu as actuellement :
-
-"$BIN_DIR/$s" "$ENV_NAME"
-
-et/ou :
-
-"$BIN_DIR/$s" "$ENV_NAME" "$COLOR"
-
-👉 Remplace uniquement par :
-
-"$BIN_DIR/$s" "$ENV_NAME" "$APP_INSTANCE"
-
-(si tu as la variante avec $COLOR, tu peux l’ignorer ou la laisser si tes scripts l’acceptent, mais tu passes toujours APP_INSTANCE)
-
-
----
-
-✅ Résultat concret (sans casser l’existant)
-
-mono-module + instance mono
-→ start.sh dev eai-camel-rgv-mono
-
-multi-module + instance blue
-→ start.sh dev eai-camel-rgv-blue
-
-
-👉 Aucune différence pour Jenkins, SSH, Artifactory, layout disque.
-
-
----
-
-🔒 Pourquoi ça marche sans casser
-
-PARENT_APP et INSTANCE existent déjà
-
-APP_INSTANCE est juste une concaténation
-
-run_script() est le seul point d’appel aux scripts
-
-mono / multi n’intervient pas dans les paramètres passés
-
-
-
----
-
-TL;DR
-
-✔️ 1 ligne ajoutée
-✔️ 1 ligne modifiée
-✔️ zéro refactor
-✔️ mono & multi OK
-
-Si tu veux, colle ici ton run_script() actuel, et je te dis exactement quelle ligne remplacer (copier-coller safe).
-
-
-
-
-
-# ----- BIN scripts: sync from local ops repo on target VM -----
-OPS_ROOT="/serveur_apps/eai-camel-ops"
-OPS_BIN="${OPS_ROOT}/${PARENT_APP}/bin"
-
-if [[ -d "$OPS_BIN" ]]; then
-  mkdir -p "$BIN_DIR"
-  cp -f "$OPS_BIN/"*.sh "$BIN_DIR/" 2>/dev/null || true
-  chmod +x "$BIN_DIR/"*.sh 2>/dev/null || true
-
-  # optionnel: exposer la version des scripts si tu as un fichier VERSION
-  if [[ -f "${OPS_ROOT}/${PARENT_APP}/VERSION" ]]; then
-    SCRIPTS_VER="$(cat "${OPS_ROOT}/${PARENT_APP}/VERSION" | tr -d '\r\n')"
-    echo "info.scripts.version=$SCRIPTS_VER" >> "$CONFIG_DIR/deploy-info.properties"
-  fi
-else
-  echo "WARN: OPS bin introuvable: $OPS_BIN (scripts start/stop/restart non mis à jour)"
-fi
-
-
-/*
-  Jenkinsfile (final) : mono-module + multi-module
-  - Ne redéfinit PAS les parameters (utilise ceux déjà dans l’UI)
-  - Garde ta logique de download (maven-metadata.xml + curl) => inchangée dans le fond
-  - Détecte automatiquement mono vs multi via pom.xml
-  - Layout VM:
-      * Mono  : /serveur_apps/<APP>-<INSTANCE>/{bin,lib,config}
-      * Multi : /serveur_apps/<PARENT>-<INSTANCE>/<MODULE>/{bin,lib,config}
-  - Chaque stage a un try/catch pour tracer
-*/
 
 @NonCPS
 def parseXmlText(String xmlText) {
@@ -168,17 +37,17 @@ pipeline {
     JAR_REPO  = 'eai-marches-0002775-maven-local-sas'
     CONF_REPO = 'eai-marches-0002775-maven-local-sas'
 
-    // Mono-module: conf artifact fixe (ex: <APP>-conf). Multi-module: par défaut <module>-conf (convention)
-    CONF_ARTIFACT = 'eai-camel-rgv-conf'
+    // Mono-module: conf artifact fixe (ex: <APP>-config). Multi-module: par défaut <module>-conf (convention)
 
     // Git (HTTPS) : adapte à ton GitLab
     // Exemple: https://gitlab.mon-domaine/mon-groupe
-    GIT_BASE = 'https://gitlab.mon-domaine'
-    GIT_NAMESPACE = 'mon-groupe'
+    GIT_BASE = 'https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches'
+    GIT_NAMESPACE = 'sources-eai'
     GIT_CRED = 'gitlab_read_repo_token'   // Username+Password où "Password" = token GitLab
 
     // SSH
     SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+	SSH_USER = 'usr_svc_eai_qlf'
   }
 
   stages {
@@ -255,7 +124,7 @@ CONF_VERSION : ${params.CONF_VERSION}
               branches: [[name: branch]],
               userRemoteConfigs: [[
                 url: repoUrl,
-                credentialsId: env.GIT_CRED
+                credentialsId: 'usr_gitlab_eai'
               ]]
             ])
 
@@ -332,7 +201,7 @@ CONF_VERSION : ${params.CONF_VERSION}
             hosts.each { host ->
               sh """
                 set -euo pipefail
-                ssh ${env.SSH_OPTS} "${host}" "echo OK: \$(hostname) as \$(whoami)"
+                ssh ${env.SSH_OPTS} ${env.SSH_USER}@"${host}" "echo OK: \$(hostname) as \$(whoami)"
               """
             }
           } catch (e) {
@@ -381,26 +250,35 @@ if [[ "$INSTANCE" != "mono" ]]; then
   COLOR="$INSTANCE"
 fi
 
+rm -rf "$MOD_DIR"
+
 mkdir -p "$BIN_DIR" "$LIB_DIR" "$CONFIG_DIR"
+
+APP_INSTANCE="${PARENT_APP}-${INSTANCE}"
 
 run_script() {
   local s="$1"
   if [[ -x "$BIN_DIR/$s" ]]; then
     if [[ -z "$COLOR" ]]; then
-      "$BIN_DIR/$s" "$ENV_NAME"
+      #"$BIN_DIR/$s" "$ENV_NAME"
+	  "$BIN_DIR/$s" "$ENV_NAME" "$APP_INSTANCE"
     else
-      "$BIN_DIR/$s" "$ENV_NAME" "$COLOR"
+      #"$BIN_DIR/$s" "$ENV_NAME" "$COLOR"
+	  "$BIN_DIR/$s" "$ENV_NAME" "$APP_INSTANCE"
     fi
   fi
 }
 
-run_script stop.sh
+echo "Stopping (best effort)..."
+if ! run_script stop.sh; then 
+  echo "Application already stopped"
+fi
 
 # ----- CONF install -----
 if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
   [[ -f /tmp/conf.zip ]] || { echo "ERROR: /tmp/conf.zip absent"; exit 2; }
 
-  STAGE_DIR="$(mktemp -d "/tmp/${MODULE}-conf-stage-XXXXXX")"
+  STAGE_DIR="$(mktemp -d "/tmp/${MODULE}-config-stage-XXXXXX")"
   unzip -o "/tmp/conf.zip" -d "$STAGE_DIR"
 
   rm -rf "$CONFIG_DIR"/*
@@ -408,6 +286,7 @@ if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
 
   cp -f "$STAGE_DIR/application.properties" "$CONFIG_DIR/" 2>/dev/null || true
   cp -f "$STAGE_DIR/application-${ENV_NAME}.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$STAGE_DIR/logback-spring.xml" "$CONFIG_DIR/" 2>/dev/null || true
   if [[ -n "$COLOR" ]]; then
     cp -f "$STAGE_DIR/application-${ENV_NAME}-${COLOR}.properties" "$CONFIG_DIR/" 2>/dev/null || true
   fi
@@ -421,6 +300,32 @@ if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "BIN_ONLY" ]]; then
   mv -f "/tmp/app.jar" "$LIB_DIR/${MODULE}-${JAR_VERSION_UI}.jar"
   ln -sfn "$LIB_DIR/${MODULE}-${JAR_VERSION_UI}.jar" "$LIB_DIR/app.jar"
 fi
+
+
+
+# ----- BIN scripts: sync from local ops repo on target VM -----
+OPS_ROOT="/serveur_apps/eai-camel-ops"
+OPS_BIN="${OPS_ROOT}/${PARENT_APP}/bin"
+
+  echo "OPS_BIN=$OPS_BIN"
+  echo "BIN_DIR=$BIN_DIR"
+  ls -la "$OPS_BIN" || true
+  ls -la "$OPS_BIN"/*sh || true
+  
+if [[ -d "$OPS_BIN" ]]; then
+  mkdir -p "$BIN_DIR"
+  cp -f "$OPS_BIN/"*.sh "$BIN_DIR/" || true
+  chmod +x "$BIN_DIR/"*.sh || true
+
+  # optionnel: exposer la version des scripts si tu as un fichier VERSION
+  if [[ -f "${OPS_ROOT}/${PARENT_APP}/VERSION" ]]; then
+    SCRIPTS_VER="$(cat "${OPS_ROOT}/${PARENT_APP}/VERSION" | tr -d '\r\n')"
+    echo "info.scripts.version=$SCRIPTS_VER" >> "$CONFIG_DIR/deploy-info.properties"
+  fi
+else
+  echo "WARN: OPS bin introuvable: $OPS_BIN (scripts start/stop/restart non mis à jour)"
+fi
+
 
 DEPLOYED_AT="$(date --iso-8601=seconds)"
 
@@ -519,7 +424,7 @@ fi
 
                 // CONF
                 if (env.NEEDS_CONF == "true") {
-                  def confArtifactId = (env.IS_MULTI == "true") ? "${moduleArtifactId}-conf" : env.CONF_ARTIFACT
+                  def confArtifactId = (env.IS_MULTI == "true") ? "${moduleArtifactId}-config" : "${params.APP}-config"
 
                   def confResolved
                   if (params.CONF_VERSION.endsWith("-SNAPSHOT")) {
@@ -554,12 +459,12 @@ fi
                   sh """
                     set -euo pipefail
                     echo "=== Copy to ${host} (${moduleArtifactId}) ==="
-                    scp ${env.SSH_OPTS} deploy_remote.sh "${host}:/tmp/deploy_remote.sh"
-                    ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/${moduleArtifactId}-${params.JAR_VERSION}.jar \"${host}:/tmp/app.jar\"" : "true"}
-                    ${env.NEEDS_CONF == "true" ? "scp ${env.SSH_OPTS} artifacts/conf.zip \"${host}:/tmp/conf.zip\"" : "true"}
+                    scp ${env.SSH_OPTS} deploy_remote.sh ${env.SSH_USER}@"${host}:/tmp/deploy_remote.sh"
+                    ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/${moduleArtifactId}-${params.JAR_VERSION}.jar ${env.SSH_USER}@\"${host}:/tmp/app.jar\"" : "true"}
+                    ${env.NEEDS_CONF == "true" ? "scp ${env.SSH_OPTS} artifacts/conf.zip ${env.SSH_USER}@\"${host}:/tmp/conf.zip\"" : "true"}
 
                     echo "=== Deploy on ${host} (${moduleArtifactId}) ==="
-                    ssh ${env.SSH_OPTS} "${host}" "bash /tmp/deploy_remote.sh \
+                    ssh ${env.SSH_OPTS} ${env.SSH_USER}@"${host}" "bash /tmp/deploy_remote.sh \
                       '${params.APP}' \
                       '${moduleArtifactId}' \
                       '${params.ENV}' \
@@ -582,4 +487,3 @@ fi
     }
   }
 }
-```0
