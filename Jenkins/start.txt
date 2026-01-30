@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+# --- se positionner dans le répertoire bin ---
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$BIN_DIR"
+echo "[start.sh] CWD=$(pwd)"
+
+# --- chemins calculés à partir de bin ---
+APP_HOME="$(cd "$BIN_DIR/.." && pwd)"
 COMMON="/serveur_apps/eai-camel-ops/bin/appctl.sh"
 
 JAR="$APP_HOME/lib/app.jar"
 PROPS="$APP_HOME/config/application.properties"
 LOGBACK="$APP_HOME/config/logback-spring.xml"
-PROFILE="${1:-prod}"   # start.sh [profile]
+RUN_DIR="$APP_HOME/run"
+
+PROFILE="${1:-prod}"          # start.sh [profile]
+APP_INSTANCE="${2:-}"         # start.sh [profile] [app-instance]
+
+if [[ -z "$APP_INSTANCE" ]]; then
+  echo "ERROR: missing app-instance (ex: eai-camel-rgv-mono / eai-camel-rgv-blue)"
+  exit 2
+fi
+
+# --- debug : commande réelle ---
+echo "[start.sh] exec: $COMMON start \
+  --name '$APP_INSTANCE' \
+  --run '$RUN_DIR' \
+  --jar '$JAR' \
+  --props '$PROPS' \
+  --logback '$LOGBACK' \
+  --profile '$PROFILE'"
 
 exec "$COMMON" start \
-  --name "eai-camel-rgv" \
-  --run "$APP_HOME/run" \
+  --name "$APP_INSTANCE" \
+  --run "$RUN_DIR" \
   --jar "$JAR" \
   --props "$PROPS" \
   --logback "$LOGBACK" \
