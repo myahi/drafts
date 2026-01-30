@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+COMMON="/serveur_apps/eai-camel-ops/bin/appctl.sh"
+
+PROFILE="${1:-prod}"          # restart.sh [profile]
+APP_INSTANCE="${2:-}"         # restart.sh [profile] [app-instance]  ex: eai-camel-rgv-blue
+
+if [[ -z "$APP_INSTANCE" ]]; then
+  echo "ERROR: missing app-instance (ex: eai-camel-rgv-mono / eai-camel-rgv-blue)"
+  exit 2
+fi
+
+JAR="$APP_HOME/lib/app.jar"
+PROPS="$APP_HOME/config/application.properties"
+LOGBACK="$APP_HOME/config/logback-spring.xml"
+
+cd "$APP_HOME"
+
+echo "[restart.sh] CWD=$(pwd)"
+echo "[restart.sh] exec: $COMMON restart --name '$APP_INSTANCE' --run '$APP_HOME/run' --jar '$JAR' --props '$PROPS' --logback '$LOGBACK' --profile '$PROFILE'"
+
+exec "$COMMON" restart \
+  --name "$APP_INSTANCE" \
+  --run "$APP_HOME/run" \
+  --jar "$JAR" \
+  --props "$PROPS" \
+  --logback "$LOGBACK" \
+  --profile "$PROFILE"
