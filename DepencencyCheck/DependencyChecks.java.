@@ -1,0 +1,122 @@
+package eai.camel.core.health;
+
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.Session;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.sql.Timestamp;
+import java.util.Objects;
+
+@Component
+public class DependencyChecks {
+
+  private final JdbcTemplate jdbcTemplate;
+  private final ConnectionFactory connectionFactory;
+  private final DependencyCheckProperties props;
+
+  public DependencyChecks(JdbcTemplate jdbcTemplate,
+                          ConnectionFactory connectionFactory,
+                          DependencyCheckProperties props) {
+    this.jdbcTemplate = jdbcTemplate;
+    this.connectionFactory = connectionFactory;
+    this.props = props;
+  }
+
+  public CheckResult checkAll() {
+    StringBuilder errors = new StringBuilder();
+
+    boolean bddOk = checkOracleDb(errors);
+    boolean emsOk = checkTibcoEms(errors);
+    boolean fsOk  = checkFilesystem(errors);
+
+    boolean ok = bddOk && emsOk && fsOk;
+    return new CheckResult(ok, ok ? "OK" : errors.toString().trim());
+  }
+
+  private boolean checkOracleDb(StringBuilder errors) {
+    try {
+      jdbcTemplate.execute("SELECT 1 FROM dual");
+      return true;
+    } catch (Exception e) {
+      errors.append("[BDD KO: ").append(rootMessage(e)).append("] ");
+      return false;
+    }
+  }
+
+  private boolean checkTibcoEms(StringBuilder errors) {
+    try (var connection = connectionFactory.createConnection()) {
+      connection.start();
+
+      try (var session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
+        // Check strict (TIBCO EMS): temp destination + send
+        var tmpQueue = session.createTemporaryQueue();
+        try (var producer = session.createProducer(tmpQueue)) {
+          producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+          producer.send(session.createTextMessage("startup-runtime-check"));
+        } finally {
+          try { tmpQueue.delete(); } catch (Exception ignore) {}
+        }
+      }
+
+      return true;
+    } catch (Exception e) {
+      errors.append("[EMS KO: ").append(rootMessage(e)).append("] ");
+      return false;
+    }
+  }
+
+  private boolean checkFilesystem(StringBuilder errors) {
+    String pathStr = props.getFilesystem().getPath();
+    boolean requireWritable = props.getFilesystem().isRequireWritable();
+
+    try {
+      Path p = Paths.get(pathStr);
+
+      if (!Files.exists(p)) {
+        errors.append("[FS KO: path does not exist: ").append(pathStr).append("] ");
+        return false;
+      }
+      if (!Files.isDirectory(p)) {
+        errors.append("[FS KO: not a directory: ").append(pathStr).append("] ");
+        return false;
+      }
+      if (!Files.isReadable(p)) {
+        errors.append("[FS KO: not readable: ").append(pathStr).append("] ");
+        return false;
+      }
+      if (requireWritable && !Files.isWritable(p)) {
+        errors.append("[FS KO: not writable: ").append(pathStr).append("] ");
+        return false;
+      }
+
+      if (requireWritable) {
+        Path tmp = p.resolve(".dependency-check.tmp");
+        try {
+          Files.writeString(tmp, "ok",
+              StandardOpenOption.CREATE,
+              StandardOpenOption.TRUNCATE_EXISTING);
+        } finally {
+          try { Files.deleteIfExists(tmp); } catch (IOException ignore) {}
+        }
+      }
+
+      return true;
+    } catch (Exception e) {
+      errors.append("[FS KO: ").append(rootMessage(e)).append("] ");
+      return false;
+    }
+  }
+
+  private static String rootMessage(Throwable t) {
+    Throwable cur = t;
+    while (cur.getCause() != null) cur = cur.getCause();
+    String msg = cur.getMessage();
+    return (msg == null || msg.isBlank()) ? cur.getClass().getSimpleName() : msg;
+  }
+
+  public record CheckResult(boolean ok, String message) {}
+}
