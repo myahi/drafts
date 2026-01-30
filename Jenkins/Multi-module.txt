@@ -1,3 +1,105 @@
+Parfait — on fait minimal, chirurgical, sans refactor 👍
+👉 une seule ligne ajoutée + une micro-modif, rien d’autre.
+
+Tu ne touches pas :
+
+au parsing mono / multi
+
+à IS_MULTI
+
+à la structure des dossiers
+
+au Jenkinsfile (appel SSH)
+
+
+
+---
+
+🎯 Objectif (rappel)
+
+Passer aux scripts :
+
+ENV
+
+APP-INSTANCE (ex : eai-camel-rgv-mono, eai-camel-rgv-blue) ✔️ que l’appli soit mono-module ou multi-module
+
+
+
+---
+
+✅ PATCH MINIMAL (2 lignes max)
+
+1️⃣ Ajoute UNE ligne dans deploy_remote.sh
+
+Juste avant run_script() :
+
+APP_INSTANCE="${PARENT_APP}-${INSTANCE}"
+
+(on ne renomme rien, on ne touche pas au reste)
+
+
+---
+
+2️⃣ Modifie UNE ligne dans run_script()
+
+Tu as actuellement :
+
+"$BIN_DIR/$s" "$ENV_NAME"
+
+et/ou :
+
+"$BIN_DIR/$s" "$ENV_NAME" "$COLOR"
+
+👉 Remplace uniquement par :
+
+"$BIN_DIR/$s" "$ENV_NAME" "$APP_INSTANCE"
+
+(si tu as la variante avec $COLOR, tu peux l’ignorer ou la laisser si tes scripts l’acceptent, mais tu passes toujours APP_INSTANCE)
+
+
+---
+
+✅ Résultat concret (sans casser l’existant)
+
+mono-module + instance mono
+→ start.sh dev eai-camel-rgv-mono
+
+multi-module + instance blue
+→ start.sh dev eai-camel-rgv-blue
+
+
+👉 Aucune différence pour Jenkins, SSH, Artifactory, layout disque.
+
+
+---
+
+🔒 Pourquoi ça marche sans casser
+
+PARENT_APP et INSTANCE existent déjà
+
+APP_INSTANCE est juste une concaténation
+
+run_script() est le seul point d’appel aux scripts
+
+mono / multi n’intervient pas dans les paramètres passés
+
+
+
+---
+
+TL;DR
+
+✔️ 1 ligne ajoutée
+✔️ 1 ligne modifiée
+✔️ zéro refactor
+✔️ mono & multi OK
+
+Si tu veux, colle ici ton run_script() actuel, et je te dis exactement quelle ligne remplacer (copier-coller safe).
+
+
+
+
+
 # ----- BIN scripts: sync from local ops repo on target VM -----
 OPS_ROOT="/serveur_apps/eai-camel-ops"
 OPS_BIN="${OPS_ROOT}/${PARENT_APP}/bin"
