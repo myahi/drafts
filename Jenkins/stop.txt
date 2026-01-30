@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+COMMON="/serveur_apps/eai-camel-ops/bin/appctl.sh"
+JAR="$APP_HOME/lib/app.jar"
+
+exec "$COMMON" stop \
+  --name "eai-camel-rgv" \
+  --run "$APP_HOME/run" \
+  --jar "$JAR"
+~
