@@ -1,3 +1,200 @@
+
+Oui 👍 on peut faire EXACTEMENT la même chose que les 2 classes, mais en une seule classe, sans perdre de fonctionnalité.
+
+Voici la version recommandée “1 classe = 2 classes fusionnées”, qui fait strictement la même chose que :
+
+CriticalResourceChecker
+
+StartupAndRuntimeGuard
+
+
+
+---
+
+✅ Une seule classe : CriticalResourcesGuard
+
+👉 Elle fait :
+
+check Oracle + EMS + FS
+
+retry + délai paramétrables
+
+check au démarrage
+
+check périodique
+
+arrêt complet de l’application si KO
+
+compatible avec ton démarrage contrôlé des routes
+
+
+
+---
+
+CriticalResourcesGuard.java
+
+@Component
+@EnableScheduling
+public class CriticalResourcesGuard {
+
+  private final JdbcTemplate jdbc;
+  private final Environment env;
+  private final ApplicationContext ctx;
+
+  public CriticalResourcesGuard(JdbcTemplate jdbc,
+                                Environment env,
+                                ApplicationContext ctx) {
+    this.jdbc = jdbc;
+    this.env = env;
+    this.ctx = ctx;
+  }
+
+  /* =========================
+     DÉMARRAGE APPLICATION
+     ========================= */
+  @EventListener(ApplicationReadyEvent.class)
+  public void checkOnStartup() {
+    int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
+    long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
+
+    for (int i = 1; i <= retries; i++) {
+      try {
+        checkAll();
+        return; // ✅ OK → les routes pourront démarrer
+      } catch (Exception e) {
+        if (i == retries) {
+          shutdown("Startup resource check failed", e);
+        }
+        sleep(delayMs);
+      }
+    }
+  }
+
+  /* =========================
+     SURVEILLANCE RUNTIME
+     ========================= */
+  @Scheduled(fixedDelayString = "${resource.check.period-ms}")
+  public void periodicCheck() {
+    try {
+      checkAll();
+    } catch (Exception e) {
+      shutdown("Runtime resource failure", e);
+    }
+  }
+
+  /* =========================
+     CHECKS
+     ========================= */
+  private void checkAll() {
+    checkOracle();
+    checkEms();
+    checkFilesystem();
+  }
+
+  private void checkOracle() {
+    jdbc.queryForObject("select 1 from dual", Integer.class);
+  }
+
+  private void checkEms() {
+    try {
+      var factory = new com.tibco.tibjms.TibjmsConnectionFactory(
+        env.getRequiredProperty("resource.ems.url")
+      );
+      try (var c = factory.createConnection(
+          env.getRequiredProperty("resource.ems.user"),
+          env.getRequiredProperty("resource.ems.password"))) {
+        c.start();
+      }
+    } catch (Exception e) {
+      throw new IllegalStateException("EMS unavailable", e);
+    }
+  }
+
+  private void checkFilesystem() {
+    Path path = Paths.get(env.getRequiredProperty("resource.fs.path"));
+    if (!Files.isDirectory(path) || !Files.isReadable(path)) {
+      throw new IllegalStateException("Filesystem not accessible: " + path);
+    }
+  }
+
+  /* =========================
+     ARRÊT APPLICATION
+     ========================= */
+  private void shutdown(String reason, Exception e) {
+    // log.error(reason, e);
+    SpringApplication.exit(ctx, () -> 1);
+    System.exit(1);
+  }
+
+  private void sleep(long ms) {
+    try {
+      Thread.sleep(ms);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
+  }
+}
+
+
+---
+
+✅ application.properties (inchangé)
+
+resource.check.retry.count=5
+resource.check.retry.delay-ms=5000
+resource.check.period-ms=60000
+
+resource.fs.path=/data/camel/input
+
+resource.ems.url=tcp://ems.mycompany.local:7222
+resource.ems.user=ems_user
+resource.ems.password=secret
+
+
+---
+
+🧩 Comment ça s’intègre avec ton existant
+
+1. Spring démarre
+
+
+2. ApplicationReadyEvent
+
+
+3. 🔎 check ressources
+
+
+4. ❌ KO → app stoppée
+
+
+5. ✅ OK → ton RouteStartupManager démarre Camel + routes
+
+
+6. En runtime → check périodique
+
+
+7. Ressource KO → app stoppée
+
+
+
+
+---
+
+TL;DR
+
+✔️ 1 seule classe
+✔️ même comportement que les 2 précédentes
+✔️ plus simple à lire / maintenir
+✔️ parfaitement aligné avec Spring Boot 3 + Camel
+
+Si tu veux, je peux te proposer une variante :
+
+qui stoppe seulement Camel au lieu de tuer l’app
+
+ou qui publie un status Actuator readiness plutôt que System.exit
+
+*****
+
 OK 👍 je te propose une solution propre, robuste et minimale, alignée avec ce que tu as déjà :
 
 ✅ avant démarrage des routes
