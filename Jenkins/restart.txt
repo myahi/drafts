@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+# --- se positionner dans le répertoire bin ---
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$BIN_DIR"
+
+echo "[restart.sh] CWD=$(pwd)"
+
+# --- chemins relatifs cohérents depuis bin ---
+APP_HOME="$(cd "$BIN_DIR/.." && pwd)"
+
 COMMON="/serveur_apps/eai-camel-ops/bin/appctl.sh"
 
 PROFILE="${1:-prod}"          # restart.sh [profile]
-APP_INSTANCE="${2:-}"         # restart.sh [profile] [app-instance]  ex: eai-camel-rgv-blue
+APP_INSTANCE="${2:-}"         # restart.sh [profile] [app-instance]
 
 if [[ -z "$APP_INSTANCE" ]]; then
   echo "ERROR: missing app-instance (ex: eai-camel-rgv-mono / eai-camel-rgv-blue)"
@@ -15,15 +23,21 @@ fi
 JAR="$APP_HOME/lib/app.jar"
 PROPS="$APP_HOME/config/application.properties"
 LOGBACK="$APP_HOME/config/logback-spring.xml"
+RUN_DIR="$APP_HOME/run"
 
-cd "$APP_HOME"
+# --- debug : commande réelle ---
+echo "[restart.sh] exec: $COMMON restart \
+  --name '$APP_INSTANCE' \
+  --run '$RUN_DIR' \
+  --jar '$JAR' \
+  --props '$PROPS' \
+  --logback '$LOGBACK' \
+  --profile '$PROFILE'"
 
-echo "[restart.sh] CWD=$(pwd)"
-echo "[restart.sh] exec: $COMMON restart --name '$APP_INSTANCE' --run '$APP_HOME/run' --jar '$JAR' --props '$PROPS' --logback '$LOGBACK' --profile '$PROFILE'"
-
+# --- appel réel ---
 exec "$COMMON" restart \
   --name "$APP_INSTANCE" \
-  --run "$APP_HOME/run" \
+  --run "$RUN_DIR" \
   --jar "$JAR" \
   --props "$PROPS" \
   --logback "$LOGBACK" \
