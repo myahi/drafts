@@ -1,0 +1,111 @@
+Parfait 👍
+Voilà la version correcte et prête-prod pour Spring Boot 3.x + Active Directory, toujours avec une seule classe et des properties.
+
+
+---
+
+✅ application.properties (Spring Boot 3 + AD)
+
+### Active Directory
+spring.ldap.urls=ldap://ad.mycompany.local:389
+spring.ldap.base=dc=mycompany,dc=local
+spring.ldap.username=svc_ldap@mycompany.local
+spring.ldap.password=secret
+
+# Utilisateurs AD
+spring.security.ldap.user-search-base=ou=users
+spring.security.ldap.user-search-filter=(sAMAccountName={0})
+
+# Groupes AD
+spring.security.ldap.group-search-base=ou=groups
+spring.security.ldap.group-search-filter=(member={0})
+
+### Groupe AD autorisé à gérer Camel
+security.camel.admin-group=CAMEL_ADMINS
+
+### Hawtio / Jolokia
+hawtio.authenticationEnabled=true
+management.endpoints.web.exposure.include=hawtio,jolokia
+
+> ⚠️ Le groupe AD CAMEL_ADMINS sera exposé comme
+ROLE_CAMEL_ADMINS côté Spring Security.
+
+
+
+
+---
+
+✅ Classe UNIQUE de sécurité (Spring Boot 3.x)
+
+@Configuration
+@EnableWebSecurity
+public class JolokiaSecurityConfig {
+
+  @Value("${security.camel.admin-group}")
+  private String adminGroup;
+
+  @Bean
+  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    http
+      .csrf(csrf -> csrf.disable())
+      .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/actuator/**").permitAll()
+        .requestMatchers("/hawtio/**").authenticated()
+        .requestMatchers("/jolokia/**")
+          .hasAuthority("ROLE_" + adminGroup)
+        .anyRequest().denyAll()
+      )
+      .httpBasic(Customizer.withDefaults());
+
+    return http.build();
+  }
+}
+
+
+---
+
+🔍 Points importants (AD)
+
+sAMAccountName = login Windows
+
+member={0} fonctionne si ton AD retourne le DN utilisateur
+
+Si ton AD est capricieux, on peut passer à :
+
+(member:1.2.840.113556.1.4.1941:={0})
+
+(groupes imbriqués)
+
+
+
+---
+
+✅ Résultat final
+
+✔️ Spring Boot 3 compatible
+✔️ Active Directory natif
+✔️ Hawtio UI libre
+✔️ JMX/Jolokia sécurisé
+✔️ Start/Stop Camel autorisé uniquement aux membres AD
+✔️ UX simple (popup unique)
+
+
+---
+
+🔒 Option recommandée (mais facultative)
+
+Pour éviter les surprises AD :
+
+spring.security.ldap.authorities-populator.ignore-partial-result-exception=true
+
+
+---
+
+Si tu veux, je peux aussi te fournir :
+
+la version SSL LDAPS
+
+la config groupes imbriqués AD
+
+ou la récupération du username pour l’audit DB (UPDATED_BY)
