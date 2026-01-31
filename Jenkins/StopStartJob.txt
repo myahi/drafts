@@ -1,0 +1,229 @@
+Parfait. Voici la version finale, claire et propre, avec séparation totale DEPLOY / OPS, GUI propre, et UN Jenkinsfile OPS dédié.
+👉 Aucun jar / zip / Artifactory ici.
+
+
+---
+
+✅ ÉTAPES COMPLÈTES
+
+1️⃣ Principe (à graver)
+
+Job 1 = DEPLOY → ton Jenkinsfile actuel (inchangé)
+
+Job 2 = OPS → start / stop / restart uniquement (celui-ci)
+
+
+
+---
+
+2️⃣ Pré-requis côté VM
+
+Dans chaque répertoire bin/ :
+
+start.sh
+stop.sh
+restart.sh
+
+Chemins attendus :
+
+Mono-module
+
+/serveur_apps/<APP>/<INSTANCE>/bin
+
+Multi-module
+
+/serveur_apps/<APP>/<INSTANCE>/<MODULE>/bin
+
+
+---
+
+3️⃣ GUI du job Jenkins OPS (PARAMÈTRES)
+
+👉 Tu reprends EXACTEMENT les mêmes paramètres que ton job deploy, + 1 seul en plus.
+
+Paramètres à définir dans Jenkins
+
+APP (choice) → mêmes valeurs que le job deploy
+
+ENV (choice) → dev / recette / preprod / prod
+
+INSTANCE (choice) → vert / bleu / rouge (pas de texte libre)
+
+ACTION (choice) → start | stop | restart
+
+
+✔️ Les couleurs sont validées via ta MAP
+✔️ Aucun champ libre dangereux
+
+
+---
+
+4️⃣ Jenkinsfile OPS (COMPLET ET MINIMAL)
+
+👉 Ce Jenkinsfile :
+
+lit le POM
+
+détecte mono / multi
+
+calcule les chemins
+
+exécute les scripts en SSH
+
+
+@NonCPS
+def parseXmlText(String xmlText) {
+  new XmlSlurper(false, false).parseText(xmlText)
+}
+
+@NonCPS
+def detectModules(String parentPom, Map modulePoms) {
+  def p = parseXmlText(parentPom)
+  def modules = p.modules?.module?.collect { it.text().trim() } ?: []
+  if (!modules) return []
+
+  modules.collect { m ->
+    def mp = parseXmlText(modulePoms[m])
+    mp.artifactId.text().trim()
+  }
+}
+
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no'
+    BASE_DIR = '/serveur_apps'
+  }
+
+  stages {
+
+    stage('Resolve targets') {
+      steps {
+        script {
+          // === TA MAP (exemple) ===
+          def MATRIX = [
+            "eai-camel-report": [
+              dev: [ vert:['sdv01'], bleu:['sdv02'] ],
+              prod:[ vert:['spr01'], bleu:['spr02'] ]
+            ],
+            "eai-bofi-rgv": [
+              dev: [ vert:['sdv10'], bleu:['sdv11'], rouge:['sdv12'] ],
+              prod:[ vert:['spr10'], bleu:['spr11'], rouge:['spr12'] ]
+            ]
+          ]
+
+          def envMap = MATRIX[params.APP]?.get(params.ENV)
+          if (!envMap) error("ENV non supporté")
+
+          if (!envMap.containsKey(params.INSTANCE)) {
+            error("INSTANCE non autorisée. Autorisées: ${envMap.keySet()}")
+          }
+
+          env.TARGET_VMS = envMap[params.INSTANCE].join(',')
+        }
+      }
+    }
+
+    stage('Checkout repo (read pom)') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Detect mono / multi') {
+      steps {
+        script {
+          def parentPom = readFile('pom.xml')
+          def xml = parseXmlText(parentPom)
+          def moduleDirs = xml.modules?.module?.collect { it.text().trim() }
+
+          if (!moduleDirs) {
+            env.IS_MULTI = "false"
+            env.MODULES  = ""
+          } else {
+            def modulePoms = [:]
+            moduleDirs.each { modulePoms[it] = readFile("${it}/pom.xml") }
+            env.MODULES  = detectModules(parentPom, modulePoms).join(',')
+            env.IS_MULTI = "true"
+          }
+        }
+      }
+    }
+
+    stage('Operate') {
+      steps {
+        script {
+          def hosts = env.TARGET_VMS.split(',')
+
+          hosts.each { host ->
+            if (env.IS_MULTI == "true") {
+              env.MODULES.split(',').each { mod ->
+                operate(host,
+                  "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/bin")
+              }
+            } else {
+              operate(host,
+                "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/bin")
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+def operate(String host, String binDir) {
+  sh """
+    echo ">>> ${host} :: ${binDir} :: ${params.ACTION}"
+    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@${host} '
+      set -e
+      cd ${binDir}
+      ./${params.ACTION}.sh
+    '
+  """
+}
+
+
+---
+
+5️⃣ Résultat final (exemples)
+
+Multi-module (2 modules, instance vert)
+
+/vert/base/bin/restart.sh
+/vert/cashflows/bin/restart.sh
+
+Mono-module (instance rouge)
+
+/rouge/bin/restart.sh
+
+
+---
+
+6️⃣ Résumé ultra-court
+
+✔️ 2 jobs Jenkins
+
+✔️ Deploy inchangé
+
+✔️ OPS dédié
+
+✔️ Mono / multi auto
+
+✔️ Instances sécurisées
+
+✔️ SSH uniquement
+
+
+Si tu veux ensuite :
+
+rolling restart
+
+dry-run
+
+healthcheck actuator
+
+
+👉 on peut les ajouter sans toucher à cette base.
