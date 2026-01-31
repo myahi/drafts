@@ -1,12 +1,123 @@
-2026-01-31 01:48:06.287 WARN  [scheduling-1] o.a.c.loader.WebappClassLoaderBase - correlationId= userId= executionId= - The web application [ROOT] appears to have started a thread named [Camel (camel-1) thread #9 - ShutdownTask] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
- java.base@17.0.17/jdk.internal.misc.Unsafe.park(Native Method)
- java.base@17.0.17/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
- java.base@17.0.17/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
- java.base@17.0.17/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
- java.base@17.0.17/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
- java.base@17.0.17/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1630)
- java.base@17.0.17/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
- java.base@17.0.17/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1062)
- java.base@17.0.17/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1122)
- java.base@17.0.17/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
- java.base@17.0.17/java.lang.Thread.run(Thread.java:840)
+Très bonne question — et la nuance est importante 👍
+La réponse courte : les deux marchent, mais pas pour les mêmes usages.
+
+
+---
+
+TL;DR (si tu veux juste la règle)
+
+✅ --spring.config.location=… → argument applicatif (le plus simple)
+
+✅ -Dspring.config.location=… → propriété JVM (le plus robuste en équipe / Eclipse)
+
+❌ Pas de différence fonctionnelle pour Spring Boot
+
+👉 Choisis selon ton contexte
+
+
+
+---
+
+Différence claire entre -- et -D
+
+🔹 --spring.config.location=...
+
+Passé à l’application Spring Boot
+
+Visible dans args[]
+
+Facile à tester en local
+
+Très courant en CLI / scripts
+
+
+📍 Dans Eclipse :
+Run Configurations → Arguments → Program arguments
+
+--spring.config.location=../EVI-RGV/config/
+
+
+---
+
+🔹 -Dspring.config.location=...
+
+Propriété JVM
+
+Disponible dès le bootstrap
+
+Fonctionne même très tôt (avant certains logs)
+
+Plus stable quand tu changes de mode de lancement
+
+
+📍 Dans Eclipse :
+Run Configurations → Arguments → VM arguments
+
+-Dspring.config.location=${workspace_loc:EVI-RGV}/config/
+
+
+---
+
+Ordre de priorité (important)
+
+Spring Boot traite :
+
+1. propriétés JVM (-D)
+
+
+2. arguments applicatifs (--)
+
+
+3. fichiers application.yml/properties
+
+
+
+Donc si tu mets les deux : 👉 -D gagne.
+
+
+---
+
+Recommandation concrète (cas Eclipse / workspace)
+
+👉 Utilise -Dspring.config.additional-location plutôt que location :
+
+-Dspring.config.additional-location=${workspace_loc:EVI-RGV}/config/
+
+Pourquoi ?
+
+tu gardes application.yml dans EAI
+
+tu ajoutes la conf externe
+
+pas de surprise si un fichier manque
+
+
+
+---
+
+Cas où utiliser --spring.config.location
+
+tests rapides
+
+lancement en ligne de commande
+
+override total de la config embarquée
+
+
+
+---
+
+Résumé final
+
+Cas	Recommandation
+
+Eclipse / workspace	-Dspring.config.additional-location=…
+Script / CLI	--spring.config.location=…
+Ajouter sans écraser	additional-location
+Override total	location
+
+
+
+---
+
+👉 Si tu veux, dis-moi si ta conf externe doit remplacer ou compléter celle du projet EAI, et je te donne la config exacte (y compris pour plusieurs profils).
