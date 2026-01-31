@@ -1,3 +1,60 @@
+Oui : modif “chirurgicale” = changer uniquement le calcul des répertoires dans deploy_remote.sh.
+
+Ce que tu veux
+
+Base : /serveur_apps/APP/INSTANCE/
+
+Multi-module : /serveur_apps/APP/INSTANCE/MODULE/
+
+Et à l’intérieur inchangé : bin/ lib/ run/ config/
+
+
+Patch minimal dans deploy_remote.sh
+
+Remplace ce bloc :
+
+# Layout:
+# - mono : /serveur_apps/<APP>-<INSTANCE>/{bin,lib,config}
+# - multi: /serveur_apps/<PARENT>-<INSTANCE>/<MODULE>/{bin,lib,config}
+if [[ "$IS_MULTI" == "true" ]]; then
+  PARENT_DIR="${APPS_BASE}/${PARENT_APP}-${INSTANCE}"
+  MOD_DIR="${PARENT_DIR}/${MODULE}"
+else
+  MOD_DIR="${APPS_BASE}/${PARENT_APP}-${INSTANCE}"
+fi
+
+par celui-ci :
+
+# Layout:
+# - mono : /serveur_apps/<APP>/<INSTANCE>/{bin,lib,run,config}
+# - multi: /serveur_apps/<APP>/<INSTANCE>/<MODULE>/{bin,lib,run,config}
+APP_DIR="${APPS_BASE}/${PARENT_APP}"
+INST_DIR="${APP_DIR}/${INSTANCE}"
+
+if [[ "$IS_MULTI" == "true" ]]; then
+  MOD_DIR="${INST_DIR}/${MODULE}"
+else
+  MOD_DIR="${INST_DIR}"
+fi
+
+Et complète (si tu veux vraiment garder run inchangé partout) en ajoutant juste après :
+
+RUN_DIR="${MOD_DIR}/run"
+
+et en adaptant la création des dossiers :
+
+mkdir -p "$BIN_DIR" "$LIB_DIR" "$CONFIG_DIR" "$RUN_DIR"
+
+> Rien d’autre à changer : BIN_DIR/LIB_DIR/CONFIG_DIR restent basés sur MOD_DIR.
+
+
+
+C’est tout.
+
+
+
+
+
 @NonCPS
 def parseXmlText(String xmlText) {
   return new XmlSlurper(false, false).parseText(xmlText)
