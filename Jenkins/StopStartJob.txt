@@ -1,172 +1,291 @@
-Parfait. Voici la version finale, claire et propre, avec séparation totale DEPLOY / OPS, GUI propre, et UN Jenkinsfile OPS dédié.
-👉 Aucun jar / zip / Artifactory ici.
+Parfait. Voici la version complète, finale et non abrégée, avec toutes les étapes et un Jenkinsfile OPS entier, sans raccourci, sans mélange avec le job de déploiement, et aligné exactement avec ce que tu as décidé.
 
 
 ---
 
-✅ ÉTAPES COMPLÈTES
+🧱 ARCHITECTURE FINALE (RAPPEL)
 
-1️⃣ Principe (à graver)
+Job 1 – DEPLOY
+👉 Ton Jenkinsfile existant (jar, zip, Artifactory, install)
+👉 INCHANGÉ
 
-Job 1 = DEPLOY → ton Jenkinsfile actuel (inchangé)
+Job 2 – OPS
+👉 NOUVEAU job Jenkins
+👉 Start / Stop / Restart uniquement
+👉 Mono / Multi détecté via le POM
+👉 Sélection :
 
-Job 2 = OPS → start / stop / restart uniquement (celui-ci)
+application
+
+environnement
+
+instance (couleur)
+
+module (ALL ou un module précis)
+
 
 
 
 ---
 
-2️⃣ Pré-requis côté VM
+1️⃣ PRÉ-REQUIS CÔTÉ VM
 
-Dans chaque répertoire bin/ :
+Dans chaque répertoire bin/, les scripts suivants doivent exister et être exécutables :
 
 start.sh
 stop.sh
 restart.sh
 
-Chemins attendus :
+Layout attendu sur les VM
 
-Mono-module
+Application mono-module
 
 /serveur_apps/<APP>/<INSTANCE>/bin
 
-Multi-module
+Application multi-module
 
 /serveur_apps/<APP>/<INSTANCE>/<MODULE>/bin
 
+Exemples réels :
 
----
-
-3️⃣ GUI du job Jenkins OPS (PARAMÈTRES)
-
-👉 Tu reprends EXACTEMENT les mêmes paramètres que ton job deploy, + 1 seul en plus.
-
-Paramètres à définir dans Jenkins
-
-APP (choice) → mêmes valeurs que le job deploy
-
-ENV (choice) → dev / recette / preprod / prod
-
-INSTANCE (choice) → vert / bleu / rouge (pas de texte libre)
-
-ACTION (choice) → start | stop | restart
-
-
-✔️ Les couleurs sont validées via ta MAP
-✔️ Aucun champ libre dangereux
+/serveur_apps/eai-camel-report/vert/base/bin
+/serveur_apps/eai-camel-report/vert/cashflows/bin
+/serveur_apps/eai-bofi-rgv/rouge/bin
 
 
 ---
 
-4️⃣ Jenkinsfile OPS (COMPLET ET MINIMAL)
+2️⃣ GUI JENKINS – PARAMÈTRES DU JOB OPS
 
-👉 Ce Jenkinsfile :
+👉 Les paramètres APP / ENV / INSTANCE sont les mêmes que dans ton job deploy
+👉 On ajoute seulement ACTION et MODULE
 
-lit le POM
+Paramètres Jenkins
 
-détecte mono / multi
+APP (choice)
+Ex : eai-camel-report, eai-bofi-rgv
 
-calcule les chemins
+ENV (choice)
+dev | recette | preprod | prod
 
-exécute les scripts en SSH
+INSTANCE (choice)
+vert | bleu | rouge
+(validé via ta MAP interne)
 
+ACTION (choice)
+start | stop | restart
+
+MODULE (choice)
+ALL | base | cashflows | …
+(ignoré si mono-module)
+
+
+
+---
+
+3️⃣ CE QUE TU GARDES TEL QUEL
+
+Dans ce Jenkinsfile OPS, tu réutilises exactement la même logique que dans ton job deploy pour :
+
+la MAP APP / ENV / INSTANCE → VMs
+
+la validation des entrées
+
+la détection mono / multi-module via le pom.xml
+
+les variables calculées :
+
+env.IS_MULTI
+
+env.MODULES
+
+env.TARGET_VMS
+
+
+
+👉 Aucune redéfinition, aucune saisie libre.
+
+
+---
+
+4️⃣ JENKINSFILE OPS – VERSION COMPLÈTE (NON ABRÉGÉE)
+
+👉 À copier tel quel dans le job OPS.
 
 @NonCPS
 def parseXmlText(String xmlText) {
-  new XmlSlurper(false, false).parseText(xmlText)
+  return new XmlSlurper(false, false).parseText(xmlText)
 }
 
 @NonCPS
-def detectModules(String parentPom, Map modulePoms) {
-  def p = parseXmlText(parentPom)
-  def modules = p.modules?.module?.collect { it.text().trim() } ?: []
-  if (!modules) return []
+def detectModulesFromPoms(String parentPomText, Map<String, String> modulePomTexts) {
+  def parent = parseXmlText(parentPomText)
 
-  modules.collect { m ->
-    def mp = parseXmlText(modulePoms[m])
-    mp.artifactId.text().trim()
-  }
+  def moduleDirs = parent.modules?.module?.collect { it.text().trim() }?.findAll { it } ?: []
+  if (!moduleDirs) return [modules: [], artifactIds: []]
+
+  def artifactIds = moduleDirs.collect { m ->
+    def mpomText = modulePomTexts[m]
+    if (!mpomText) {
+      throw new RuntimeException("pom.xml introuvable pour le module: ${m}")
+    }
+    def mpom = parseXmlText(mpomText)
+    def aid = mpom.artifactId?.text()?.trim()
+    if (!aid) {
+      throw new RuntimeException("artifactId introuvable dans pom du module: ${m}")
+    }
+    return aid
+  }.unique()
+
+  return [modules: moduleDirs, artifactIds: artifactIds]
 }
 
 pipeline {
   agent any
-  options { timestamps(); disableConcurrentBuilds() }
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
 
   environment {
-    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no'
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
     BASE_DIR = '/serveur_apps'
   }
 
   stages {
 
-    stage('Resolve targets') {
+    stage('Resolve & validate inputs') {
       steps {
         script {
-          // === TA MAP (exemple) ===
+
+          // === MAP CENTRALE (EXEMPLE – À ADAPTER À TON EXISTANT) ===
           def MATRIX = [
             "eai-camel-report": [
-              dev: [ vert:['sdv01'], bleu:['sdv02'] ],
-              prod:[ vert:['spr01'], bleu:['spr02'] ]
+              dev:     [ vert: ['sdv4eai02'], bleu: ['sdv4eai03'] ],
+              recette: [ vert: ['src4eai02'], bleu: ['src4eai03'] ],
+              preprod: [ vert: ['spp4eai02'], bleu: ['spp4eai03'] ],
+              prod:    [ vert: ['spr4eai02'], bleu: ['spr4eai03'] ]
             ],
             "eai-bofi-rgv": [
-              dev: [ vert:['sdv10'], bleu:['sdv11'], rouge:['sdv12'] ],
-              prod:[ vert:['spr10'], bleu:['spr11'], rouge:['spr12'] ]
+              dev:     [ vert: ['sdv4eai10'], bleu: ['sdv4eai11'], rouge: ['sdv4eai12'] ],
+              recette: [ vert: ['src4eai10'], bleu: ['src4eai11'], rouge: ['src4eai12'] ],
+              preprod: [ vert: ['spp4eai10'], bleu: ['spp4eai11'], rouge: ['spp4eai12'] ],
+              prod:    [ vert: ['spr4eai10'], bleu: ['spr4eai11'], rouge: ['spr4eai12'] ]
             ]
           ]
 
-          def envMap = MATRIX[params.APP]?.get(params.ENV)
-          if (!envMap) error("ENV non supporté")
-
-          if (!envMap.containsKey(params.INSTANCE)) {
-            error("INSTANCE non autorisée. Autorisées: ${envMap.keySet()}")
+          if (!params.APP?.trim()) {
+            error("APP requis")
+          }
+          if (!params.INSTANCE?.trim()) {
+            error("INSTANCE requis")
           }
 
-          env.TARGET_VMS = envMap[params.INSTANCE].join(',')
+          def envMap = MATRIX[params.APP]?.get(params.ENV)
+          if (!envMap) {
+            error("ENV non supporté pour APP=${params.APP}")
+          }
+
+          if (!envMap.containsKey(params.INSTANCE)) {
+            error("INSTANCE '${params.INSTANCE}' non autorisée. Autorisées: ${envMap.keySet()}")
+          }
+
+          def targets = envMap[params.INSTANCE]
+          if (!targets || targets.isEmpty()) {
+            error("Aucune VM configurée pour ${params.APP}/${params.ENV}/${params.INSTANCE}")
+          }
+
+          env.TARGET_VMS = targets.join(',')
+
+          echo """
+========== OPS PLAN ==========
+APP       : ${params.APP}
+ENV       : ${params.ENV}
+INSTANCE  : ${params.INSTANCE}
+ACTION    : ${params.ACTION}
+MODULE    : ${params.MODULE}
+TARGETS   : ${env.TARGET_VMS}
+==============================
+"""
         }
       }
     }
 
-    stage('Checkout repo (read pom)') {
+    stage('Checkout application repository') {
       steps {
         checkout scm
       }
     }
 
-    stage('Detect mono / multi') {
+    stage('Detect mono / multi-module') {
       steps {
         script {
-          def parentPom = readFile('pom.xml')
-          def xml = parseXmlText(parentPom)
-          def moduleDirs = xml.modules?.module?.collect { it.text().trim() }
 
-          if (!moduleDirs) {
+          if (!fileExists('pom.xml')) {
             env.IS_MULTI = "false"
             env.MODULES  = ""
-          } else {
-            def modulePoms = [:]
-            moduleDirs.each { modulePoms[it] = readFile("${it}/pom.xml") }
-            env.MODULES  = detectModules(parentPom, modulePoms).join(',')
-            env.IS_MULTI = "true"
+            return
           }
+
+          def parentPomText = readFile('pom.xml')
+          def tmp = detectModulesFromPoms(parentPomText, [:])
+          def moduleDirs = tmp.modules
+
+          if (!moduleDirs || moduleDirs.isEmpty()) {
+            env.IS_MULTI = "false"
+            env.MODULES  = ""
+            return
+          }
+
+          def modulePomTexts = [:]
+          moduleDirs.each { m ->
+            def p = "${m}/pom.xml"
+            if (!fileExists(p)) {
+              error("pom.xml introuvable pour le module: ${m}")
+            }
+            modulePomTexts[m] = readFile(p)
+          }
+
+          def res = detectModulesFromPoms(parentPomText, modulePomTexts)
+          env.MODULES  = res.artifactIds.join(',')
+          env.IS_MULTI = "true"
         }
       }
     }
 
-    stage('Operate') {
+    stage('Operate application') {
       steps {
         script {
+
           def hosts = env.TARGET_VMS.split(',')
 
-          hosts.each { host ->
-            if (env.IS_MULTI == "true") {
-              env.MODULES.split(',').each { mod ->
-                operate(host,
-                  "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/bin")
-              }
+          if (env.IS_MULTI == "true") {
+
+            def modules
+            if (params.MODULE == 'ALL') {
+              modules = env.MODULES.split(',')
             } else {
-              operate(host,
-                "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/bin")
+              modules = [ params.MODULE ]
             }
+
+            hosts.each { host ->
+              modules.each { mod ->
+                operate(
+                  host,
+                  "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/bin"
+                )
+              }
+            }
+
+          } else {
+
+            hosts.each { host ->
+              operate(
+                host,
+                "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/bin"
+              )
+            }
+
           }
         }
       }
@@ -177,10 +296,15 @@ pipeline {
 def operate(String host, String binDir) {
   sh """
     echo ">>> ${host} :: ${binDir} :: ${params.ACTION}"
-    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@${host} '
-      set -e
-      cd ${binDir}
-      ./${params.ACTION}.sh
+    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" '
+      set -euo pipefail
+      cd "${binDir}"
+      if [[ -x "./${params.ACTION}.sh" ]]; then
+        "./${params.ACTION}.sh"
+      else
+        echo "ERROR: ${params.ACTION}.sh introuvable dans ${binDir}"
+        exit 127
+      fi
     '
   """
 }
@@ -188,42 +312,49 @@ def operate(String host, String binDir) {
 
 ---
 
-5️⃣ Résultat final (exemples)
+5️⃣ CE QUE TU OBTIENS (EXEMPLES RÉELS)
 
-Multi-module (2 modules, instance vert)
+Multi-module (eai-camel-report), instance vert, MODULE=ALL
 
-/vert/base/bin/restart.sh
-/vert/cashflows/bin/restart.sh
+/serveur_apps/eai-camel-report/vert/base/bin/restart.sh
+/serveur_apps/eai-camel-report/vert/cashflows/bin/restart.sh
 
-Mono-module (instance rouge)
+Multi-module, MODULE=cashflows
 
-/rouge/bin/restart.sh
+/serveur_apps/eai-camel-report/vert/cashflows/bin/restart.sh
+
+Mono-module (eai-bofi-rgv)
+
+/serveur_apps/eai-bofi-rgv/rouge/bin/restart.sh
 
 
 ---
 
-6️⃣ Résumé ultra-court
+6️⃣ RÉCAP FINAL (COURT)
 
-✔️ 2 jobs Jenkins
+✔️ Jenkins est le bon outil
 
-✔️ Deploy inchangé
-
-✔️ OPS dédié
+✔️ Séparation DEPLOY / OPS
 
 ✔️ Mono / multi auto
 
-✔️ Instances sécurisées
+✔️ Modules ciblables ou ALL
 
-✔️ SSH uniquement
+✔️ Zéro jar / zip / Artifactory
+
+✔️ Chemins réels et absolus
 
 
-Si tu veux ensuite :
+Tu as maintenant une base OPS propre, industrielle et exploitable en prod.
+Si tu veux, prochain pas possible :
 
 rolling restart
 
+healthcheck Spring Boot
+
 dry-run
 
-healthcheck actuator
+approval prod
 
 
-👉 on peut les ajouter sans toucher à cette base.
+Dis-moi 👌
