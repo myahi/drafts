@@ -112,7 +112,6 @@ env.TARGET_VMS
 
 👉 À copier tel quel dans le job OPS.
 
-
 @NonCPS
 def parseXmlText(String xmlText) {
   return new XmlSlurper(false, false).parseText(xmlText)
@@ -278,7 +277,7 @@ TARGETS   : ${env.TARGET_VMS}
                 operate(host, binDir)
 
                 if (params.ACTION != 'stop') {
-                  healthcheck(host, cfgDir)
+                  healthcheckStable(host, cfgDir)
                 }
               }
             }
@@ -293,7 +292,7 @@ TARGETS   : ${env.TARGET_VMS}
               operate(host, binDir)
 
               if (params.ACTION != 'stop') {
-                healthcheck(host, cfgDir)
+                healthcheckStable(host, cfgDir)
               }
             }
           }
@@ -319,9 +318,9 @@ def operate(String host, String binDir) {
   """
 }
 
-def healthcheck(String host, String configDir) {
+def healthcheckStable(String host, String configDir) {
   sh """
-    echo ">>> HEALTHCHECK on ${host} (${configDir})"
+    echo ">>> HEALTHCHECK STABLE on ${host} (${configDir})"
     ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" '
       set -euo pipefail
 
@@ -338,51 +337,36 @@ def healthcheck(String host, String configDir) {
         fi
       fi
 
-      if [[ -z "\${PORT}" ]]; then
-        PORT=8080
-      fi
-
+      [[ -n "\${PORT}" ]] || PORT=8080
       echo "Using port=\${PORT}"
 
-      ATTEMPTS=20
-      SLEEP=3
+      STABLE_REQUIRED=5
+      SLEEP=5
+      MAX_LOOPS=24   # 24 * 5s = 120s max
+      ok=0
       i=1
 
-      while [ \$i -le \$ATTEMPTS ]; do
+      while [ \$i -le \$MAX_LOOPS ]; do
         if curl -fs "http://127.0.0.1:\${PORT}/actuator/health" | grep -q '"status":"UP"'; then
-          echo "Healthcheck OK"
-          exit 0
+          ok=\$((ok+1))
+          echo "UP (\${ok}/\${STABLE_REQUIRED})"
+          if [ "\${ok}" -ge "\${STABLE_REQUIRED}" ]; then
+            echo "Healthcheck STABLE OK"
+            exit 0
+          fi
+        else
+          echo "Not UP -> reset counter"
+          ok=0
         fi
-        echo "Waiting for app... (\$i/\$ATTEMPTS)"
         sleep \$SLEEP
         i=\$((i+1))
       done
 
-      echo "ERROR: Healthcheck FAILED on port \${PORT}"
+      echo "ERROR: Healthcheck FAILED to reach STABLE UP"
       exit 1
     '
   """
 }
-
----
-
-5️⃣ CE QUE TU OBTIENS (EXEMPLES RÉELS)
-
-Multi-module (eai-camel-report), instance vert, MODULE=ALL
-
-/serveur_apps/eai-camel-report/vert/base/bin/restart.sh
-/serveur_apps/eai-camel-report/vert/cashflows/bin/restart.sh
-
-Multi-module, MODULE=cashflows
-
-/serveur_apps/eai-camel-report/vert/cashflows/bin/restart.sh
-
-Mono-module (eai-bofi-rgv)
-
-/serveur_apps/eai-bofi-rgv/rouge/bin/restart.sh
-
-
----
 
 6️⃣ RÉCAP FINAL (COURT)
 
