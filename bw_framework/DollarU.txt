@@ -1,0 +1,100 @@
+package com.example.dollaru.routes;
+
+import com.example.dollarU.dto.DollarUCommandRequest;
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DollarURoute extends RouteBuilder {
+
+    private static final String H_EXEC_EXIT   = "CamelExecExitValue";
+    private static final String H_EXEC_STDERR = "CamelExecStderr";
+
+    @Override
+    public void configure() {
+
+        // Catch-all (équivalent Catch All + Handle Error.process)
+        onException(Exception.class)
+            .handled(true)
+            .setProperty("errorMessage", simple("${exception.message}"))
+            .to("direct:handleError");
+
+        from("direct:dollarUCommand")
+            .routeId("dollarUCommandRoute")
+
+            // --- Validation minimale ---
+            .process(e -> {
+                DollarUCommandRequest req = e.getMessage().getBody(DollarUCommandRequest.class);
+                if (req == null || req.getCommandParameters() == null) {
+                    throw new IllegalArgumentException("Missing commandParameters");
+                }
+                if (req.getCommandParameters().getFlowType() == null
+                        || req.getCommandParameters().getFlowType().isBlank()) {
+                    throw new IllegalArgumentException("Missing commandParameters.flowType");
+                }
+            })
+
+            // --- Statut selon règle: quantity > 0 => ERROR sinon SUCCESS ---
+            .process(e -> {
+                DollarUCommandRequest req = e.getMessage().getBody(DollarUCommandRequest.class);
+                int quantity = req.getCommandParameters().getQuantity();
+                e.setProperty("auditStatus", (quantity > 0) ? "ERROR" : "SUCCESS");
+            })
+
+            // --- Construire la commande (équivalent BW Create command) ---
+            .process(e -> {
+                DollarUCommandRequest req = e.getMessage().getBody(DollarUCommandRequest.class);
+
+                String script = e.getContext().resolvePropertyPlaceholders("{{dollarU.script}}");
+                String flowType = req.getCommandParameters().getFlowType();
+                int quantity = req.getCommandParameters().getQuantity();
+                String dollarUData = req.getCommandParameters().getDollarUData();
+
+                String cmd = script + " " + flowType + " " + quantity;
+                if (dollarUData != null && !dollarUData.isBlank()) {
+                    cmd += " " + dollarUData;
+                }
+
+                e.setProperty("cmd", cmd);
+            })
+
+            // --- Exécuter seulement si dollarU.enabled=true ---
+            .choice()
+                .when(simple("{{dollarU.enabled}} == 'false'"))
+                    .log("DollarU disabled – skipping exec (cmd=${exchangeProperty.cmd})")
+                    // Simule un succès d'exec pour la suite du flux
+                    .setHeader(H_EXEC_EXIT).constant(0)
+                .otherwise()
+                    .setHeader(Exchange.EXEC_COMMAND, exchangeProperty("cmd"))
+                    // dummy requis, la commande vient du header Exchange.EXEC_COMMAND
+                    .to("exec:dummy?useStderrOnEmptyStdout=true")
+            .end()
+
+            // --- Si exitCode != 0 => erreur (règle unique) ---
+            .choice()
+                .when(simple("${header." + H_EXEC_EXIT + "} != 0"))
+                    .setProperty("execStderr", header(H_EXEC_STDERR))
+                    .throwException(new RuntimeException(
+                        "DollarU command failed - exitCode=${header.CamelExecExitValue}"
+                    ))
+            .end()
+
+            // --- Sleep / cooldown ---
+            .delay(simple("{{dollarU.pause.ms}}"))
+
+            // --- Audit ---
+            .setHeader("auditStatus", exchangeProperty("auditStatus"))
+            .to("direct:audit")
+
+            // --- Trace ---
+            .log("DollarU cmd=${exchangeProperty.cmd}, status=${exchangeProperty.auditStatus}, exitCode=${header.CamelExecExitValue}");
+    }
+}
+
+Exemple application.properties :
+
+dollarU.enabled=false
+dollarU.script=/opt/dollaru/bin/dollarUniverseScript.sh
+dollarU.pause.ms=500
+```0
