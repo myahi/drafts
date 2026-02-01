@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:ProcessDefinition xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:pfx="http://www.labanquepostale.fr/xml/dollarU" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:ns="http://www.tibco.com/pe/EngineTypes" xmlns:ns12="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns121="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns0="www.tibco.com/plugin/Sleep" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/pe/DeployedVarsType">
+    <xsd:import namespace="http://www.labanquepostale.fr/xml/dollarU" schemaLocation="/framework/resources/XSD/dollarUniverseCommand.xsd"/>
+    <pd:name>framework/process/DollarU/dollarUniverseCommandV3.process</pd:name>
+    <pd:description>Launch a dollar universe command to modify dollarU chain 
+(used to choose between 2 $U resources).
+
+DOES NOT STOP DOLLAR U CHAIN.</pd:description>
+    <pd:startName>Start</pd:startName>
+    <pd:startType>
+        <xsd:element name="root">
+            <xsd:complexType>
+                <xsd:sequence>
+                    <xsd:element ref="pfx:commandParameters"/>
+                    <xsd:element name="references" minOccurs="0">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="reference" minOccurs="0" maxOccurs="unbounded">
+                                    <xsd:complexType>
+                                        <xsd:sequence>
+                                            <xsd:element name="code" type="xsd:string" minOccurs="0"/>
+                                            <xsd:element name="codifier" type="xsd:string" minOccurs="0"/>
+                                        </xsd:sequence>
+                                    </xsd:complexType>
+                                </xsd:element>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="metadatas" minOccurs="0">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="metadata" minOccurs="0" maxOccurs="unbounded">
+                                    <xsd:complexType>
+                                        <xsd:sequence>
+                                            <xsd:element name="key" type="xsd:string" minOccurs="0"/>
+                                            <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                                        </xsd:sequence>
+                                    </xsd:complexType>
+                                </xsd:element>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="auditStatus" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:element>
+    </pd:startType>
+    <pd:startX>43</pd:startX>
+    <pd:startY>154</pd:startY>
+    <pd:returnBindings/>
+    <pd:endName>End</pd:endName>
+    <pd:endX>941</pd:endX>
+    <pd:endY>156</pd:endY>
+    <pd:errorSchemas/>
+    <pd:processVariables>
+        <command>
+            <xsd:element name="script" type="xsd:string"/>
+        </command>
+    </pd:processVariables>
+    <pd:targetNamespace>http://xmlns.example.com/1364914708855</pd:targetNamespace>
+    <pd:group name="Single instance">
+        <pd:type>com.tibco.pe.core.CriticalSectionGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>151</pd:x>
+        <pd:y>1</pd:y>
+        <pd:width>686</pd:width>
+        <pd:height>291</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>criticalSection</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:scope>single</pd:scope>
+            <pd:criticalSectionLock>/framework/resources/Lock/DollarUChainLock.sharedLock</pd:criticalSectionLock>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Create command</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Log DollarU command</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Launching Command</pd:from>
+            <pd:to>Sleep</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>otherwise</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Launching Command</pd:from>
+            <pd:to>ERROR - Launching DollarU Cmd</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-65536</pd:lineColor>
+            <pd:conditionType>error</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Launching Command</pd:from>
+            <pd:to>ERROR - DollarU Cmd on error</pd:to>
+            <pd:xpathDescription>Cmd on error</pd:xpathDescription>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-65536</pd:lineColor>
+            <pd:conditionType>xpath</pd:conditionType>
+            <pd:xpath>$_globalVariables/ns1:GlobalVariables/Framework/environment!='dev'
+and
+$Launching-Command/CmdOutputWithActivityOutput/returnCode!=0</pd:xpath>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Sleep</pd:from>
+            <pd:to>sendAuditInfo</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Create command</pd:from>
+            <pd:to>Launching Command</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>sendAuditInfo</pd:from>
+            <pd:to>Log DollarU command</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="Launching Command">
+            <pd:type>com.tibco.plugin.cmdexec.CmdExecActivity</pd:type>
+            <pd:resourceType>ae.activities.CmdExecActivity</pd:resourceType>
+            <pd:x>357</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <outputToString>true</outputToString>
+                <lineSplit>At Operating System Line End</lineSplit>
+            </config>
+            <pd:inputBindings>
+                <CmdInput>
+                    <command>
+                        <xsl:value-of select="$command/script"/>
+                    </command>
+                </CmdInput>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Log DollarU command">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>698</pd:x>
+            <pd:y>69</pd:y>
+            <config>
+                <processName>/framework/process/logHandling/Trace.process</processName>
+                <spawn>true</spawn>
+            </config>
+            <pd:inputBindings>
+                <trace>
+                    <code>
+                        <xsl:value-of select="'BW-EAIFRAMEWORK012'"/>
+                    </code>
+                    <msg>
+                        <xsl:value-of select="concat('DollarU command : ', $command/script,&quot;, Result : &quot;, $Launching-Command/CmdOutputWithActivityOutput/returnCode)"/>
+                    </msg>
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                            <CustomId>
+                                <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </trace>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Create command">
+            <pd:type>com.tibco.pe.core.AssignActivity</pd:type>
+            <pd:resourceType>ae.activities.assignActivity</pd:resourceType>
+            <pd:x>226</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <variableName>command</variableName>
+            </config>
+            <pd:inputBindings>
+                <script>
+                    <xsl:value-of select="if(string-length($Start/root/pfx:commandParameters/pfx:dollarUData)>0)&#xA;then&#xA;concat($_globalVariables/ns1:GlobalVariables/Framework/DollarUniverse/dollarUniverseScript, ' ', $Start/root/pfx:commandParameters/pfx:flowType, ' ', $Start/root/pfx:commandParameters/pfx:quantity,' ',$Start/root/pfx:commandParameters/pfx:dollarUData)&#xA;else&#xA;concat($_globalVariables/ns1:GlobalVariables/Framework/DollarUniverse/dollarUniverseScript, ' ', $Start/root/pfx:commandParameters/pfx:flowType, ' ', $Start/root/pfx:commandParameters/pfx:quantity)"/>
+                </script>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="ERROR - Launching DollarU Cmd">
+            <pd:type>com.tibco.pe.core.GenerateErrorActivity</pd:type>
+            <pd:resourceType>ae.activities.throw</pd:resourceType>
+            <pd:x>276</pd:x>
+            <pd:y>199</pd:y>
+            <config>
+                <faultName/>
+            </config>
+            <pd:inputBindings>
+                <ns12:ActivityInput>
+                    <message>
+                        <xsl:value-of select="concat('DollarU cmd was on error for flow [', $Start/root/pfx:commandParameters/pfx:flowType, '] and  quantity [', $Start/root/pfx:commandParameters/pfx:quantity,'] due to the following error : ', $_error/ns:ErrorReport/Msg)"/>
+                    </message>
+                </ns12:ActivityInput>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="ERROR - DollarU Cmd on error">
+            <pd:type>com.tibco.pe.core.GenerateErrorActivity</pd:type>
+            <pd:resourceType>ae.activities.throw</pd:resourceType>
+            <pd:x>447</pd:x>
+            <pd:y>194</pd:y>
+            <config>
+                <faultName/>
+            </config>
+            <pd:inputBindings>
+                <ns12:ActivityInput>
+                    <message>
+                        <xsl:value-of select="concat('DollarU was on error  for flow [', $Start/root/pfx:commandParameters/pfx:flowType, '] and  quantity [', $Start/root/pfx:commandParameters/pfx:quantity,']. Error description : ', tib:concat-sequence-format($Launching-Command/CmdOutputWithActivityOutput/error,&quot;&#xA;&quot;, true()))"/>
+                    </message>
+                </ns12:ActivityInput>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Sleep">
+            <pd:type>com.tibco.plugin.timer.SleepActivity</pd:type>
+            <pd:resourceType>ae.activities.sleep</pd:resourceType>
+            <pd:x>502</pd:x>
+            <pd:y>61</pd:y>
+            <config/>
+            <pd:inputBindings>
+                <ns0:SleepInputSchema>
+                    <IntervalInMillisec>
+                        <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/Framework/DollarUniverse/dollarUniversePauseTime"/>
+                    </IntervalInMillisec>
+                </ns0:SleepInputSchema>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="sendAuditInfo">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>599</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+            </config>
+            <pd:inputBindings>
+                <audit>
+                    <ns121:auditInfo>
+                        <ns121:timestamp>
+                            <xsl:value-of select="current-dateTime()"/>
+                        </ns121:timestamp>
+                        <xsl:for-each select="$Start/root/references/reference">
+                            <ns121:reference>
+                                <ns121:code>
+                                    <xsl:value-of select="code"/>
+                                </ns121:code>
+                                <ns121:codifier>
+                                    <xsl:value-of select="codifier"/>
+                                </ns121:codifier>
+                            </ns121:reference>
+                        </xsl:for-each>
+                        <ns121:metadatas>
+                            <xsl:for-each select="$Start/root/metadatas/metadata">
+                                <ns121:metadata>
+                                    <ns121:key>
+                                        <xsl:value-of select="key"/>
+                                    </ns121:key>
+                                    <ns121:value>
+                                        <xsl:value-of select="value"/>
+                                    </ns121:value>
+                                </ns121:metadata>
+                            </xsl:for-each>
+                        </ns121:metadatas>
+                        <ns121:description>
+                            <xsl:value-of select="&quot;Valorisation de la Ressource Logique DollarU&quot;"/>
+                        </ns121:description>
+                        <ns121:data>
+                            <xsl:value-of select="$Start/root/pfx:commandParameters/pfx:flowType"/>
+                        </ns121:data>
+                        <xsl:choose>
+                            <xsl:when test="string-length($Start/root/auditStatus)>0">
+                                <ns121:statut>
+                                    <xsl:value-of select="$Start/root/auditStatus"/>
+                                </ns121:statut>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <ns121:statut>
+                                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/Framework/Status/Success"/>
+                                </ns121:statut>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </ns121:auditInfo>
+                    <ns:ProcessContext>
+                        <ProcessId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                            <CustomId>
+                                <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </ns:ProcessContext>
+                </audit>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:activity name="Catch All">
+        <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+        <pd:resourceType>ae.activities.catch</pd:resourceType>
+        <pd:x>674</pd:x>
+        <pd:y>373</pd:y>
+        <pd:handler>true</pd:handler>
+        <config>
+            <catchAll>true</catchAll>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Handle Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>865</pd:x>
+        <pd:y>372</pd:y>
+        <config>
+            <processName>/framework/process/errorHandling/Handle Error.process</processName>
+        </config>
+        <pd:inputBindings>
+            <error>
+                <processContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </processContext>
+                <errorReport>
+                    <StackTrace>
+                        <xsl:value-of select="$_error/ns:ErrorReport/StackTrace"/>
+                    </StackTrace>
+                    <Msg>
+                        <xsl:value-of select="'Valorisation de la Ressource Logique DollarU en erreur'"/>
+                    </Msg>
+                    <FullClass>
+                        <xsl:value-of select="$_error/ns:ErrorReport/FullClass"/>
+                    </FullClass>
+                    <Class>
+                        <xsl:value-of select="$_error/ns:ErrorReport/Class"/>
+                    </Class>
+                    <ProcessStack>
+                        <xsl:value-of select="$_error/ns:ErrorReport/ProcessStack"/>
+                    </ProcessStack>
+                    <xsl:if test="$_error/ns:ErrorReport/MsgCode">
+                        <MsgCode>
+                            <xsl:value-of select="$_error/ns:ErrorReport/MsgCode"/>
+                        </MsgCode>
+                    </xsl:if>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/Data"/>
+                </errorReport>
+                <data>
+                    <xsl:copy-of select="$Start/root/pfx:commandParameters/pfx:flowType"/>
+                </data>
+                <reference>
+                    <xsl:choose>
+                        <xsl:when test="string-length($Start/root/references/reference[1]/code)>0">
+                            <code>
+                                <xsl:value-of select="$Start/root/references/reference[1]/code"/>
+                            </code>
+                            <codifier>
+                                <xsl:value-of select="$Start/root/references/reference[1]/codifier"/>
+                            </codifier>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <code>
+                                <xsl:value-of select="$Start/root/pfx:commandParameters/pfx:flowType"/>
+                            </code>
+                            <codifier>
+                                <xsl:value-of select="'DOLLAR_U'"/>
+                            </codifier>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </reference>
+            </error>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:transition>
+        <pd:from>Catch All</pd:from>
+        <pd:to>Handle Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Handle Error</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Single instance</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Start</pd:from>
+        <pd:to>Single instance</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+</pd:ProcessDefinition>
