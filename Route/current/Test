@@ -1,0 +1,4 @@
+import org.apache.camel.ServiceStatus;
+
+ServiceStatus status = camelContext.getRouteController().getRouteStatus(routeId);
+log.info("About to start routeId={}, currentStatus={}", routeId, status);
