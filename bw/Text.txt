@@ -1,1 +1,43 @@
+@Component
+@Slf4j
+public class CriticalResourcesGuard implements org.springframework.context.SmartLifecycle {
 
+    private volatile boolean running = false;
+
+    @Override
+    public void start() {
+        checkAllWithRetry();
+        running = true;
+        log.info("Critical resources guard started");
+    }
+
+    @Override
+    public void stop() {
+        running = false;
+    }
+
+    @Override
+    public void stop(Runnable callback) {
+        stop();
+        callback.run();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public boolean isAutoStartup() {
+        return true;
+    }
+
+    @Override
+    public int getPhase() {
+        return Integer.MIN_VALUE; // start first
+    }
+
+    private void checkAllWithRetry() {
+        // ton check + retry + sleep
+    }
+}
