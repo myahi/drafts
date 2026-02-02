@@ -1,4 +1,6 @@
 
+PBEWithHmacSHA512AndAES_128
+
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 
 public class EncryptTool {
