@@ -1,4 +1,33 @@
 
+import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
+import org.jasypt.salt.RandomSaltGenerator;
+
+public class EncryptTool {
+
+    public static void main(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: java -jar encrypt.jar <secret> <masterPassword>");
+            System.exit(1);
+        }
+
+        String secret = args[0];
+        String masterPassword = args[1];
+
+        PooledPBEStringEncryptor enc = new PooledPBEStringEncryptor();
+        enc.setPassword(masterPassword);
+        enc.setAlgorithm("PBEWithHmacSHA512AndAES_128");
+        enc.setKeyObtentionIterations(1000);
+        enc.setPoolSize(1);
+
+        // 🔥 OBLIGATOIRE
+        enc.setSaltGenerator(new RandomSaltGenerator());
+
+        String encrypted = enc.encrypt(secret);
+        System.out.println("ENC(" + encrypted + ")");
+    }
+}
+
+
 PBEWithHmacSHA512AndAES_128
 
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
