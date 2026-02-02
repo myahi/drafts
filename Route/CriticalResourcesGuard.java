@@ -1,4 +1,22 @@
 
+import jakarta.jms.ConnectionFactory;
+import org.messaginghub.pooled.jms.JmsPoolConnectionFactory;
+
+private void logEmsUser(ConnectionFactory cf) {
+    ConnectionFactory target = cf;
+
+    if (cf instanceof JmsPoolConnectionFactory pooled) {
+        target = pooled.getConnectionFactory();
+    }
+
+    if (target instanceof com.tibco.tibjms.TibjmsConnectionFactory tibco) {
+        log.info("EMS user configured = {}", tibco.getUserName());
+    } else {
+        log.warn("Unknown ConnectionFactory type: {}", target.getClass());
+    }
+}
+
+
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Session;
