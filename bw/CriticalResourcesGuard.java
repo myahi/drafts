@@ -5,11 +5,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.Phased;
-import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -21,120 +19,140 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @EnableScheduling
 @Slf4j
-public class CriticalResourcesGuard implements Lifecycle,Phased{
+public class CriticalResourcesGuard implements Lifecycle, Phased {
 
-	private final JdbcTemplate jdbc;
-	private final Environment env;
-	private final ApplicationContext ctx;
-	
-	private boolean isRunning = false;
-	
-	public CriticalResourcesGuard(JdbcTemplate jdbc, Environment env, ApplicationContext ctx) {
-		this.jdbc = jdbc;
-		this.env = env;
-		this.ctx = ctx;
-	}
+    private final JdbcTemplate jdbc;
+    private final Environment env;
+    private final ApplicationContext ctx;
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void checkOnStartup() {
-		int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
-		long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
+    // visible across threads
+    private volatile boolean running = false;
 
-		for (int i = 1; i <= retries; i++) {
-			try {
-				checkAll();
-				log.info("Startup resource check succeeded");
-				isRunning = true;
-				return;
-			} catch (Exception e) {
-				if (i == retries) {
-					shutdown("Startup resource check failed", e);
-				}
-				sleep(delayMs);
-			}
-		}
-	}
+    public CriticalResourcesGuard(JdbcTemplate jdbc, Environment env, ApplicationContext ctx) {
+        this.jdbc = jdbc;
+        this.env = env;
+        this.ctx = ctx;
+    }
 
-	@Scheduled(fixedDelayString = "${resource.check.period-ms}")
-	public void periodicCheck() {
-		int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
-		long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
-		for (int i = 1; i <= retries; i++) {
-			try {
-				checkAll();
-				return;
-			} catch (Exception e) {
-				if (i == retries) {
-					shutdown("Runtime resource failure", e);
-				}
-				sleep(delayMs);
-			}
-		}
-	}
+    /**
+     * Spring will call this during context startup.
+     * Because we implement Phased and return MIN_VALUE, this starts first.
+     *
+     * IMPORTANT: only set running=true AFTER checks succeed.
+     */
+    @Override
+    public void start() {
+        int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
+        long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
 
-	private void checkAll() {
-		checkOracle();
-		checkEms();
-		checkFilesystem();
-	}
+        for (int i = 1; i <= retries; i++) {
+            try {
+                checkAll();
+                log.info("Startup resource check succeeded");
+                running = true;
+                return;
+            } catch (Exception e) {
+                if (i == retries) {
+                    shutdown("Startup resource check failed", e);
+                    return; // for completeness (shutdown exits)
+                }
+                sleep(delayMs);
+            }
+        }
+    }
 
-	private void checkOracle() {
-		jdbc.queryForObject("select 1 from dual", Integer.class);
-	}
+    @Override
+    public void stop() {
+        running = false;
+    }
 
-	private void checkEms() {
-		try {
-			var factory = new com.tibco.tibjms.TibjmsConnectionFactory(env.getRequiredProperty("tibco.ems.server-url"));
-			try (var connection = factory.createConnection(env.getRequiredProperty("tibco.ems.username"), env.getRequiredProperty("tibco.ems.password"))) {
-				connection.start();
-			}
-		} catch (Exception e) {
-			throw new IllegalStateException("EMS unavailable", e);
-		}
-	}
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
 
-	private void checkFilesystem() {
-		Path path = Paths.get(env.getRequiredProperty("resource.fs.path"));
-		if (!Files.isDirectory(path) || !Files.isReadable(path)) {
-			throw new IllegalStateException("Filesystem not accessible: " + path);
-		}
-	}
+    /**
+     * Lower value = started earlier.
+     * MIN_VALUE means: start this bean as early as possible.
+     */
+    @Override
+    public int getPhase() {
+        return Integer.MIN_VALUE;
+    }
 
-	private void shutdown(String reason, Exception e) {
-		try {
-			log.error(reason, e);
-		} catch (Exception exception) {
-		} finally {
-			SpringApplication.exit(ctx, () -> 1);
-			System.exit(1);
-		}
-	}
+    /**
+     * Optional runtime periodic check:
+     * If critical resources fail at runtime, shutdown.
+     *
+     * NOTE: This job will only start running after the scheduler is active.
+     * That's fine: it doesn't participate in ordering.
+     */
+    @Scheduled(fixedDelayString = "${resource.check.period-ms}")
+    public void periodicCheck() {
+        int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
+        long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
 
-	private void sleep(long ms) {
-		try {
-			Thread.sleep(ms);
-		} catch (InterruptedException ie) {
-			Thread.currentThread().interrupt();
-		}
-	}
+        for (int i = 1; i <= retries; i++) {
+            try {
+                checkAll();
+                return;
+            } catch (Exception e) {
+                if (i == retries) {
+                    shutdown("Runtime resource failure", e);
+                }
+                sleep(delayMs);
+            }
+        }
+    }
 
-	@Override
-	public boolean isRunning() {
-		return isRunning;
-	}
+    private void checkAll() {
+        checkOracle();
+        checkEms();
+        checkFilesystem();
+    }
 
-	@Override
-	public void start() {
-		isRunning = true;
-	}
+    private void checkOracle() {
+        jdbc.queryForObject("select 1 from dual", Integer.class);
+    }
 
-	@Override
-	public void stop() {
-		isRunning = false;
-	}
+    private void checkEms() {
+        try {
+            var factory = new com.tibco.tibjms.TibjmsConnectionFactory(
+                env.getRequiredProperty("tibco.ems.server-url")
+            );
+            try (var connection = factory.createConnection(
+                env.getRequiredProperty("tibco.ems.username"),
+                env.getRequiredProperty("tibco.ems.password")
+            )) {
+                connection.start();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("EMS unavailable", e);
+        }
+    }
 
-	@Override
-	public int getPhase() {
-		return Integer.MIN_VALUE;
-	}
+    private void checkFilesystem() {
+        Path path = Paths.get(env.getRequiredProperty("resource.fs.path"));
+        if (!Files.isDirectory(path) || !Files.isReadable(path)) {
+            throw new IllegalStateException("Filesystem not accessible: " + path);
+        }
+    }
+
+    private void shutdown(String reason, Exception e) {
+        try {
+            log.error(reason, e);
+        } catch (Exception ignored) {
+        } finally {
+            SpringApplication.exit(ctx, () -> 1);
+            System.exit(1);
+        }
+    }
+
+    private void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }
