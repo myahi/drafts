@@ -1,4 +1,8 @@
 
+jasypt.encryptor.algorithm=PBEWithHmacSHA512AndAES_256
+jasypt.encryptor.key-obtention-iterations=1000
+	
+
 import jakarta.jms.ConnectionFactory;
 import org.messaginghub.pooled.jms.JmsPoolConnectionFactory;
 
