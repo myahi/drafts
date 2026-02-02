@@ -1,4 +1,29 @@
 
+import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
+
+public class EncryptTool {
+
+    public static void main(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: java -jar encrypt.jar <secret> <password>");
+            System.exit(1);
+        }
+
+        String secret = args[0];
+        String password = args[1];
+
+        PooledPBEStringEncryptor enc = new PooledPBEStringEncryptor();
+        enc.setPassword(password);
+        enc.setAlgorithm("PBEWithHmacSHA512AndAES_256");
+        enc.setKeyObtentionIterations(1000);
+        enc.setPoolSize(1);
+
+        String encrypted = enc.encrypt(secret);
+        System.out.println("ENC(" + encrypted + ")");
+    }
+}
+
+
 jasypt.encryptor.algorithm=PBEWithHmacSHA512AndAES_256
 jasypt.encryptor.key-obtention-iterations=1000
 	
