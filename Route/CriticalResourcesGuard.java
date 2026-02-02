@@ -1,3 +1,106 @@
+
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Session;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.SmartLifecycle;
+// ...
+
+@Component
+@EnableScheduling
+@Slf4j
+public class CriticalResourcesGuard implements SmartLifecycle {
+
+    private final JdbcTemplate jdbc;
+    private final Environment env;
+    private final ApplicationContext ctx;
+    private final ConnectionFactory emsConnectionFactory;
+
+    private volatile boolean running = false;
+
+    public CriticalResourcesGuard(JdbcTemplate jdbc,
+                                  Environment env,
+                                  ApplicationContext ctx,
+                                  @Qualifier("emsConnectionFactory") ConnectionFactory emsConnectionFactory) {
+        this.jdbc = jdbc;
+        this.env = env;
+        this.ctx = ctx;
+        this.emsConnectionFactory = emsConnectionFactory;
+    }
+
+    @Override
+    public void start() {
+        int retries = env.getProperty("resource.check.retry.count", Integer.class, 3);
+        long delayMs = env.getProperty("resource.check.retry.delay-ms", Long.class, 5000L);
+
+        for (int i = 1; i <= retries; i++) {
+            try {
+                checkAll();
+                log.info("Startup resource check succeeded");
+                running = true;
+                return;
+            } catch (Exception e) {
+                if (i == retries) {
+                    shutdown("Startup resource check failed", e);
+                    return;
+                }
+                sleep(delayMs);
+            }
+        }
+    }
+
+    private void checkAll() {
+        checkOracle();
+        checkEms();
+        checkFilesystem();
+    }
+
+    private void checkOracle() {
+        jdbc.queryForObject("select 1 from dual", Integer.class);
+    }
+
+    private void checkEms() {
+        // Force a real connection attempt using the *same* ConnectionFactory as Camel/JmsTemplate
+        try (Connection connection = emsConnectionFactory.createConnection()) {
+            connection.start();
+
+            // Optional: create a session to validate fully (sometimes connect works but session fails)
+            try (Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
+                // no-op
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("EMS unavailable", e);
+        }
+    }
+
+    private void checkFilesystem() {
+        Path path = Paths.get(env.getRequiredProperty("resource.fs.path"));
+        if (!Files.isDirectory(path) || !Files.isReadable(path)) {
+            throw new IllegalStateException("Filesystem not accessible: " + path);
+        }
+    }
+
+    @Override public void stop() { running = false; }
+    @Override public void stop(Runnable callback) { stop(); callback.run(); }
+    @Override public boolean isRunning() { return running; }
+    @Override public boolean isAutoStartup() { return true; }
+    @Override public int getPhase() { return Integer.MIN_VALUE; }
+
+    private void shutdown(String reason, Exception e) {
+        try { log.error(reason, e); } finally {
+            int code = SpringApplication.exit(ctx, () -> 1);
+            System.exit(code);
+        }
+    }
+
+    private void sleep(long ms) {
+        try { Thread.sleep(ms); }
+        catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+    }
+}
+
+
+
 package fr.labanquepostale.marches.eai.core.ressources;
 
 import java.nio.file.Files;
