@@ -1,43 +1,51 @@
-package fr.labanquepostale.marches.eai.core.route.lifecycle;
-
-import org.apache.camel.CamelContext;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-
 @Component
 public class RouteStartupManager {
 
-	
-	private final CamelContext camelContext;
-	private final RouteStateRepository repository;
-	private final String instanceName;
-	private final Environment env;
-	
-	public RouteStartupManager(CamelContext camelContext, RouteStateRepository repository,Environment env) {
-		this.camelContext = camelContext;
-		this.env = env;
-		this.instanceName = this.env.getProperty("app.instance-name");
-		this.repository = repository;
-	}
+    private final CamelContext camelContext;
+    private final RouteStateRepository repository;
+    private final String instanceName;
+    private final AppReadiness readiness;
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void startRoutes() throws Exception {
+    public RouteStartupManager(CamelContext camelContext,
+                               RouteStateRepository repository,
+                               Environment env,
+                               AppReadiness readiness) {
+        this.camelContext = camelContext;
+        this.repository = repository;
+        this.instanceName = env.getRequiredProperty("app.instance-name");
+        this.readiness = readiness;
+    }
 
-		camelContext.start();
+    @EventListener(ApplicationReadyEvent.class)
+    public void startRoutes() throws Exception {
 
-		var states = repository.loadAllForInstance(instanceName);
+        // 1) Start CamelContext (routes are still NOT started thanks to camel.main.auto-startup=false)
+        camelContext.start();
 
-		for (var route : camelContext.getRoutes()) {
-			String routeId = route.getId();
-			String desired = states.getOrDefault(routeId, "STARTED");
+        // 2) Load desired states from DB
+        var states = repository.loadAllForInstance(instanceName);
 
-			if ("STOPPED".equalsIgnoreCase(desired)) {
-				continue;
-			}
+        // 3) Apply state route by route
+        for (var route : camelContext.getRoutes()) {
+            String routeId = route.getId();
 
-			camelContext.getRouteController().startRoute(routeId);
-		}
-	}
+            // New route => insert STARTED by default
+            String desired = states.get(routeId);
+            if (desired == null) {
+                desired = "STARTED";
+                repository.upsert(instanceName, routeId, "STARTED");
+            }
+
+            if ("STOPPED".equalsIgnoreCase(desired)) {
+                // Ensure stopped (optional safety)
+                // camelContext.getRouteController().stopRoute(routeId);
+                continue;
+            }
+
+            camelContext.getRouteController().startRoute(routeId);
+        }
+
+        // 4) Only now: allow EventNotifier to persist Hawtio changes
+        readiness.markReady();
+    }
 }
