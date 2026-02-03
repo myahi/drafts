@@ -93,24 +93,21 @@ public class CashFlowsRoute extends RouteBuilder {
             .log("Merge OK: mergedFile=${exchangeProperty.outputFile}");
     }
 
-    private void listFilesToMerge(Exchange e) throws Exception {
-        String inputDir = e.getProperty("inputDir", String.class);
-        String regex = e.getProperty("filePattern", String.class);
-
+    private void listFilesToMerge(Exchange exchange) throws Exception {
+        String inputDir = exchange.getProperty("inputDir", String.class);
+        String regex = exchange.getProperty("filePattern", String.class);
         Pattern pattern = Pattern.compile(regex);
-
         try (Stream<Path> stream = Files.list(Paths.get(inputDir))) {
             List<Path> files = stream
                 .filter(Files::isRegularFile)
                 .filter(path -> pattern.matcher(path.getFileName().toString()).matches())
                 .sorted()
                 .collect(Collectors.toList());
-
-            e.setProperty("intputFiles", files);
+            exchange.setProperty("intputFiles", files);
         }
 
         
-		List<Path> files = (List<Path>) e.getProperty("filesToMerge");
+		List<Path> files = (List<Path>) exchange.getProperty("intputFiles");
         if (files == null || files.isEmpty()) {
             throw new IllegalStateException("No files matched pattern to merge");
         }
@@ -130,7 +127,7 @@ public class CashFlowsRoute extends RouteBuilder {
     }
 
     private void moveListedFiles(Exchange e, String subdir) throws Exception {
-        List<Path> files = (List<Path>) e.getProperty("filesToMerge");
+        List<Path> files = (List<Path>) e.getProperty("intputFiles");
         if (files == null || files.isEmpty()) {
             return;
         }
