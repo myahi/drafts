@@ -1,3 +1,65 @@
+
+private void listFilesToMerge(Exchange exchange) throws Exception {
+    String inputDir = exchange.getProperty("inputDir", String.class);
+    String regex = exchange.getProperty("filePattern", String.class);
+
+    Pattern pattern = Pattern.compile(regex);
+
+    try (Stream<Path> stream = Files.list(Paths.get(inputDir))) {
+        List<Path> files = stream
+            .filter(Files::isRegularFile)
+            .filter(path -> pattern.matcher(path.getFileName().toString()).matches())
+            .sorted()
+            .collect(Collectors.toList());
+
+        exchange.setProperty("intputFiles", files);
+
+        String filesAsString = files.stream()
+            .map(Path::getFileName)
+            .map(Path::toString)
+            .collect(Collectors.joining("\n"));
+
+        exchange.setProperty("filesToMergeAsString", filesAsString);
+    }
+}
+
+
+.choice()
+    .when(exchangeProperty("intputFiles").isNull()
+          .or(exchangeProperty("intputFiles").method("isEmpty")))
+        // --- AUCUN FICHIER ---
+        .process(exchange -> {
+            auditHelper.audit(exchange)
+                .ref(
+                    Codifier.FILE_NAME.getCodifier(),
+                    exchange.getProperty("notifcationFileName", String.class)
+                )
+                .desc("Aucun fichier CashFlows trouvé dans le répertoire")
+                .status(Status.Info.getStatus())
+                .data("")
+                .meta("PROCESS_NAME", this.getClass().getName())
+                .send();
+        })
+        .process(this::deleteNotification)
+        .stop()
+.otherwise()
+        // --- FICHIERS PRÉSENTS ---
+        .process(exchange -> {
+            auditHelper.audit(exchange)
+                .ref(
+                    Codifier.FILE_NAME.getCodifier(),
+                    exchange.getProperty("notifcationFileName", String.class)
+                )
+                .desc("Fichiers cashflows MO Calypso reçus")
+                .status(Status.Info.getStatus())
+                .data(exchange.getProperty("filesToMergeAsString", String.class))
+                .meta("PROCESS_NAME", this.getClass().getName())
+                .send();
+        })
+.end()
+
+
+
 package fr.labanquepostale.report.cashflows.routes;
 import java.nio.file.Files;
 import java.nio.file.Path;
