@@ -44,7 +44,10 @@ def fetchRepo = { String repo ->
 items.find({
   "repo": "${repo}",
   "path": {"${'$'}match":"${groupPath}/${app}/*"},
-  "name": {"${'$'}match":"${app}-*.jar"}
+  ${'$'}or": [
+    {"name": {"${'$'}match":"${app}-*.pom"}},
+    {"name": {"${'$'}match":"${app}-*.jar"}}
+  ]
 }).include("repo","path","name")
 """
   def url = new URL("${baseUrl}/api/search/aql")
