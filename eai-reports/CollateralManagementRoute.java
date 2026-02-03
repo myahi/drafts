@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fr.labanquepostale.marches.eai.core.dollaru.DollarUUtil;
+import fr.labanquepostale.marches.eai.core.file.FileMoveUtil;
 import fr.labanquepostale.marches.eai.core.helper.AuditHelper;
 import fr.labanquepostale.marches.eai.core.model.audit.Codifier;
 import fr.labanquepostale.marches.eai.core.model.audit.Status;
@@ -32,14 +33,20 @@ public class CollateralManagementRoute extends RouteBuilder {
         fromF("file:{{eai.report.collateral.input.dir}}"
             + "?include={{eai.report.collateral.input.file.pattern}}"
             + "&delay={{eai.report.collateral.input.delay.ms}}"
-            + "&readLock=changed")
+            + "&readLock=changed"
+            + "&idempotent=true")
         .routeId("eai-camel-report-collateral-management-route")
 
-        // Cache paths
-        .setProperty("inputFilePath", header("CamelFilePath"))
-        .setProperty("inputFileName", header("CamelFileName"))
+        // Cache context
+        .setProperty("inputDir", simple("{{eai.report.collateral.input.dir}}"))
+        .setProperty("archivesSubdir", simple("{{eai.report.collateral.input.dir.archives.subdir}}"))
+        .setProperty("errorsSubdir", simple("{{eai.report.collateral.input.dir.errors.subdir}}"))
         .setProperty("outputDir", simple("{{eai.report.collateral.output.dir}}"))
         .setProperty("dollarURessourceName", simple("{{eai.report.collateral.dollaru.ressource}}"))
+
+        // File info
+        .setProperty("inputFilePath", header("CamelFilePath"))
+        .setProperty("inputFileName", header("CamelFileName"))
 
         // Audit réception
         .process(exchange -> {
@@ -48,7 +55,7 @@ public class CollateralManagementRoute extends RouteBuilder {
                     Codifier.FILE_NAME.getCodifier(),
                     exchange.getProperty("inputFileName", String.class)
                 )
-                .desc("Fichier collateral management détecté")
+                .desc("Fichier Collateral Management détecté")
                 .status(Status.Info.getStatus())
                 .data("")
                 .meta("PROCESS_NAME", this.getClass().getName())
@@ -68,6 +75,11 @@ public class CollateralManagementRoute extends RouteBuilder {
         )
         .to("direct:dollarUCommand")
 
+        // Archivage du fichier source
+        .process(exchange ->
+            FileMoveUtil.move(exchange, "archivesSubdir", "inputFilePath")
+        )
+
         // Audit succès
         .process(exchange -> {
             auditHelper.audit(exchange)
@@ -75,7 +87,7 @@ public class CollateralManagementRoute extends RouteBuilder {
                     Codifier.FILE_NAME.getCodifier(),
                     exchange.getProperty("inputFileName", String.class)
                 )
-                .desc("Fichier collateral management traité")
+                .desc("Fichier Collateral Management traité")
                 .status(Status.Success.getStatus())
                 .data("")
                 .meta("PROCESS_NAME", this.getClass().getName())
@@ -106,6 +118,11 @@ public class CollateralManagementRoute extends RouteBuilder {
         exchange.setProperty("outputFile", target.toString());
     }
 
+    /**
+     * Gestion des erreurs :
+     * - DollarU NOK
+     * - déplacement du fichier en erreur
+     */
     private void handleException(Exchange exchange) throws Exception {
         Exception ex = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
 
@@ -117,6 +134,9 @@ public class CollateralManagementRoute extends RouteBuilder {
         exchange.getContext()
             .createProducerTemplate()
             .send("direct:dollarUCommand", exchange);
+
+        // Move en erreur
+        FileMoveUtil.move(exchange, "errorsSubdir", "inputFilePath");
 
         log.error(
             "Collateral management NOK: reason={}",
