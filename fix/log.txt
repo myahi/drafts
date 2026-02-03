@@ -1,4 +1,18 @@
- 8=FIXT.1.1|9=178|35=AR|34=2|49=LBP_EURP_PT_LDN_TEST|52=20260203-23:09:12.503|56=TRADEWEB|150=F|487=0|571=20260203.LBP.EURP.TRDCONF.1840.1|572=20260203.LBP.EURP.TRDCONF.1840.1|828=101|856=0|939=0|10=014|
+private void sendTradeCaptureReportAck(Message tradeReport, SessionID sessionID)
+        throws FieldNotFound, SessionNotFound {
+
+    TradeCaptureReportAck ack = new TradeCaptureReportAck();
+
+    ack.set(new TradeReportID(tradeReport.getString(TradeReportID.FIELD))); // 571
+    ack.set(new TradeReportTransType(0));                                   // 487 = New
+    ack.set(new TradeReportType(0));                                        // 856 (à valider TW)
+    ack.set(new TrdRptStatus(TrdRptStatus.ACCEPTED));                       // 939 = Accepted
+
+    // NE PAS SET 150, 828, 572 tant que TW ne le demande pas explicitement
+    Session.sendToTarget(ack, sessionID);
+}
+
+8=FIXT.1.1|9=178|35=AR|34=2|49=LBP_EURP_PT_LDN_TEST|52=20260203-23:09:12.503|56=TRADEWEB|150=F|487=0|571=20260203.LBP.EURP.TRDCONF.1840.1|572=20260203.LBP.EURP.TRDCONF.1840.1|828=101|856=0|939=0|10=014|
 [INFO ] 2026-02-04 00:09:12.504 [QFJ Message Processor] FixSessionLog - Session OUT >>> 8=FIXT.1.1|9=178|35=AR|34=2|49=LBP_EURP_PT_LDN_TEST|52=20260203-23:09:12.503|56=TRADEWEB|150=F|487=0|571=20260203.LBP.EURP.TRDCONF.1840.1|572=20260203.LBP.EURP.TRDCONF.1840.1|828=101|856=0|939=0|10=014|
 [INFO ] 2026-02-04 00:09:12.504 [QFJ Message Processor] FixClientStarter - Trade Capture Report ACK sent for TradeReportID: 20260203.LBP.EURP.TRDCONF.1840.1
 [INFO ] 2026-02-04 00:09:12.564 [NioProcessor-2] FixSessionLog - Session IN >>> 8=FIXT.1.1|9=147|35=3|34=3|49=TRADEWEB|52=20260203-23:09:12.521|56=LBP_EURP_PT_LDN_TEST|45=2|58=Value is incorrect (out of range) for this tag|371=150|372=AR|373=5|10=209|
