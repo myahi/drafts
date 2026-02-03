@@ -1,111 +1,28 @@
--add-opens java.base/sun.security.ssl=ALL-UNNAMED 
-
-<dependency>
-  <groupId>org.apache.mina</groupId>
-  <artifactId>mina-core</artifactId>
-  <version>2.1.8</version>
-</dependency>
-
-<dependency>
-  <groupId>org.apache.mina</groupId>
-  <artifactId>mina-filter-ssl</artifactId>
-  <version>2.1.8</version>
-</dependency>
-
-
-<project xmlns="https://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>fr.labanquepostale.marces.eai</groupId>
-	<artifactId>fix-engine</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
-	<properties>
-		<java.version>17</java.version>
-		<maven.compiler.source>17</maven.compiler.source>
-		<maven.compiler.target>17</maven.compiler.target>
-		<log4j.version>2.23.0</log4j.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.tibco.ems</groupId>
-			<artifactId>tibjms</artifactId>
-			<version>8.2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.tibco</groupId>
-			<artifactId>tibcrypt</artifactId>
-			<version>8.2</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.jms</groupId>
-			<artifactId>javax.jms-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.quickfixj</groupId>
-			<artifactId>quickfixj-core</artifactId>
-			<version>2.3.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.quickfixj</groupId>
-			<artifactId>quickfixj-messages-fixt11</artifactId>
-			<version>2.3.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.quickfixj</groupId>
-			<artifactId>quickfixj-messages-fix50sp2</artifactId>
-			<version>2.3.2</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.jms</groupId>
-			<artifactId>javax.jms-api</artifactId>
-			<version>2.0</version>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<!-- any other plugins -->
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>fr.labanquepostale.fix.connection.FixClientStarter</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<finalName>fixEngineTradeWeb</finalName>
-					<appendAssemblyId>false</appendAssemblyId>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-</project>
+nohup: appending output to ‘nohup.out’
+Exception in thread "main" java.lang.ExceptionInInitializerError
+        at java.base/java.lang.Class.forName0(Native Method)
+        at java.base/java.lang.Class.forName(Class.java:375)
+        at com.tibco.security.impl.OoOO.ooOO.init(SecurityVendor.java:129)
+        at com.tibco.security.impl.OoOO.ooOO.init(SecurityVendor.java:85)
+        at com.tibco.security.impl.OoOO.G.init(CryptoVendor.java:46)
+        at com.tibco.security.impl.OoOO.G.getInstance(CryptoVendor.java:90)
+        at com.tibco.security.Crypto.undo(Crypto.java:73)
+        at com.tibco.security.ObfuscationEngine.decrypt(ObfuscationEngine.java:320)
+        at fr.labanquepostale.tools.JavaPropertiesSetter.initialiseJVMSSLProperties(JavaPropertiesSetter.java:93)
+        at fr.labanquepostale.tools.JavaPropertiesSetter.initializeEMSPrperties(JavaPropertiesSetter.java:44)
+        at fr.labanquepostale.fix.connection.FixApplication.<init>(FixApplication.java:46)
+        at fr.labanquepostale.fix.connection.FixClientStarter.main(FixClientStarter.java:30)
+Caused by: java.lang.RuntimeException: cannot find JSSE security provider com.sun.net.ssl.internal.ssl.Provider: java.lang.ClassNotFoundException: com.sun.net.ssl.internal.ssl.Provider
+        at com.tibco.security.providers.SecurityVendor_j2se.<clinit>(SecurityVendor_j2se.java:70)
+        ... 12 more
+Caused by: java.lang.ClassNotFoundException: com.sun.net.ssl.internal.ssl.Provider
+        at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+        at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+        at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+        at java.base/java.lang.Class.forName0(Native Method)
+        at java.base/java.lang.Class.forName(Class.java:467)
+        at com.tibco.security.providers.SecurityVendor_j2se.<clinit>(SecurityVendor_j2se.java:68)
+        ... 12 more
+[INFO ] 2026-02-03 21:35:32.724 [Thread-0] FixClientStarter - Fix engine will be shutdown.
+Exception in thread "Thread-0" java.lang.NullPointerException: Cannot invoke "quickfix.SocketInitiator.stop()" because "fr.labanquepostale.fix.connection.FixClientStarter.SOCKET_INITIATOR" is null
+        at fr.labanquepostale.fix.connection.FixClientStarter$1.run(FixClientStarter.java:26
