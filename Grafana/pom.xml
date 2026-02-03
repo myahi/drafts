@@ -1,3 +1,17 @@
+# --- Management port ---
+management.server.port=8081
+
+# --- Actuator endpoints exposure ---
+management.endpoints.web.exposure.include=health,info,prometheus
+
+# --- Prometheus endpoint ---
+management.endpoint.prometheus.enabled=true
+
+# --- Micrometer / Camel ---
+camel.micrometer.enabled=true
+
+
+
 <!-- Actuator (obligatoire) -->
 <dependency>
   <groupId>org.springframework.boot</groupId>
