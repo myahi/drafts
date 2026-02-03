@@ -144,7 +144,7 @@ public class FixApplication implements Application {
 		    
 		    // Copier les parties (si nécessaire selon spec TradeWeb)
 		    if (tradeReport.isSetField(TrdMatchID.FIELD)) {
-		        ack.set(new TrdMatchID(tradeReport.getString(TrdMatchID.FIELD))); // Tag 880
+		       ack.set(new TrdType(tradeReport.getInt(TrdType.FIELD)));
 		    }
 		    
 		    // Envoyer
