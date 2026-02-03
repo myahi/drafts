@@ -22,3 +22,4 @@ ValidateFieldsHaveValues=N
 ValidateUserDefinedFields=N
 AllowUnknownMsgFields=Y
 ValidateUnorderedGroupFields=N
+ValidateIncomingMessage=N
