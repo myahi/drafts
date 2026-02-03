@@ -1,8 +1,20 @@
-[INFO ] 2026-02-03 17:24:32.400 [NioProcessor-2] Fix360TSessionLog - Session IN >>> 8=FIXT.1.1|9=119|35=j|34=3|49=TRADEWEB|52=20260203-16:24:32.387|56=LBP_EURP_PT_LDN_TEST|45=2|58=Message type not supported|372=AE|380=3|10=072|
-[INFO ] 2026-02-03 17:24:32.400 [QFJ Message Processor] LBP360TFixClientMain - FROM APP (j) >>> 8=FIXT.1.1|9=119|35=j|34=3|49=TRADEWEB|52=20260203-16:24:32.387|56=LBP_EURP_PT_LDN_TEST|45=2|58=Message type not supported|372=AE|380=3|10=072|
-[INFO ] 2026-02-03 17:24:32.401 [QFJ Message Processor] LBP360TFixClientMain - Write incoming message in /serveur_apps/tradeWebPostTrade/incomingMessages/03022026/3_03022026_172432401.txt
-[INFO ] 2026-02-03 17:24:32.412 [QFJ Message Processor] LBP360TFixClientMain - sending message to queue : rec.re7integration.tradeweb.trade.in
-[INFO ] 2026-02-03 17:24:32.413 [QFJ Message Processor] LBP360TFixClientMain - TO APP (j) >>> 8=FIXT.1.1|9=119|35=j|34=3|49=LBP_EURP_PT_LDN_TEST|52=20260203-16:24:32.412|56=TRADEWEB|45=2|58=Message type not supported|372=AE|380=3|10=061|
-[INFO ] 2026-02-03 17:24:32.413 [QFJ Message Processor] Fix360TSessionLog - Session OUT >>> 8=FIXT.1.1|9=119|35=j|34=3|49=LBP_EURP_PT_LDN_TEST|52=20260203-16:24:32.412|56=TRADEWEB|45=2|58=Message type not supported|372=AE|380=3|10=061|
-[INFO ] 2026-02-03 17:24:32.443 [NioProcessor-2] Fix360TSessionLog - Session IN >>> 8=FIXT.1.1|9=112|35=j|34=4|49=TRADEWEB|52=20260203-16:24:32.430|56=LBP_EURP_PT_LDN_TEST|45=3|58=Message type not supported|380=3|10=216|
-[INFO ] 2026-02-03 17:24:32.444 [QFJ Message Processor] Fix360TSessionLog - Session ERR >>> Rejecting invalid message: quickfix.FieldException: Required tag missing, field=372: 8=FIXT.1.1|9=112|35=j|34=4|49=TRADEWEB|52=20260203-16:24:32.430|56=LBP_EURP_PT_LDN_TEST|45=3|58=Message type not supported|380=3|10=216|
+<!-- Core QuickFIX/J -->
+<dependency>
+    <groupId>org.quickfixj</groupId>
+    <artifactId>quickfixj-core</artifactId>
+    <version>2.3.2</version>
+</dependency>
+
+<!-- Messages FIXT 1.1 -->
+<dependency>
+    <groupId>org.quickfixj</groupId>
+    <artifactId>quickfixj-messages-fixt11</artifactId>
+    <version>2.3.2</version>
+</dependency>
+
+<!-- Messages FIX 5.0 SP2 (AE = TradeCaptureReport) -->
+<dependency>
+    <groupId>org.quickfixj</groupId>
+    <artifactId>quickfixj-messages-fix50sp2</artifactId>
+    <version>2.3.2</version>
+</dependency>
