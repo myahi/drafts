@@ -1,0 +1,3 @@
+[INFO ] 2026-02-03 20:42:07.432 [main] SecurityVendor - Initializing JSSE's crypto provider class com.sun.net.ssl.internal.ssl.Provider in default mode
+[ERROR] 2026-02-03 20:42:07.820 [main] FixClientStarter - quickfix.ConfigError: error during session initialization
+[INFO ] 2026-02-03 20:42:07.821 [Thread-1] FixClientStarter - Fix engine will be shutdown.
