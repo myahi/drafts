@@ -1,3 +1,4 @@
+-add-opens java.base/sun.security.ssl=ALL-UNNAMED 
 
 <dependency>
   <groupId>org.apache.mina</groupId>
