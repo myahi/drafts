@@ -922,8 +922,8 @@
 			<field name="UnderlyingSecurityDesc" required="N"/>
 			<field name="UnderlyingCurrency" required="N"/>
 			<field name="UnderlyingQty" required="N"/>
-			<field name="UnderlyingDirtyPrice" required="N"/>
 			<field name="UnderlyingPx" required="N"/>
+			<field name="UnderlyingDirtyPrice" required="N"/>
 			<field name="UnderlyingStartValue" required="N"/>
 			<field name="UnderlyingCurrentValue" required="N"/>
 			<field name="UnderlyingEndValue" required="N"/>
