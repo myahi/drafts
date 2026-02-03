@@ -1,3 +1,32 @@
-[INFO ] 2026-02-03 20:42:07.432 [main] SecurityVendor - Initializing JSSE's crypto provider class com.sun.net.ssl.internal.ssl.Provider in default mode
-[ERROR] 2026-02-03 20:42:07.820 [main] FixClientStarter - quickfix.ConfigError: error during session initialization
-[INFO ] 2026-02-03 20:42:07.821 [Thread-1] FixClientStarter - Fix engine will be shutdown.
+Exception in thread "Thread-1" java.lang.NullPointerException
+        at quickfix.mina.SingleThreadedEventHandlingStrategy.stopHandlingMessages(SingleThreadedEventHandlingStrategy.java:197)
+        at quickfix.SocketInitiator.stop(SocketInitiator.java:146)
+        at quickfix.Connector.stop(Connector.java:45)
+        at fr.labanquepostale.fix.connection.FixClientStarter$1.run(FixClientStarter.java:26)
+nohup: appending output to ‘nohup.out’
+[INFO ] 2026-02-03 20:45:13.272 [main] SecurityVendor - Initializing JSSE's crypto provider class com.sun.net.ssl.internal.ssl.Provider in default mode
+[INFO ] 2026-02-03 20:45:13.742 [main] DefaultSessionSchedule - [FIXT.1.1:LBP_EURP_PT_LDN_TEST->TRADEWEB] weekly, SAT 17:01:00-UTC - SAT 17:00:00-UTC
+[INFO ] 2026-02-03 20:45:13.754 [main] FixSessionLog - Session EVT >>> Session FIXT.1.1:LBP_EURP_PT_LDN_TEST->TRADEWEB schedule is weekly, SAT 17:01:00-UTC - SAT 17:00:00-UTC
+[INFO ] 2026-02-03 20:45:13.754 [main] FixSessionLog - Session EVT >>> Created session: FIXT.1.1:LBP_EURP_PT_LDN_TEST->TRADEWEB
+[INFO ] 2026-02-03 20:45:13.754 [main] FixClientStarter - Successfully called onCreate for sessionId : FIXT.1.1:LBP_EURP_PT_LDN_TEST->TRADEWEB
+[INFO ] 2026-02-03 20:45:13.756 [main] NetworkingOptions - Socket option: SocketKeepAlive=true
+[INFO ] 2026-02-03 20:45:13.756 [main] NetworkingOptions - Socket option: SocketTcpNoDelay=true
+[INFO ] 2026-02-03 20:45:13.756 [main] NetworkingOptions - Socket option: SocketSynchronousWrites=false
+[INFO ] 2026-02-03 20:45:13.756 [main] NetworkingOptions - Socket option: SocketSynchronousWriteTimeout=30000
+Exception in thread "main" java.lang.NoSuchMethodError: org.apache.mina.filter.ssl.SslFilter.setEndpointIdentificationAlgorithm(Ljava/lang/String;)V
+        at quickfix.mina.initiator.IoSessionInitiator$ConnectTask.installSslFilter(IoSessionInitiator.java:193)
+        at quickfix.mina.initiator.IoSessionInitiator$ConnectTask.setupIoConnector(IoSessionInitiator.java:154)
+        at quickfix.mina.initiator.IoSessionInitiator$ConnectTask.<init>(IoSessionInitiator.java:145)
+        at quickfix.mina.initiator.IoSessionInitiator.<init>(IoSessionInitiator.java:78)
+        at quickfix.mina.initiator.AbstractSocketInitiator.createInitiator(AbstractSocketInitiator.java:179)
+        at quickfix.mina.initiator.AbstractSocketInitiator.createSessionInitiators(AbstractSocketInitiator.java:108)
+        at quickfix.SocketInitiator.initialize(SocketInitiator.java:127)
+        at quickfix.SocketInitiator.start(SocketInitiator.java:120)
+        at fr.labanquepostale.fix.connection.FixClientStarter.main(FixClientStarter.java:35)
+[INFO ] 2026-02-03 20:45:13.799 [Thread-1] FixClientStarter - Fix engine will be shutdown.
+[INFO ] 2026-02-03 20:45:13.799 [Thread-1] SocketInitiator - Logging out all sessions
+Exception in thread "Thread-1" java.lang.NullPointerException
+        at quickfix.mina.SingleThreadedEventHandlingStrategy.stopHandlingMessages(SingleThreadedEventHandlingStrategy.java:197)
+        at quickfix.SocketInitiator.stop(SocketInitiator.java:146)
+        at quickfix.Connector.stop(Connector.java:45)
+        at fr.labanquepostale.fix.connection.FixClientStarter$1.run(FixClientStarter.java:26)
