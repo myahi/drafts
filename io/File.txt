@@ -1,0 +1,437 @@
+Parfait — je te redonne toutes les classes, avec leur code, propres, cohérentes et prêtes à coller, telles qu’on les a définies pour Spring Boot + Camel.
+(J’utilise le package com.yourapp.common.io, adapte-le si besoin.)
+
+
+---
+
+📐 FileSizeUnit
+
+package com.yourapp.common.io;
+
+public enum FileSizeUnit {
+  BYTES(1L),
+  KB(1024L),
+  MB(1024L * 1024L),
+  GB(1024L * 1024L * 1024L);
+
+  private final long divisor;
+
+  FileSizeUnit(long divisor) {
+    this.divisor = divisor;
+  }
+
+  public long convert(long bytes) {
+    return bytes / divisor;
+  }
+
+  public double convertDouble(long bytes) {
+    return (double) bytes / divisor;
+  }
+}
+
+
+---
+
+📦 FileSizeUtil
+
+package com.yourapp.common.io;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class FileSizeUtil {
+
+  private FileSizeUtil() {}
+
+  public static long size(Path file, FileSizeUnit unit) throws IOException {
+    return unit.convert(Files.size(file));
+  }
+
+  public static double sizeAsDouble(Path file, FileSizeUnit unit) throws IOException {
+    return unit.convertDouble(Files.size(file));
+  }
+
+  public static long sizeInBytes(Path file) throws IOException {
+    return Files.size(file);
+  }
+}
+
+
+---
+
+📦 TempFileUtil
+
+package com.yourapp.common.io;
+
+import java.io.IOException;
+import java.nio.file.*;
+
+public final class TempFileUtil {
+
+  private TempFileUtil() {}
+
+  public static Path createTempInSameDir(Path target, String prefix, String suffix) throws IOException {
+    Path dir = target.getParent();
+    if (dir == null) {
+      return Files.createTempFile(prefix, suffix);
+    }
+    Files.createDirectories(dir);
+    return Files.createTempFile(dir, prefix, suffix);
+  }
+
+  public static void atomicReplace(Path tmp, Path target) throws IOException {
+    try {
+      Files.move(tmp, target,
+          StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.ATOMIC_MOVE);
+    } catch (AtomicMoveNotSupportedException e) {
+      Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+    }
+  }
+}
+
+
+---
+
+📦 FileMergeUtil
+
+package com.yourapp.common.io;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Objects;
+
+public final class FileMergeUtil {
+
+  private FileMergeUtil() {}
+
+  public static void merge(Path output, List<Path> inputs, int bufferSize, boolean append)
+      throws IOException {
+
+    Objects.requireNonNull(output);
+    Objects.requireNonNull(inputs);
+    if (inputs.isEmpty()) throw new IllegalArgumentException("inputs empty");
+
+    Path parent = output.getParent();
+    if (parent != null) Files.createDirectories(parent);
+
+    OpenOption[] opts = append
+        ? new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND}
+        : new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING};
+
+    try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(output, opts), bufferSize)) {
+      for (Path in : inputs) {
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(in), bufferSize)) {
+          is.transferTo(out);
+        }
+      }
+    }
+  }
+
+  public static void mergeAtomic(Path output, List<Path> inputs, int bufferSize)
+      throws IOException {
+
+    Path tmp = TempFileUtil.createTempInSameDir(output, "merge", ".tmp");
+    try {
+      merge(tmp, inputs, bufferSize, false);
+      TempFileUtil.atomicReplace(tmp, output);
+    } finally {
+      Files.deleteIfExists(tmp);
+    }
+  }
+}
+
+
+---
+
+📦 ZipUtil
+
+package com.yourapp.common.io;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.List;
+import java.util.zip.*;
+
+public final class ZipUtil {
+
+  private ZipUtil() {}
+
+  public static void zip(Path zipOut,
+                         List<Path> inputs,
+                         int bufferSize,
+                         int compressionLevel,
+                         boolean overwrite) throws IOException {
+
+    if (Files.exists(zipOut) && !overwrite) {
+      throw new FileAlreadyExistsException(zipOut.toString());
+    }
+
+    Path parent = zipOut.getParent();
+    if (parent != null) Files.createDirectories(parent);
+
+    try (ZipOutputStream zos = new ZipOutputStream(
+        new BufferedOutputStream(Files.newOutputStream(zipOut), bufferSize))) {
+
+      zos.setLevel(compressionLevel);
+
+      for (Path p : inputs) {
+        ZipEntry entry = new ZipEntry(p.getFileName().toString());
+        zos.putNextEntry(entry);
+        try (InputStream in = new BufferedInputStream(Files.newInputStream(p), bufferSize)) {
+          in.transferTo(zos);
+        }
+        zos.closeEntry();
+      }
+    }
+  }
+
+  public static void unzip(Path zipFile, Path destDir, int bufferSize, boolean overwrite)
+      throws IOException {
+
+    Files.createDirectories(destDir);
+
+    try (ZipInputStream zis = new ZipInputStream(
+        new BufferedInputStream(Files.newInputStream(zipFile), bufferSize))) {
+
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        Path out = destDir.resolve(entry.getName()).normalize();
+        if (!out.startsWith(destDir)) {
+          throw new IOException("Zip slip detected");
+        }
+        if (entry.isDirectory()) {
+          Files.createDirectories(out);
+        } else {
+          Files.createDirectories(out.getParent());
+          if (Files.exists(out) && !overwrite) {
+            throw new FileAlreadyExistsException(out.toString());
+          }
+          try (OutputStream os = Files.newOutputStream(out)) {
+            zis.transferTo(os);
+          }
+        }
+        zis.closeEntry();
+      }
+    }
+  }
+}
+
+
+---
+
+📦 ChecksumUtil
+
+package com.yourapp.common.io;
+
+import java.io.InputStream;
+import java.nio.file.*;
+import java.security.MessageDigest;
+
+public final class ChecksumUtil {
+
+  private ChecksumUtil() {}
+
+  public static String sha256(Path file) throws Exception {
+    MessageDigest md = MessageDigest.getInstance("SHA-256");
+    try (InputStream in = Files.newInputStream(file)) {
+      byte[] buf = new byte[8192];
+      int r;
+      while ((r = in.read(buf)) != -1) {
+        md.update(buf, 0, r);
+      }
+    }
+    StringBuilder sb = new StringBuilder();
+    for (byte b : md.digest()) {
+      sb.append(String.format("%02x", b));
+    }
+    return sb.toString();
+  }
+}
+
+
+---
+
+📦 FileNameUtil
+
+package com.yourapp.common.io;
+
+import java.nio.file.Path;
+
+public final class FileNameUtil {
+
+  private FileNameUtil() {}
+
+  public static String extension(Path p) {
+    String n = p.getFileName().toString();
+    int i = n.lastIndexOf('.');
+    return i > 0 ? n.substring(i + 1) : "";
+  }
+
+  public static String basename(Path p) {
+    String n = p.getFileName().toString();
+    int i = n.lastIndexOf('.');
+    return i > 0 ? n.substring(0, i) : n;
+  }
+
+  public static String safeFileName(String raw) {
+    return raw.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+  }
+}
+
+
+---
+
+📦 FileListingUtil
+
+package com.yourapp.common.io;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public final class FileListingUtil {
+
+  private FileListingUtil() {}
+
+  public enum SortCriterion { NAME, SIZE, LAST_MODIFIED }
+  public enum SortDirection { ASC, DESC }
+
+  public static List<Path> listFiles(Path dir,
+                                     boolean recursive,
+                                     SortCriterion sort,
+                                     SortDirection direction) throws IOException {
+
+    try (Stream<Path> s = recursive ? Files.walk(dir) : Files.list(dir)) {
+      Comparator<Path> cmp = comparator(sort);
+      if (direction == SortDirection.DESC) cmp = cmp.reversed();
+
+      return s.filter(Files::isRegularFile)
+              .sorted(cmp)
+              .collect(Collectors.toList());
+    }
+  }
+
+  private static Comparator<Path> comparator(SortCriterion c) {
+    return switch (c) {
+      case NAME -> Comparator.comparing(p -> p.getFileName().toString());
+      case SIZE -> Comparator.comparingLong(p -> {
+        try { return Files.size(p); } catch (IOException e) { return Long.MAX_VALUE; }
+      });
+      case LAST_MODIFIED -> Comparator.comparingLong(p -> {
+        try { return Files.getLastModifiedTime(p).toMillis(); }
+        catch (IOException e) { return Long.MAX_VALUE; }
+      });
+    };
+  }
+}
+
+
+---
+
+⚙️ FileIOProperties
+
+package com.yourapp.common.io;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "app.io")
+public class FileIOProperties {
+
+  private int bufferSize = 65536;
+  private int zipCompressionLevel = -1;
+  private boolean atomicWritesEnabled = true;
+  private FileSizeUnit defaultSizeUnit = FileSizeUnit.MB;
+
+  public int getBufferSize() { return bufferSize; }
+  public void setBufferSize(int bufferSize) { this.bufferSize = bufferSize; }
+
+  public int getZipCompressionLevel() { return zipCompressionLevel; }
+  public void setZipCompressionLevel(int zipCompressionLevel) {
+    this.zipCompressionLevel = zipCompressionLevel;
+  }
+
+  public boolean isAtomicWritesEnabled() { return atomicWritesEnabled; }
+  public void setAtomicWritesEnabled(boolean atomicWritesEnabled) {
+    this.atomicWritesEnabled = atomicWritesEnabled;
+  }
+
+  public FileSizeUnit getDefaultSizeUnit() { return defaultSizeUnit; }
+  public void setDefaultSizeUnit(FileSizeUnit defaultSizeUnit) {
+    this.defaultSizeUnit = defaultSizeUnit;
+  }
+}
+
+
+---
+
+⚙️ FileIOConfig
+
+package com.yourapp.common.io;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+
+@Configuration
+@EnableConfigurationProperties(FileIOProperties.class)
+public class FileIOConfig {}
+
+
+---
+
+🧠 FileIOService
+
+package com.yourapp.common.io;
+
+import org.springframework.stereotype.Service;
+import java.nio.file.Path;
+import java.util.List;
+
+@Service
+public class FileIOService {
+
+  private final FileIOProperties props;
+
+  public FileIOService(FileIOProperties props) {
+    this.props = props;
+  }
+
+  public void merge(Path out, List<Path> in) throws Exception {
+    if (props.isAtomicWritesEnabled()) {
+      FileMergeUtil.mergeAtomic(out, in, props.getBufferSize());
+    } else {
+      FileMergeUtil.merge(out, in, props.getBufferSize(), false);
+    }
+  }
+
+  public void zip(Path out, List<Path> in, boolean overwrite) throws Exception {
+    ZipUtil.zip(out, in, props.getBufferSize(),
+        props.getZipCompressionLevel(), overwrite);
+  }
+
+  public long fileSize(Path file) throws Exception {
+    return FileSizeUtil.size(file, props.getDefaultSizeUnit());
+  }
+}
+
+
+---
+
+✅ Conclusion
+
+Tu as maintenant l’intégralité du socle IO, cohérent, lisible, maintenable, parfaitement adapté à Spring Boot + Camel.
+
+Si tu veux, prochaine étape naturelle :
+
+🔍 tests unitaires
+
+🐪 exemples Camel complets
+
+🧹 revue finale / naming / packages
+
+
+Dis-moi 👌
