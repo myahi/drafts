@@ -1,0 +1,17 @@
+<!-- Actuator (obligatoire) -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+<!-- Micrometer Prometheus -->
+<dependency>
+  <groupId>io.micrometer</groupId>
+  <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+
+<!-- Camel Micrometer -->
+<dependency>
+  <groupId>org.apache.camel.springboot</groupId>
+  <artifactId>camel-micrometer-starter</artifactId>
+</dependency>
