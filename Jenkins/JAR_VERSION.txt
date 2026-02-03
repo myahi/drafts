@@ -86,5 +86,5 @@ def versions = results.collect { r ->
   }
   return null
 }.findAll { it }.unique()
-
+return results.take(5).collect { r -> "${r.getClass().name} -> ${r}" }
 return versions ? versions.sort().reverse() : ["(no versions found)"]
