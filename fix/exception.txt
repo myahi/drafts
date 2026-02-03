@@ -1,28 +1,11 @@
-nohup: appending output to ‘nohup.out’
-Exception in thread "main" java.lang.ExceptionInInitializerError
-        at java.base/java.lang.Class.forName0(Native Method)
-        at java.base/java.lang.Class.forName(Class.java:375)
-        at com.tibco.security.impl.OoOO.ooOO.init(SecurityVendor.java:129)
-        at com.tibco.security.impl.OoOO.ooOO.init(SecurityVendor.java:85)
-        at com.tibco.security.impl.OoOO.G.init(CryptoVendor.java:46)
-        at com.tibco.security.impl.OoOO.G.getInstance(CryptoVendor.java:90)
-        at com.tibco.security.Crypto.undo(Crypto.java:73)
-        at com.tibco.security.ObfuscationEngine.decrypt(ObfuscationEngine.java:320)
-        at fr.labanquepostale.tools.JavaPropertiesSetter.initialiseJVMSSLProperties(JavaPropertiesSetter.java:93)
-        at fr.labanquepostale.tools.JavaPropertiesSetter.initializeEMSPrperties(JavaPropertiesSetter.java:44)
-        at fr.labanquepostale.fix.connection.FixApplication.<init>(FixApplication.java:46)
-        at fr.labanquepostale.fix.connection.FixClientStarter.main(FixClientStarter.java:30)
-Caused by: java.lang.RuntimeException: cannot find JSSE security provider com.sun.net.ssl.internal.ssl.Provider: java.lang.ClassNotFoundException: com.sun.net.ssl.internal.ssl.Provider
-        at com.tibco.security.providers.SecurityVendor_j2se.<clinit>(SecurityVendor_j2se.java:70)
-        ... 12 more
-Caused by: java.lang.ClassNotFoundException: com.sun.net.ssl.internal.ssl.Provider
-        at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
-        at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
-        at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
-        at java.base/java.lang.Class.forName0(Native Method)
-        at java.base/java.lang.Class.forName(Class.java:467)
-        at com.tibco.security.providers.SecurityVendor_j2se.<clinit>(SecurityVendor_j2se.java:68)
-        ... 12 more
-[INFO ] 2026-02-03 21:35:32.724 [Thread-0] FixClientStarter - Fix engine will be shutdown.
-Exception in thread "Thread-0" java.lang.NullPointerException: Cannot invoke "quickfix.SocketInitiator.stop()" because "fr.labanquepostale.fix.connection.FixClientStarter.SOCKET_INITIATOR" is null
-        at fr.labanquepostale.fix.connection.FixClientStarter$1.run(FixClientStarter.java:26
+[INFO ] 2026-02-03 22:01:35.964 [NioProcessor-2] FixSessionLog - Session IN >>> 8=FIXT.1.1|9=119|35=j|34=3|49=TRADEWEB|52=20260203-21:01:35.952|56=LBP_EURP_PT_LDN_TEST|45=2|58=Message type not supported|372=AE|380=3|10=064|
+[INFO ] 2026-02-03 22:01:35.965 [QFJ Message Processor] FixClientStarter - FROM APP (j) >>> 8=FIXT.1.1|9=119|35=j|34=3|49=TRADEWEB|52=20260203-21:01:35.952|56=LBP_EURP_PT_LDN_TEST|45=2|58=Message type not supported|372=AE|380=3|10=064|
+[INFO ] 2026-02-03 22:01:35.965 [QFJ Message Processor] FixClientStarter - Write incoming message in /serveur_apps/tradeWebPostTrade/incomingMessages/03022026/3_03022026_220135965.txt
+[INFO ] 2026-02-03 22:01:35.975 [QFJ Message Processor] FixClientStarter - sending message to queue : rec.re7integration.tradeweb.trade.in
+[INFO ] 2026-02-03 22:01:35.976 [QFJ Message Processor] FixClientStarter - TO APP (j) >>> 8=FIXT.1.1|9=119|35=j|34=3|49=LBP_EURP_PT_LDN_TEST|52=20260203-21:01:35.976|56=TRADEWEB|45=2|58=Message type not supported|372=AE|380=3|10=070|
+[INFO ] 2026-02-03 22:01:35.976 [QFJ Message Processor] FixSessionLog - Session OUT >>> 8=FIXT.1.1|9=119|35=j|34=3|49=LBP_EURP_PT_LDN_TEST|52=20260203-21:01:35.976|56=TRADEWEB|45=2|58=Message type not supported|372=AE|380=3|10=070|
+[INFO ] 2026-02-03 22:01:35.999 [NioProcessor-2] FixSessionLog - Session IN >>> 8=FIXT.1.1|9=112|35=j|34=4|49=TRADEWEB|52=20260203-21:01:35.986|56=LBP_EURP_PT_LDN_TEST|45=3|58=Message type not supported|380=3|10=226|
+[INFO ] 2026-02-03 22:01:35.999 [QFJ Message Processor] FixSessionLog - Session ERR >>> Rejecting invalid message: quickfix.FieldException: Required tag missing, field=372: 8=FIXT.1.1|9=112|35=j|34=4|49=TRADEWEB|52=20260203-21:01:35.986|56=LBP_EURP_PT_LDN_TEST|45=3|58=Message type not supported|380=3|10=226|
+[INFO ] 2026-02-03 22:01:35.999 [QFJ Message Processor] FixSessionLog - Session ERR >>> Reject sent for message 4: Required tag missing, field=372
+[INFO ] 2026-02-03 22:01:36.000 [QFJ Message Processor] FixClientStarter - TO SERVER (Reject) >>> 8=FIXT.1.1|9=131|35=3|34=4|49=LBP_EURP_PT_LDN_TEST|52=20260203-21:01:36.000|56=TRADEWEB|45=4|58=Required tag missing, field=372|371=372|372=j|373=1|10=018|
+[INFO ] 2026-02-03 22:01:36.000 [QFJ Message Processor] FixSessionLog - Session OUT >>> 8=FIXT.1.1|9=131|35=3|34=4|49=LBP_EURP_PT_LDN_TEST|52=20260203-21:01:36.000|56=TRADEWEB|45=4|58=Required tag missing, field=372|371=372|372=j|373=1|10=018|
