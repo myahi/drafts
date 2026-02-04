@@ -1,0 +1,145 @@
+@NonCPS
+def parsePom(String xml) {
+  def root = new XmlSlurper(false, false).parseText(xml)
+  root.declareNamespace(p: 'http://maven.apache.org/POM/4.0.0')
+  return root
+}
+
+@NonCPS
+def extractModuleDirs(String parentPomText) {
+  def pom = parsePom(parentPomText)
+  return (pom.'p:modules'.'p:module'*.text()*.trim() ?: []).findAll { it }
+}
+
+@NonCPS
+def artifactIdFromPom(String pomText) {
+  def pom = parsePom(pomText)
+  def aid = pom.'p:artifactId'?.text()?.trim()
+  if (!aid) throw new RuntimeException("artifactId introuvable dans pom")
+  return aid
+}
+
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    ART_CRED = 'eai-marches-0002775-tech-ci-snapshot-user'
+    GIT_CRED = 'usr_gitlab_eai'
+
+    GROUP_PATH = 'fr/labanquepostale/marches/eai'
+    JAR_REPO   = 'eai-marches-0002775-maven-local-sas'
+    CONF_REPO  = 'eai-marches-0002775-maven-local-sas'
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: 'develop']],
+          userRemoteConfigs: [[
+            url: "${env.EAI_REPO_URL}/${params.APP}.git",
+            credentialsId: env.GIT_CRED
+          ]]
+        ])
+      }
+    }
+
+    stage('Debug workspace') {
+      steps {
+        sh '''
+          pwd
+          ls -la
+          find . -maxdepth 3 -name pom.xml -print
+        '''
+      }
+    }
+
+    stage('Detect modules') {
+      steps {
+        script {
+          def parentPomText = readFile('pom.xml')
+          def moduleDirs = extractModuleDirs(parentPomText)
+
+          if (!moduleDirs) {
+            env.MODULES = params.APP
+            env.IS_MULTI = "false"
+            echo "Mono-module detected"
+            return
+          }
+
+          def artifactIds = []
+          moduleDirs.each { m ->
+            def p = "${m}/pom.xml"
+            if (!fileExists(p)) error("pom.xml introuvable: ${p}")
+            artifactIds << artifactIdFromPom(readFile(p))
+          }
+
+          env.MODULES = artifactIds.unique().join(',')
+          env.IS_MULTI = "true"
+          echo "Multi-module detected: ${env.MODULES}"
+        }
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        script {
+          def modules = env.MODULES.split(',').collect { it.trim() }
+
+          withCredentials([usernamePassword(
+            credentialsId: env.ART_CRED,
+            usernameVariable: 'ART_USER',
+            passwordVariable: 'ART_PASS'
+          )]) {
+
+            def resolveSnapshot = { repo, group, artifact, version, ext ->
+              def metaUrl = "${env.EAI_ARTIFACTORY_URL}/${repo}/${group}/${artifact}/${version}/maven-metadata.xml"
+              def xml = sh(returnStdout: true,
+                script: "curl -fsS -u ${ART_USER}:${ART_PASS} ${metaUrl}"
+              ).trim()
+
+              def m = (xml =~ /<snapshotVersion>\\s*<extension>${ext}<\\/extension>.*?<value>([^<]+)<\\/value>/)
+              if (m.find()) return "${artifact}-${m.group(1)}.${ext}"
+
+              def ts = (xml =~ /<timestamp>([^<]+)<\\/timestamp>/)
+              def bn = (xml =~ /<buildNumber>([^<]+)<\\/buildNumber>/)
+              if (ts.find() && bn.find()) {
+                def base = version.replace('-SNAPSHOT','')
+                return "${artifact}-${base}-${ts.group(1)}-${bn.group(1)}.${ext}"
+              }
+              return null
+            }
+
+            // --- CONFIG (globale)
+            def confArtifactId = "${params.APP}-config"
+            def confFile = params.CONF_VERSION.endsWith('-SNAPSHOT')
+              ? resolveSnapshot(env.CONF_REPO, env.GROUP_PATH, confArtifactId, params.CONF_VERSION, 'zip')
+              : "${confArtifactId}-${params.CONF_VERSION}.zip"
+
+            sh """
+              curl -f -u ${ART_USER}:${ART_PASS} \
+              -o conf.zip \
+              ${env.EAI_ARTIFACTORY_URL}/${env.CONF_REPO}/${env.GROUP_PATH}/${confArtifactId}/${params.CONF_VERSION}/${confFile}
+            """
+
+            // --- JARS (par module)
+            modules.each { mod ->
+              def jarFile = params.JAR_VERSION.endsWith('-SNAPSHOT')
+                ? resolveSnapshot(env.JAR_REPO, env.GROUP_PATH, mod, params.JAR_VERSION, 'jar')
+                : "${mod}-${params.JAR_VERSION}.jar"
+
+              sh """
+                curl -f -u ${ART_USER}:${ART_PASS} \
+                -o ${mod}.jar \
+                ${env.EAI_ARTIFACTORY_URL}/${env.JAR_REPO}/${env.GROUP_PATH}/${mod}/${params.JAR_VERSION}/${jarFile}
+              """
+            }
+          }
+        }
+      }
+    }
+  }
+}
