@@ -1,0 +1,447 @@
+@NonCPS
+def parseXmlNoNs(String xml) {
+  // On ignore les namespaces pour simplifier (pas de p:)
+  return new XmlSlurper(false, false).parseText(xml)
+}
+
+@NonCPS
+def extractModuleDirsNoNs(String parentPomText) {
+  def pom = parseXmlNoNs(parentPomText)
+  def mods = pom.modules?.module?.collect { it.text().trim() }?.findAll { it } ?: []
+  return mods
+}
+
+@NonCPS
+def artifactIdFromPomNoNs(String pomText) {
+  def pom = parseXmlNoNs(pomText)
+  def aid = pom.artifactId?.text()?.trim()
+  if (!aid) throw new RuntimeException("artifactId introuvable dans pom")
+  return aid
+}
+
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    ART_CRED = 'eai-marches-0002775-tech-ci-snapshot-user'
+    GROUP_PATH = 'fr/labanquepostale/marches/eai'
+    JAR_REPO  = 'eai-marches-0002775-maven-local-sas'
+    CONF_REPO = 'eai-marches-0002775-maven-local-sas'
+    GIT_CRED = 'usr_gitlab_eai'
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+  }
+
+  stages {
+
+    stage('Resolve & validate inputs') {
+      steps {
+        script {
+          try {
+            def MATRIX = [
+              "eai-camel-rgv": [
+                dev:     [ mono: ['sdv4eai02'] ],
+                recette: [ mono: ['src4eai05'] ],
+                preprod: [ mono: ['spp4eai02'] ],
+                prod:    [ mono: ['spr4eai02'] ]
+              ],
+              "eai-camel-report": [
+                dev:     [ mono: ['sdv4eai02'] ],
+                recette: [ mono: ['src4eai05'] ],
+                preprod: [ mono: ['spp4eai02'] ],
+                prod:    [ mono: ['spr4eai02'] ]
+              ]
+            ]
+
+            def needsJar  = (params.DEPLOY_MODE in ['BIN_AND_CONF','BIN_ONLY'])
+            def needsConf = (params.DEPLOY_MODE in ['BIN_AND_CONF','CONF_ONLY'])
+
+            if (needsJar  && !params.JAR_VERSION?.trim())  error("JAR_VERSION requis pour ${params.DEPLOY_MODE}")
+            if (needsConf && !params.CONF_VERSION?.trim()) error("CONF_VERSION requis pour ${params.DEPLOY_MODE}")
+
+            env.NEEDS_JAR  = needsJar.toString()
+            env.NEEDS_CONF = needsConf.toString()
+
+            def envMap = MATRIX[params.APP]?.get(params.ENV)
+            if (!envMap) error("ENV non supporté: APP=${params.APP} ENV=${params.ENV}")
+
+            def allowed = envMap.keySet().toList().sort()
+            if (!allowed.contains(params.INSTANCE)) {
+              error("INSTANCE '${params.INSTANCE}' non autorisée pour ${params.APP}/${params.ENV}. Autorisées: ${allowed}")
+            }
+
+            def targets = envMap[params.INSTANCE]
+            if (!targets || targets.isEmpty()) error("Aucune VM configurée pour APP=${params.APP} ENV=${params.ENV} INSTANCE=${params.INSTANCE}")
+
+            env.TARGET_VMS = targets.join(',')
+
+            echo """
+========== PLAN ==========
+APP          : ${params.APP}
+ENV          : ${params.ENV}
+INSTANCE     : ${params.INSTANCE}
+MODE         : ${params.DEPLOY_MODE}
+TARGETS      : ${env.TARGET_VMS}
+JAR_VERSION  : ${params.JAR_VERSION}
+CONF_VERSION : ${params.CONF_VERSION}
+========================
+"""
+          } catch (e) {
+            echo "Erreur pendant le stage Resolve & validate inputs"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Checkout Git configuration') {
+      steps {
+        script {
+          try {
+            def branch = (params.ENV == 'prod') ? 'master' : 'develop'
+            def repoUrl = "${env.EAI_REPO_URL}/${params.APP}.git"
+            echo "Checkout repo=${repoUrl} branch=${branch}"
+
+            checkout([
+              $class: 'GitSCM',
+              branches: [[name: branch]],
+              userRemoteConfigs: [[
+                url: repoUrl,
+                credentialsId: env.GIT_CRED
+              ]]
+            ])
+          } catch (e) {
+            echo "Erreur pendant le stage Checkout Git configuration"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Modules resolution') {
+      steps {
+        script {
+          try {
+            if (!fileExists('pom.xml')) {
+              env.MODULES = params.APP
+              env.IS_MULTI = "false"
+              echo "No pom.xml -> fallback mono: MODULES=${env.MODULES}"
+              return
+            }
+
+            def parentPomText = readFile('pom.xml')
+            def moduleDirs = extractModuleDirsNoNs(parentPomText)
+
+            if (!moduleDirs || moduleDirs.isEmpty()) {
+              env.MODULES = params.APP
+              env.IS_MULTI = "false"
+              echo "Mono-module detected -> MODULES=${env.MODULES}"
+              return
+            }
+
+            def artifactIds = []
+            moduleDirs.each { m ->
+              def p = "${m}/pom.xml"
+              if (!fileExists(p)) error("pom.xml introuvable pour le module: ${m} (attendu: ${p})")
+              artifactIds << artifactIdFromPomNoNs(readFile(p))
+            }
+
+            env.MODULES = artifactIds.unique().join(',')
+            env.IS_MULTI = "true"
+            echo "Multi-module detected -> MODULES=${env.MODULES}"
+          } catch (e) {
+            echo "Erreur pendant le stage Modules resolution"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Validate SSH connection') {
+      steps {
+        script {
+          try {
+            def hosts = env.TARGET_VMS.split(',')
+            hosts.each { host ->
+              sh """
+                set -euo pipefail
+                ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" "echo OK: \$(hostname) as \$(whoami)"
+              """
+            }
+          } catch (e) {
+            echo "Erreur pendant le stage Validate SSH connection"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Prepare remote deploy script') {
+      steps {
+        script {
+          try {
+            def scriptText = '''#!/usr/bin/env bash
+set -euo pipefail
+
+PARENT_APP="$1"
+MODULE="$2"
+ENV_NAME="$3"
+INSTANCE="$4"
+MODE="$5"
+JAR_VERSION_UI="${6:-}"
+CONF_VERSION_UI="${7:-}"
+IS_MULTI="${8:-false}"
+
+APPS_BASE="/serveur_apps"
+
+# Layout:
+# - mono : /serveur_apps/<APP>/<INSTANCE>/{bin,lib,run,config}
+# - multi: /serveur_apps/<APP>/<INSTANCE>/<MODULE>/{bin,lib,run,config}
+APP_DIR="${APPS_BASE}/${PARENT_APP}"
+INST_DIR="${APP_DIR}/${INSTANCE}"
+
+if [[ "$IS_MULTI" == "true" ]]; then
+  MOD_DIR="${INST_DIR}/${MODULE}"
+else
+  MOD_DIR="${INST_DIR}"
+fi
+
+BIN_DIR="${MOD_DIR}/bin"
+LIB_DIR="${MOD_DIR}/lib"
+CONFIG_DIR="${MOD_DIR}/config"
+RUN_DIR="${MOD_DIR}/run"
+
+# ✅ MODIF MIN : instance-name inclut le module
+# Ex: eai-camel-report-cashflows-mono
+APP_INSTANCE="${MODULE}-${INSTANCE}"
+
+# --- Stop best-effort via scripts existants AVANT nettoyage ---
+OLD_BIN="${BIN_DIR}"
+stop_existing() {
+  local s="stop.sh"
+  if [[ -x "${OLD_BIN}/${s}" ]]; then
+    echo "[REMOTE] Will run stop (existing scripts): ${OLD_BIN}/${s} '${APP_INSTANCE}'"
+    "${OLD_BIN}/${s}" "${APP_INSTANCE}" || true
+  else
+    echo "[REMOTE] No existing stop.sh at ${OLD_BIN}/${s} (skip)"
+  fi
+}
+
+echo "[REMOTE] Stopping (best effort) before cleanup..."
+stop_existing
+
+mkdir -p "$BIN_DIR" "$LIB_DIR" "$CONFIG_DIR" "$RUN_DIR"
+
+run_script() {
+  local s="$1"
+  if [[ -x "$BIN_DIR/$s" ]]; then
+    echo "[REMOTE] Will run: $BIN_DIR/$s '${ENV_NAME}' '${APP_INSTANCE}'"
+    "$BIN_DIR/$s" "$ENV_NAME" "$APP_INSTANCE"
+  else
+    echo "[REMOTE] Script not found or not executable: $BIN_DIR/$s"
+    return 127
+  fi
+}
+
+# ----- CONF install -----
+if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
+  [[ -f /tmp/conf.zip ]] || { echo "ERROR: /tmp/conf.zip absent"; exit 2; }
+
+  STAGE_DIR="$(mktemp -d "/tmp/${MODULE}-config-stage-XXXXXX")"
+  unzip -o "/tmp/conf.zip" -d "$STAGE_DIR" >/dev/null
+
+  # ✅ MODIF MIN : certains zips ont "config/...", d'autres non
+  CONF_ROOT="$STAGE_DIR"
+  if [[ -d "$STAGE_DIR/config" ]]; then
+    CONF_ROOT="$STAGE_DIR/config"
+  fi
+
+  # ✅ MODIF MIN : en multi -> sous-dossier = nom du module (artifactId)
+  #               en mono  -> fichiers directement sous CONF_ROOT
+  if [[ "$IS_MULTI" == "true" ]]; then
+    CONF_SRC="$CONF_ROOT/$MODULE"
+  else
+    CONF_SRC="$CONF_ROOT"
+  fi
+
+  echo "[REMOTE] CONF_ROOT=$CONF_ROOT"
+  echo "[REMOTE] CONF_SRC =$CONF_SRC"
+  ls -la "$CONF_ROOT" || true
+  ls -la "$CONF_SRC"  || true
+
+  rm -rf "$CONFIG_DIR"/*
+  mkdir -p "$CONFIG_DIR"
+
+  # Copie MIN (comme avant)
+  cp -f "$CONF_SRC/application.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$CONF_SRC/application-${ENV_NAME}.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$CONF_SRC/logback-spring.xml" "$CONFIG_DIR/" 2>/dev/null || true
+
+  rm -rf "$STAGE_DIR"
+fi
+
+# ----- JAR install -----
+if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "BIN_ONLY" ]]; then
+  [[ -f /tmp/app.jar ]] || { echo "ERROR: /tmp/app.jar absent"; exit 3; }
+  mv -f "/tmp/app.jar" "$LIB_DIR/${MODULE}-${JAR_VERSION_UI}.jar"
+  ln -sfn "$LIB_DIR/${MODULE}-${JAR_VERSION_UI}.jar" "$LIB_DIR/app.jar"
+fi
+
+# ----- BIN scripts: sync from local ops repo on target VM -----
+OPS_ROOT="/serveur_apps/eai-camel-ops"
+OPS_BIN="${OPS_ROOT}/${PARENT_APP}/bin"
+OPS_CONFIG="${OPS_ROOT}/${PARENT_APP}/config"
+
+if [[ -d "$OPS_BIN" ]]; then
+  mkdir -p "$BIN_DIR"
+  cp -f "$OPS_BIN/"*.sh "$BIN_DIR/" 2>/dev/null || true
+  chmod +x "$BIN_DIR/"*.sh 2>/dev/null || true
+else
+  echo "WARN: OPS bin introuvable: $OPS_BIN (scripts start/stop/restart non mis à jour)"
+fi
+
+if [[ -d "$OPS_CONFIG" ]]; then
+  mkdir -p "$CONFIG_DIR"
+  cp -f "$OPS_CONFIG/"* "$CONFIG_DIR/" 2>/dev/null || true
+else
+  echo "WARN: OPS config introuvable: $OPS_CONFIG (config non mis à jour)"
+fi
+
+echo "[REMOTE] Post-copy scripts list:"
+ls -la "$BIN_DIR" || true
+
+# Start/restart
+if [[ -x "$BIN_DIR/restart.sh" ]]; then
+  run_script restart.sh
+else
+  run_script start.sh
+fi
+'''
+            writeFile file: 'deploy_remote.sh', text: scriptText
+            sh 'chmod +x deploy_remote.sh'
+          } catch (e) {
+            echo "Erreur pendant le stage Prepare remote deploy script"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        script {
+          try {
+            def modules = (env.MODULES ?: params.APP).split(',').collect { it.trim() }.findAll { it }
+            if (!modules) error("MODULES vide, impossible de déployer")
+
+            withCredentials([usernamePassword(credentialsId: env.ART_CRED, usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+
+              def resolveSnapshotFilename = { String repo, String groupPath, String artifactId, String version, String ext ->
+                def metaUrl = "${env.EAI_ARTIFACTORY_URL}/${repo}/${groupPath}/${artifactId}/${version}/maven-metadata.xml"
+
+                def xml = sh(
+                  returnStdout: true,
+                  script: """
+                    set -euo pipefail
+                    curl -fsS -u "${ART_USER}:${ART_PASS}" "${metaUrl}"
+                  """
+                ).trim()
+
+                def value = (xml =~ /<snapshotVersion>\\s*<extension>${ext}<\\/extension>\\s*(?:<classifier>[^<]+<\\/classifier>\\s*)?<value>([^<]+)<\\/value>/)
+                if (value.find()) {
+                  def v = value.group(1)
+                  return "${artifactId}-${v}.${ext}"
+                }
+
+                def ts = (xml =~ /<timestamp>([^<]+)<\\/timestamp>/)
+                def bn = (xml =~ /<buildNumber>([^<]+)<\\/buildNumber>/)
+                if (ts.find() && bn.find()) {
+                  def baseVer = version.replaceAll(/-SNAPSHOT$/, "")
+                  return "${artifactId}-${baseVer}-${ts.group(1)}-${bn.group(1)}.${ext}"
+                }
+                return null
+              }
+
+              def download = { String url, String outFile ->
+                sh """
+                  set -euo pipefail
+                  echo "Downloading: ${url}"
+                  curl -f -u "${ART_USER}:${ART_PASS}" -o "${outFile}" "${url}"
+                """
+              }
+
+              def hosts = env.TARGET_VMS.split(',')
+
+              modules.each { moduleArtifactId ->
+                echo "===== DEPLOY MODULE: ${moduleArtifactId} (IS_MULTI=${env.IS_MULTI}) ====="
+                sh 'mkdir -p artifacts && rm -f artifacts/* || true'
+
+                // ✅ MODIF MIN : conf artifact = parent-config (une seule logique, pas de candidats)
+                if (env.NEEDS_CONF == "true") {
+                  def confArtifactId = "${params.APP}-config"
+
+                  def confResolved
+                  if (params.CONF_VERSION.endsWith("-SNAPSHOT")) {
+                    confResolved = resolveSnapshotFilename(env.CONF_REPO, env.GROUP_PATH, confArtifactId, params.CONF_VERSION, "zip")
+                    if (!confResolved) error("Impossible de résoudre le conf SNAPSHOT via maven-metadata.xml pour ${confArtifactId} ${params.CONF_VERSION}")
+                  } else {
+                    confResolved = "${confArtifactId}-${params.CONF_VERSION}.zip"
+                  }
+
+                  def confUrl = "${env.EAI_ARTIFACTORY_URL}/${env.CONF_REPO}/${env.GROUP_PATH}/${confArtifactId}/${params.CONF_VERSION}/${confResolved}"
+                  download(confUrl, "artifacts/conf.zip")
+                }
+
+                if (env.NEEDS_JAR == "true") {
+                  def jarResolved
+                  if (params.JAR_VERSION.endsWith("-SNAPSHOT")) {
+                    jarResolved = resolveSnapshotFilename(env.JAR_REPO, env.GROUP_PATH, moduleArtifactId, params.JAR_VERSION, "jar")
+                    if (!jarResolved) error("Impossible de résoudre le jar SNAPSHOT via maven-metadata.xml pour ${moduleArtifactId} ${params.JAR_VERSION}")
+                  } else {
+                    jarResolved = "${moduleArtifactId}-${params.JAR_VERSION}.jar"
+                  }
+
+                  def jarUrl  = "${env.EAI_ARTIFACTORY_URL}/${env.JAR_REPO}/${env.GROUP_PATH}/${moduleArtifactId}/${params.JAR_VERSION}/${jarResolved}"
+                  def finalJar = "artifacts/${moduleArtifactId}-${params.JAR_VERSION}.jar"
+                  download(jarUrl, finalJar)
+                }
+
+                sh 'ls -lh artifacts || true'
+
+                hosts.each { host ->
+                  sh """
+                    set -euo pipefail
+                    echo "=== Copy to ${host} (${moduleArtifactId}) ==="
+                    scp ${env.SSH_OPTS} deploy_remote.sh ${env.EAI_SSH_USER}@"${host}:/tmp/deploy_remote.sh"
+                    ${env.NEEDS_JAR == "true" ? "scp ${env.SSH_OPTS} artifacts/${moduleArtifactId}-${params.JAR_VERSION}.jar ${env.EAI_SSH_USER}@\"${host}:/tmp/app.jar\"" : "true"}
+                    ${env.NEEDS_CONF == "true" ? "scp ${env.SSH_OPTS} artifacts/conf.zip ${env.EAI_SSH_USER}@\"${host}:/tmp/conf.zip\"" : "true"}
+
+                    echo "=== Deploy on ${host} (${moduleArtifactId}) ==="
+                    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" "bash /tmp/deploy_remote.sh \
+                      '${params.APP}' \
+                      '${moduleArtifactId}' \
+                      '${params.ENV}' \
+                      '${params.INSTANCE}' \
+                      '${params.DEPLOY_MODE}' \
+                      '${params.JAR_VERSION ?: ''}' \
+                      '${params.CONF_VERSION ?: ''}' \
+                      '${env.IS_MULTI}'"
+                  """
+                }
+              }
+            }
+          } catch (e) {
+            echo "Erreur pendant le stage Deploy"
+            echo e.toString()
+            throw e
+          }
+        }
+      }
+    }
+  }
+}
