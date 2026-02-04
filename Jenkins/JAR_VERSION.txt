@@ -4,22 +4,28 @@ import jenkins.model.Jenkins
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials
 
-def app = binding.variables.get('APP')
+def sanitizeApp = { Object v ->
+  def s = (v ?: '').toString()
+  s = s.replaceAll(/<[^>]*>/, '')     // vire HTML
+  int idx = s.indexOf('<')
+  if (idx >= 0) s = s.substring(0, idx)
+  s = s.trim().replaceAll(/[^A-Za-z0-9._-]/, '')
+  return s
+}
+
+def appBase   = sanitizeApp(binding.variables.get('APP'))
+def artifactId = "${appBase}-conf"
 def groupPath = "fr/labanquepostale/marches/eai"
 
-
 def repos = [
-  "eai-marches-0002775-maven-local-sas",
-  "https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/"
+  "eai-marches-0002775-maven-local-sas"
 ]
 
-def baseUrl = binding.variables.get('EAI_ARTIFACTORY_URL')
-
+def baseUrl = (binding.variables.get('EAI_ARTIFACTORY_URL') ?: '').toString().trim()
 def CRED_ID = "eai-marches-0002775-tech-ci-snapshot-user"
 
-if (!app || !baseUrl || !groupPath) return ["(missing params)"]
+if (!appBase || !baseUrl) return ["(missing params)"]
 
-baseUrl = baseUrl.trim()
 if (baseUrl.endsWith("/")) baseUrl = baseUrl[0..-2]
 if (!baseUrl.contains("/artifactory")) baseUrl = baseUrl + "/artifactory"
 
@@ -43,11 +49,8 @@ def fetchRepo = { String repo ->
   def aql = """
 items.find({
   "repo": "${repo}",
-  "path": {"${'$'}match":"${groupPath}/${app}/*"},
-  ${'$'}or": [
-    {"name": {"${'$'}match":"${app}-*.pom"}},
-    {"name": {"${'$'}match":"${app}-*.jar"}}
-  ]
+  "path": {"${'$'}match":"${groupPath}/${artifactId}/*"},
+  "name": {"${'$'}match":"${artifactId}-*.zip"}
 }).include("repo","path","name")
 """
   def url = new URL("${baseUrl}/api/search/aql")
@@ -73,18 +76,13 @@ items.find({
 
 def results = repos.collectMany { fetchRepo(it) }
 
-// erreurs éventuelles
 def errors = results.findAll { it instanceof Map && it._error }.collect { it._error }
 if (errors) return errors
 
-
-def prefix = "${groupPath}/${app}/"
+def prefix = "${groupPath}/${artifactId}/"
 def versions = results.collect { r ->
   def p = r.path as String
-  if (p?.startsWith(prefix)) {
-    return p.substring(prefix.length()).tokenize('/')[0]
-  }
-  return null
+  if (p?.startsWith(prefix)) p.substring(prefix.length()).tokenize('/')[0] else null
 }.findAll { it }.unique()
-return results.take(5).collect { r -> "${r.getClass().name} -> ${r}" }
-return versions ? versions.sort().reverse() : ["(no versions found)"]
+
+return versions ? versions.collect { it.toString() }.sort().reverse() : ["(no versions found)"]
