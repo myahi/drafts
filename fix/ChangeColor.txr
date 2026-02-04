@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Se placer dans le dossier où se trouve ce script (bin/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+CONF_FILE="../conf/application.properties"
+
+usage() {
+  echo "Usage: $(basename "$0") <couleur>"
+  echo "Ex: $(basename "$0") rouge"
+  exit 2
+}
+
+COLOR="${1:-}"
+[[ -n "$COLOR" ]] || usage
+
+# Normalisation: Re7Rouge / re7rouge / ROUGE -> Re7Rouge
+# (on accepte que tu passes juste 'rouge', 'jaune', etc.)
+COLOR_LC="$(echo "$COLOR" | tr '[:upper:]' '[:lower:]')"
+PREFIX="Re7$(echo "${COLOR_LC:0:1}" | tr '[:lower:]' '[:upper:]')${COLOR_LC:1}"
+
+if [[ ! -f "$CONF_FILE" ]]; then
+  echo "ERROR: fichier introuvable: $CONF_FILE"
+  echo "INFO : je suis positionné dans: $(pwd)"
+  exit 1
+fi
+
+# Backup
+TS="$(date +%Y%m%d_%H%M%S)"
+cp -f "$CONF_FILE" "${CONF_FILE}.bak.${TS}"
+
+echo "[INFO] Using prefix: $PREFIX"
+echo "[INFO] Conf file : $CONF_FILE"
+echo "[INFO] Backup    : ${CONF_FILE}.bak.${TS}"
+
+# Stop best-effort
+if [[ -x "./stop.sh" ]]; then
+  echo "[INFO] Stopping..."
+  ./stop.sh || true
+else
+  echo "[WARN] ./stop.sh non trouvé ou non exécutable (skip)"
+fi
+
+# Remplacer uniquement la partie avant le 1er point:
+# lbp.ems.queueName=<prefix>.<reste>
+# lbp.ems.error.queueName=<prefix>.<reste>
+# => on remplace <prefix> par $PREFIX, en gardant le reste inchangé.
+tmp="$(mktemp)"
+awk -v pref="$PREFIX" '
+  BEGIN { changed=0 }
+  /^[[:space:]]*lbp\.ems\.queueName[[:space:]]*=/ {
+    sub(/=.*/, "&") # no-op, pour lisibilité
+    # remplace la valeur après "=" : <quelquechose>.<reste> -> pref.<reste>
+    if (match($0, /=([^.]*)\.(.*)$/, m)) {
+      $0 = gensub(/=.*/, "= " pref "." m[2], 1)
+      changed=1
+    }
+  }
+  /^[[:space:]]*lbp\.ems\.error\.queueName[[:space:]]*=/ {
+    if (match($0, /=([^.]*)\.(.*)$/, m)) {
+      $0 = gensub(/=.*/, "= " pref "." m[2], 1)
+      changed=1
+    }
+  }
+  { print }
+  END {
+    if (changed==0) {
+      # pas fatal: on laisse passer, mais on le signale
+      # (ex: si les lignes n’ont pas de point)
+    }
+  }
+' "$CONF_FILE" > "$tmp"
+
+mv -f "$tmp" "$CONF_FILE"
+
+echo "[INFO] New values:"
+grep -E '^[[:space:]]*lbp\.ems\.queueName[[:space:]]*=|^[[:space:]]*lbp\.ems\.error\.queueName[[:space:]]*=' "$CONF_FILE" || true
+
+# Start
+if [[ -x "./start.sh" ]]; then
+  echo "[INFO] Starting..."
+  ./start.sh
+else
+  echo "[WARN] ./start.sh non trouvé ou non exécutable"
+  exit 1
+fi
+
+echo "[OK] Switch done." 
