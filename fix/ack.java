@@ -1,3 +1,46 @@
+
+
+import quickfix.Session;
+import quickfix.SessionID;
+import quickfix.FieldNotFound;
+import quickfix.SessionNotFound;
+import quickfix.Message;
+import quickfix.field.MsgType;
+
+import quickfix.field.CollAsgnID;        // 902
+import quickfix.field.CollAsgnReason;    // 895
+import quickfix.field.CollRespID;        // 904
+import quickfix.field.CollAsgnRespType;  // 905
+
+// FIX 5.0SP2 package:
+import quickfix.fix50sp2.CollateralResponse;
+
+private void ackAY(Message ay, SessionID sessionID) throws FieldNotFound, SessionNotFound {
+    CollateralResponse az = new CollateralResponse();
+
+    // 904: ton ID de réponse (ex: timestamp / UUID)
+    az.set(new CollRespID("AZ-" + System.currentTimeMillis()));
+
+    // 902: recopie depuis AY
+    if (ay.isSetField(CollAsgnID.FIELD)) {
+        az.set(new CollAsgnID(ay.getString(CollAsgnID.FIELD)));
+    } else {
+        // si Tradeweb l’envoie toujours, tu peux carrément lever une erreur ici
+        // ou générer un reject applicatif selon ton besoin
+    }
+
+    // 895: si présent dans AY, recopie
+    if (ay.isSetField(CollAsgnReason.FIELD)) {
+        az.set(new CollAsgnReason(ay.getInt(CollAsgnReason.FIELD)));
+    }
+
+    // 905: au minimum "Received"
+    az.set(new CollAsgnRespType(CollAsgnRespType.RECEIVED)); // = 0  4
+
+    Session.sendToTarget(az, sessionID);
+}
+
+
 FROM APP (Trade Capture Report) >>> 8=FIXT.1.1|9=1604|35=AE|34=2|49=TRADEWEB|52=20260203-21:25:34.207|56=LBP_EURP_PT_LDN_TEST|347=UTF-8|15=EUR|17=20260203.LBP.EURP.3.1840|22=4|31=3.40|32=250000000.0|48=FR0013200813|55=[N/A]|60=20260203-14:23:13.526|64=20260203|75=20260203|107=FRTR  0.250 11/25/2026 O/1WK|167=REPO|228=1.0|381=248267363.0|423=9|460=13|487=0|541=20260210|570=N|571=20260203.LBP.EURP.TRDCONF.1840.1|828=101|856=101|916=20260203|917=20260210|1003=20260203.LBP.EURP.3|5730=99.2590|5745=1|5756=99.10|5757=99.2590|5758=99.17950|6731=20260203.LBP.EURP.3|6847=1|6849=1|20086=1|20214=P|23006=0.0|23007=N|23016=N|23029=Y|23033=newlist_2026.02.03.14:19:07|23034=1|23048=0|23049=1|23050=DU|23060=A|23068=TWEM|23069=724500D4BFEWKWVC1G62|23070=Y|23076=0|23096=LDN15816751|23533=N|454=1|455=EURP.SPECIAL|456=100|552=1|54=1|453=1|448=UNKNOWN|447=C|452=4|575=N|159=164132.310|118=248431495.310|232=2|233=HAIRCUT|234=0.0|233=HAIRCUTTYPE|234=CASH|1072=248267363.0|11=NONREF|66=LDN1581675.1|711=1|311=[N/A]|309=FR0013200813|305=4|307=FRTR  0.250 11/25/2026|318=EUR|879=250000000.0|882=99.30694520|810=99.2590|884=248267363.0|885=248267363.0|886=248431495.310|23055=99.30694520|768=2|769=20260203-14:23:13.526|770=1|771=TW|769=20260203-14:23:13|770=2|771=TW|1116=5|1117=repobb|1118=C|1119=11|1120=3|1121=Repo GP|1122=2|1121=LDN|1122=25|1121=UK|1122=4000|1117=oblack|1118=C|1119=12|1120=1|1121=LDN|1122=25|1117=LBP|1118=B|1119=1|1120=1|1121=LDN|1122=25|1117=Becca Bank|1118=C|1119=3|1120=3|1121=W22LROWP2IHZNBB6K528|1122=4006|1121=ALLOC|1122=4003|1121=? ?|1122=4005|1117=W22LROWP2IHZNBB6K528|1118=N|1119=3|1907=1|1903=20260203LBPEURP3|1906=5|2668=1|2669=0|2670=5|10=146|
 [INFO ] 2026-02-03 22:25:34.246 [QFJ Message Processor] FixClientStarter - Write incoming message in /serveur_apps/tradeWebPostTrade/incomingMessages/03022026/2_03022026_222534240.txt
 [INFO ] 2026-02-03 22:25:34.281 [QFJ Message Processor] FixClientStarter - sending message to queue : rec.re7integration.tradeweb.trade.in
