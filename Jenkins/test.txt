@@ -1,14 +1,11 @@
-https://dlu.pop.sf.intra.laposte.fr/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-report/1.0.0-SNAPSHOT/eai-camel-report-1.0.0-20260203.164234-3.jar
 @NonCPS
-def parsePom(String xml) {
-  def root = new XmlSlurper(false, false).parseText(xml)
-  root.declareNamespace(p: 'http://maven.apache.org/POM/4.0.0')
-  return root
+def parsePomRaw(String xml) {
+  new XmlSlurper(false, false).parseText(xml)
 }
 
 @NonCPS
 def extractModuleDirs(String parentPomText) {
-  def pom = new XmlSlurper(false, false).parseText(parentPomText)
+  def pom = parsePomRaw(parentPomText)
 
   return pom.depthFirst()
     .findAll { it.name() == 'module' }
@@ -17,16 +14,17 @@ def extractModuleDirs(String parentPomText) {
 }
 
 @NonCPS
-def extractModuleDirs(String parentPomText) {
-  def pom = parsePom(parentPomText)
-  return (pom.'p:modules'.'p:module'*.text()*.trim() ?: []).findAll { it }
-}
-
-@NonCPS
 def artifactIdFromPom(String pomText) {
-  def pom = parsePom(pomText)
-  def aid = pom.'p:artifactId'?.text()?.trim()
-  if (!aid) throw new RuntimeException("artifactId introuvable dans pom")
+  def pom = parsePomRaw(pomText)
+
+  def aid = pom.depthFirst()
+    .find { it.name() == 'artifactId' }
+    ?.text()
+    ?.trim()
+
+  if (!aid) {
+    throw new RuntimeException("artifactId introuvable dans pom")
+  }
   return aid
 }
 
