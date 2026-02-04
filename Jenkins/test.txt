@@ -1,3 +1,10 @@
+def parentPomText = readFile('pom.xml')
+def packaging = (new XmlSlurper(false,false).parseText(parentPomText).packaging.text() ?: 'jar').trim()
+if (packaging == 'pom') {
+  modules = modules.findAll { it != params.APP }
+}
+
+
 @NonCPS
 def parsePomRaw(String xml) {
   new XmlSlurper(false, false).parseText(xml)
