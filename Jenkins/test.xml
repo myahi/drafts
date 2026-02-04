@@ -1,3 +1,37 @@
+
+# ----- CONF install -----
+if [[ "$MODE" == "BIN_AND_CONF" || "$MODE" == "CONF_ONLY" ]]; then
+  [[ -f /tmp/conf.zip ]] || { echo "ERROR: /tmp/conf.zip absent"; exit 2; }
+
+  STAGE_DIR="$(mktemp -d "/tmp/${MODULE}-config-stage-XXXXXX")"
+  unzip -o "/tmp/conf.zip" -d "$STAGE_DIR" >/dev/null
+
+  # On veut "juste chercher avec le nom du module" :
+  # - multi : <stage>/<module>/
+  # - mono  : <stage>/config/   (car le zip mono contient uniquement config/)
+  CONF_SRC="${STAGE_DIR}/${MODULE}"
+  if [[ ! -d "$CONF_SRC" ]]; then
+    # mono-module typique : tout sous config/
+    if [[ -d "${STAGE_DIR}/config" ]]; then
+      CONF_SRC="${STAGE_DIR}/config"
+    fi
+  fi
+
+  echo "[REMOTE] CONF_SRC=${CONF_SRC}"
+  ls -la "${CONF_SRC}" || true
+
+  rm -rf "$CONFIG_DIR"/*
+  mkdir -p "$CONFIG_DIR"
+
+  cp -f "$CONF_SRC/application.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$CONF_SRC/application-${ENV_NAME}.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$CONF_SRC/application-local.properties" "$CONFIG_DIR/" 2>/dev/null || true
+  cp -f "$CONF_SRC/logback-spring.xml" "$CONFIG_DIR/" 2>/dev/null || true
+
+  rm -rf "$STAGE_DIR"
+fi
+    
+
 // =====================
 // Helpers (Jenkins-safe)
 // =====================
