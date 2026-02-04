@@ -1,3 +1,4 @@
+https://dlu.pop.sf.intra.laposte.fr/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-report/1.0.0-SNAPSHOT/eai-camel-report-1.0.0-20260203.164234-3.jar
 @NonCPS
 def parsePom(String xml) {
   def root = new XmlSlurper(false, false).parseText(xml)
