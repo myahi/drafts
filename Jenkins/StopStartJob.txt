@@ -1,3 +1,22 @@
+def operateOnHost(String host, String binDir, String action, String appInstanceName) {
+  sh """
+    set -euo pipefail
+    echo ">>> OPERATE ${action} on ${host} (bin=${binDir}, appInstance=${appInstanceName})"
+    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" '
+      set -euo pipefail
+      cd "${binDir}"
+      if [[ -x "./${action}.sh" ]]; then
+        "./${action}.sh" --app.instance-name "${appInstanceName}"
+      else
+        echo "ERROR: ${action}.sh introuvable dans ${binDir}"
+        ls -la
+        exit 127
+      fi
+    '
+  """
+}
+
+
 @NonCPS
 def parseXmlNoNs(String xml) {
   // Ignore les namespaces (pas de p:)
