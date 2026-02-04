@@ -1,3 +1,96 @@
+private List<String> agregateInactivePnL(List<String> lines) {
+    final String POST_CHANGE_HIST_PREFIX = "POS_CHANGE_HIST_";
+    final String SEP = ";";
+
+    final int PNL_TYPE_IDX = 2;
+    final int PRODUCT_TYPE_IDX = 4;
+    final int CURRENCY_IDX = 9;
+    final int BOOK_IDX = 11;
+
+    final int SUM_FROM = 18;
+    final int SUM_TO_EXCL = 34; // 18..33 inclus
+
+    List<String> activeOrOther = new ArrayList<>();
+    List<String> inactive = new ArrayList<>();
+
+    for (String line : lines) {
+        String[] cols = line.split(SEP, -1);
+        if (!"Inactive".equals(cols[PNL_TYPE_IDX])) activeOrOther.add(line);
+        else inactive.add(line);
+    }
+
+    // clé -> colonnes "base" (ligne conservée) + col[4] de base pour éviter self-sum
+    class Agg {
+        String[] baseCols;
+        String baseCol4;
+        boolean baseIsPostChange;
+    }
+
+    // LinkedHashMap pour conserver l'ordre d'apparition
+    Map<String, Agg> aggByKey = new LinkedHashMap<>();
+
+    for (String line : inactive) {
+        String[] cols = line.split(SEP, -1);
+
+        String productTypeRaw = cols[PRODUCT_TYPE_IDX];
+        String productTypeNorm = productTypeRaw != null
+                ? productTypeRaw.replace(POST_CHANGE_HIST_PREFIX, "")
+                : "";
+
+        String key = cols[CURRENCY_IDX] + "||" + cols[BOOK_IDX] + "||" + productTypeNorm;
+
+        boolean isPostChange = productTypeRaw != null && productTypeRaw.contains(POST_CHANGE_HIST_PREFIX);
+
+        Agg agg = aggByKey.get(key);
+        if (agg == null) {
+            agg = new Agg();
+            agg.baseCols = cols;
+            agg.baseCol4 = cols[PRODUCT_TYPE_IDX]; // ou cols[4] si c'est bien l'identifiant que tu vises
+            agg.baseIsPostChange = isPostChange;
+            aggByKey.put(key, agg);
+            continue;
+        }
+
+        // Si on rencontre une ligne POS_CHANGE_HIST_ et que la base ne l’est pas,
+        // on swap la base (et on garde la somme déjà faite en la transférant)
+        if (isPostChange && !agg.baseIsPostChange) {
+            String[] oldBase = agg.baseCols;
+            String oldBaseCol4 = agg.baseCol4;
+
+            agg.baseCols = cols;
+            agg.baseCol4 = cols[PRODUCT_TYPE_IDX];
+            agg.baseIsPostChange = true;
+
+            // Important : on doit re-sommer l’ancienne base dans la nouvelle base
+            if (!oldBaseCol4.equals(agg.baseCol4)) {
+                for (int k = SUM_FROM; k < SUM_TO_EXCL; k++) {
+                    agg.baseCols[k] = formatBigDecimal(
+                            convertStringToBigDecimal(agg.baseCols[k])
+                                    .add(convertStringToBigDecimal(oldBase[k]))
+                    );
+                }
+            }
+            continue;
+        }
+
+        // Somme uniquement si col[4] diffère (équivalent à ton guard !columns[4].equals(currentColumns[4]))
+        // Ici je compare la baseCol4 à cols[PRODUCT_TYPE_IDX] comme dans ton code (tu utilisais columns[4])
+        if (!agg.baseCol4.equals(cols[PRODUCT_TYPE_IDX])) {
+            for (int k = SUM_FROM; k < SUM_TO_EXCL; k++) {
+                agg.baseCols[k] = formatBigDecimal(
+                        convertStringToBigDecimal(agg.baseCols[k])
+                                .add(convertStringToBigDecimal(cols[k]))
+                );
+            }
+        }
+    }
+
+    List<String> out = new ArrayList<>(activeOrOther);
+    for (Agg a : aggByKey.values()) {
+        out.add(concatColumn(a.baseCols));
+    }
+    return out;
+}
 
 private List<String> aggregateInactivePnL(List<String> lines) {
     final String POST_CHANGE_HIST_PREFIX = "POS_CHANGE_HIST_";
