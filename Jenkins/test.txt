@@ -1,3 +1,5 @@
+def parentPackaging = readPackagingFromPom(readFile('pom.xml'))
+
 @NonCPS
 def readPackagingFromPom(String pomText) {
   def pom = new XmlSlurper(false, false).parseText(pomText)
