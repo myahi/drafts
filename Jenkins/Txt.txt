@@ -1,3 +1,32 @@
+@NonCPS
+def parseXmlText(String xmlText) {
+  // namespace-aware + accès simple via declareNamespace
+  def root = new XmlSlurper(false, false).parseText(xmlText)
+  root.declareNamespace(p: 'http://maven.apache.org/POM/4.0.0')
+  return root
+}
+
+@NonCPS
+def extractModuleDirs(String parentPomText) {
+  def parent = parseXmlText(parentPomText)
+  // on force le namespace Maven (p:) pour accéder à <modules><module>
+  def moduleDirs = parent.'p:modules'.'p:module'*.text()*.trim()
+  return (moduleDirs ?: []).findAll { it }
+}
+
+@NonCPS
+def artifactIdFromPom(String pomText) {
+  def mpom = parseXmlText(pomText)
+  def aid = mpom.'p:artifactId'?.text()?.trim()
+  if (!aid) throw new RuntimeException("artifactId introuvable dans pom")
+  return aid
+}
+
+
+
+
+
+
 pipeline {
   agent any
   options { timestamps(); disableConcurrentBuilds() }
