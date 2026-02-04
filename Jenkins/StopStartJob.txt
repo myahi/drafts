@@ -1,117 +1,3 @@
-Parfait. Voici la version complète, finale et non abrégée, avec toutes les étapes et un Jenkinsfile OPS entier, sans raccourci, sans mélange avec le job de déploiement, et aligné exactement avec ce que tu as décidé.
-
-
----
-
-🧱 ARCHITECTURE FINALE (RAPPEL)
-
-Job 1 – DEPLOY
-👉 Ton Jenkinsfile existant (jar, zip, Artifactory, install)
-👉 INCHANGÉ
-
-Job 2 – OPS
-👉 NOUVEAU job Jenkins
-👉 Start / Stop / Restart uniquement
-👉 Mono / Multi détecté via le POM
-👉 Sélection :
-
-application
-
-environnement
-
-instance (couleur)
-
-module (ALL ou un module précis)
-
-
-
-
----
-
-1️⃣ PRÉ-REQUIS CÔTÉ VM
-
-Dans chaque répertoire bin/, les scripts suivants doivent exister et être exécutables :
-
-start.sh
-stop.sh
-restart.sh
-
-Layout attendu sur les VM
-
-Application mono-module
-
-/serveur_apps/<APP>/<INSTANCE>/bin
-
-Application multi-module
-
-/serveur_apps/<APP>/<INSTANCE>/<MODULE>/bin
-
-Exemples réels :
-
-/serveur_apps/eai-camel-report/vert/base/bin
-/serveur_apps/eai-camel-report/vert/cashflows/bin
-/serveur_apps/eai-bofi-rgv/rouge/bin
-
-
----
-
-2️⃣ GUI JENKINS – PARAMÈTRES DU JOB OPS
-
-👉 Les paramètres APP / ENV / INSTANCE sont les mêmes que dans ton job deploy
-👉 On ajoute seulement ACTION et MODULE
-
-Paramètres Jenkins
-
-APP (choice)
-Ex : eai-camel-report, eai-bofi-rgv
-
-ENV (choice)
-dev | recette | preprod | prod
-
-INSTANCE (choice)
-vert | bleu | rouge
-(validé via ta MAP interne)
-
-ACTION (choice)
-start | stop | restart
-
-MODULE (choice)
-ALL | base | cashflows | …
-(ignoré si mono-module)
-
-
-
----
-
-3️⃣ CE QUE TU GARDES TEL QUEL
-
-Dans ce Jenkinsfile OPS, tu réutilises exactement la même logique que dans ton job deploy pour :
-
-la MAP APP / ENV / INSTANCE → VMs
-
-la validation des entrées
-
-la détection mono / multi-module via le pom.xml
-
-les variables calculées :
-
-env.IS_MULTI
-
-env.MODULES
-
-env.TARGET_VMS
-
-
-
-👉 Aucune redéfinition, aucune saisie libre.
-
-
----
-
-4️⃣ JENKINSFILE OPS – VERSION COMPLÈTE (NON ABRÉGÉE)
-
-👉 À copier tel quel dans le job OPS.
-
 @NonCPS
 def parseXmlText(String xmlText) {
   return new XmlSlurper(false, false).parseText(xmlText)
@@ -161,16 +47,14 @@ pipeline {
           // ===== MAP CENTRALE (EXEMPLE – À ALIGNER AVEC TON EXISTANT) =====
           def MATRIX = [
             "eai-camel-report": [
-              dev:     [ vert: ['sdv4eai02'], bleu: ['sdv4eai03'] ],
-              recette: [ vert: ['src4eai02'], bleu: ['src4eai03'] ],
-              preprod: [ vert: ['spp4eai02'], bleu: ['spp4eai03'] ],
-              prod:    [ vert: ['spr4eai02'], bleu: ['spr4eai03'] ]
+              dev:     [ mono: ['sdv4eai02']],
+              recette: [ mono: ['src4eai05']],
+              preprod: [ mono: ['spp4eai02']]
             ],
             "eai-bofi-rgv": [
-              dev:     [ vert: ['sdv4eai10'], bleu: ['sdv4eai11'], rouge: ['sdv4eai12'] ],
-              recette: [ vert: ['src4eai10'], bleu: ['src4eai11'], rouge: ['src4eai12'] ],
-              preprod: [ vert: ['spp4eai10'], bleu: ['spp4eai11'], rouge: ['spp4eai12'] ],
-              prod:    [ vert: ['spr4eai10'], bleu: ['spr4eai11'], rouge: ['spr4eai12'] ]
+              dev:     [ mono: ['sdv4eai02'] ],
+              recette: [ mono: ['src4eai05'] ],
+              preprod: [ mono: ['spp4eai02'] ]
             ]
           ]
 
@@ -367,32 +251,3 @@ def healthcheckStable(String host, String configDir) {
     '
   """
 }
-
-6️⃣ RÉCAP FINAL (COURT)
-
-✔️ Jenkins est le bon outil
-
-✔️ Séparation DEPLOY / OPS
-
-✔️ Mono / multi auto
-
-✔️ Modules ciblables ou ALL
-
-✔️ Zéro jar / zip / Artifactory
-
-✔️ Chemins réels et absolus
-
-
-Tu as maintenant une base OPS propre, industrielle et exploitable en prod.
-Si tu veux, prochain pas possible :
-
-rolling restart
-
-healthcheck Spring Boot
-
-dry-run
-
-approval prod
-
-
-Dis-moi 👌
