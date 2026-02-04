@@ -8,6 +8,16 @@ def parsePom(String xml) {
 
 @NonCPS
 def extractModuleDirs(String parentPomText) {
+  def pom = new XmlSlurper(false, false).parseText(parentPomText)
+
+  return pom.depthFirst()
+    .findAll { it.name() == 'module' }
+    .collect { it.text().trim() }
+    .findAll { it }
+}
+
+@NonCPS
+def extractModuleDirs(String parentPomText) {
   def pom = parsePom(parentPomText)
   return (pom.'p:modules'.'p:module'*.text()*.trim() ?: []).findAll { it }
 }
