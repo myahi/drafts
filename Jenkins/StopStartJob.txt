@@ -1,29 +1,22 @@
 @NonCPS
-def parseXmlText(String xmlText) {
-  return new XmlSlurper(false, false).parseText(xmlText)
+def parseXmlNoNs(String xml) {
+  // On ignore les namespaces pour simplifier (pas de p:)
+  return new XmlSlurper(false, false).parseText(xml)
 }
 
 @NonCPS
-def detectModulesFromPoms(String parentPomText, Map<String, String> modulePomTexts) {
-  def parent = parseXmlText(parentPomText)
+def extractModuleDirsNoNs(String parentPomText) {
+  def pom = parseXmlNoNs(parentPomText)
+  def mods = pom.modules?.module?.collect { it.text().trim() }?.findAll { it } ?: []
+  return mods
+}
 
-  def moduleDirs = parent.modules?.module?.collect { it.text().trim() }?.findAll { it } ?: []
-  if (!moduleDirs) return [modules: [], artifactIds: []]
-
-  def artifactIds = moduleDirs.collect { m ->
-    def mpomText = modulePomTexts[m]
-    if (!mpomText) {
-      throw new RuntimeException("pom.xml introuvable pour le module: ${m}")
-    }
-    def mpom = parseXmlText(mpomText)
-    def aid = mpom.artifactId?.text()?.trim()
-    if (!aid) {
-      throw new RuntimeException("artifactId introuvable dans pom du module: ${m}")
-    }
-    return aid
-  }.unique()
-
-  return [modules: moduleDirs, artifactIds: artifactIds]
+@NonCPS
+def artifactIdFromPomNoNs(String pomText) {
+  def pom = parseXmlNoNs(pomText)
+  def aid = pom.artifactId?.text()?.trim()
+  if (!aid) throw new RuntimeException("artifactId introuvable dans pom")
+  return aid
 }
 
 pipeline {
@@ -34,9 +27,16 @@ pipeline {
   }
 
   environment {
+    ART_CRED = 'eai-marches-0002775-tech-ci-snapshot-user'
+    GROUP_PATH = 'fr/labanquepostale/marches/eai'
+    JAR_REPO  = 'eai-marches-0002775-maven-local-sas'
+    CONF_REPO = 'eai-marches-0002775-maven-local-sas'
+    GIT_CRED = 'usr_gitlab_eai'
     SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
     BASE_DIR = '/serveur_apps'
   }
+  
+  
 
   stages {
 
@@ -95,44 +95,66 @@ TARGETS   : ${env.TARGET_VMS}
       }
     }
 
-    stage('Checkout application repository') {
-      steps {
-        checkout scm
-      }
-    }
-
-    stage('Detect mono / multi-module') {
+     stage('Checkout Git configuration') {
       steps {
         script {
+          try {
+            def branch = (params.ENV == 'prod') ? 'master' : 'develop'
+            def repoUrl = "${env.EAI_REPO_URL}/${params.APP}.git"
+            echo "Checkout repo=${repoUrl} branch=${branch}"
 
-          if (!fileExists('pom.xml')) {
-            env.IS_MULTI = "false"
-            env.MODULES  = ""
-            return
+            checkout([
+              $class: 'GitSCM',
+              branches: [[name: branch]],
+              userRemoteConfigs: [[
+                url: repoUrl,
+                credentialsId: env.GIT_CRED
+              ]]
+            ])
+          } catch (e) {
+            echo "Erreur pendant le stage Checkout Git configuration"
+            echo e.toString()
+            throw e
           }
-
-          def parentPomText = readFile('pom.xml')
-          def tmp = detectModulesFromPoms(parentPomText, [:])
-          def moduleDirs = tmp.modules
-
-          if (!moduleDirs || moduleDirs.isEmpty()) {
-            env.IS_MULTI = "false"
-            env.MODULES  = ""
-            return
-          }
-
-          def modulePomTexts = [:]
-          moduleDirs.each { m ->
-            def p = "${m}/pom.xml"
-            if (!fileExists(p)) {
-              error("pom.xml introuvable pour le module: ${m}")
+        }
+      }
+    }
+    stage('Modules resolution') {
+      steps {
+        script {
+          try {
+            if (!fileExists('pom.xml')) {
+              env.MODULES = params.APP
+              env.IS_MULTI = "false"
+              echo "No pom.xml -> fallback mono: MODULES=${env.MODULES}"
+              return
             }
-            modulePomTexts[m] = readFile(p)
-          }
 
-          def res = detectModulesFromPoms(parentPomText, modulePomTexts)
-          env.MODULES  = res.artifactIds.join(',')
-          env.IS_MULTI = "true"
+            def parentPomText = readFile('pom.xml')
+            def moduleDirs = extractModuleDirsNoNs(parentPomText)
+
+            if (!moduleDirs || moduleDirs.isEmpty()) {
+              env.MODULES = params.APP
+              env.IS_MULTI = "false"
+              echo "Mono-module detected -> MODULES=${env.MODULES}"
+              return
+            }
+
+            def artifactIds = []
+            moduleDirs.each { m ->
+              def p = "${m}/pom.xml"
+              if (!fileExists(p)) error("pom.xml introuvable pour le module: ${m} (attendu: ${p})")
+              artifactIds << artifactIdFromPomNoNs(readFile(p))
+            }
+
+            env.MODULES = artifactIds.unique().join(',')
+            env.IS_MULTI = "true"
+            echo "Multi-module detected -> MODULES=${env.MODULES}"
+          } catch (e) {
+            echo "Erreur pendant le stage Modules resolution"
+            echo e.toString()
+            throw e
+          }
         }
       }
     }
@@ -140,44 +162,26 @@ TARGETS   : ${env.TARGET_VMS}
     stage('Operate application') {
       steps {
         script {
-
           def hosts = env.TARGET_VMS.split(',')
-
           if (env.IS_MULTI == "true") {
-
             def modules
             if (params.MODULE == 'ALL') {
               modules = env.MODULES.split(',')
             } else {
               modules = [ params.MODULE ]
             }
-
             hosts.each { host ->
               modules.each { mod ->
-
                 def binDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/bin"
                 def cfgDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/config"
-
                 operate(host, binDir)
-
-                if (params.ACTION != 'stop') {
-                  healthcheckStable(host, cfgDir)
-                }
               }
             }
-
           } else {
-
             hosts.each { host ->
-
               def binDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/bin"
               def cfgDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/config"
-
               operate(host, binDir)
-
-              if (params.ACTION != 'stop') {
-                healthcheckStable(host, cfgDir)
-              }
             }
           }
         }
@@ -202,52 +206,3 @@ def operate(String host, String binDir) {
   """
 }
 
-def healthcheckStable(String host, String configDir) {
-  sh """
-    echo ">>> HEALTHCHECK STABLE on ${host} (${configDir})"
-    ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@"${host}" '
-      set -euo pipefail
-
-      CONF_DIR="${configDir}"
-      PROP_FILE="\${CONF_DIR}/application.properties"
-
-      PORT=""
-
-      if [[ -f "\${PROP_FILE}" ]]; then
-        if grep -q "^management.server.port=" "\${PROP_FILE}"; then
-          PORT=\$(grep "^management.server.port=" "\${PROP_FILE}" | tail -1 | cut -d= -f2)
-        elif grep -q "^server.port=" "\${PROP_FILE}"; then
-          PORT=\$(grep "^server.port=" "\${PROP_FILE}" | tail -1 | cut -d= -f2)
-        fi
-      fi
-
-      [[ -n "\${PORT}" ]] || PORT=8080
-      echo "Using port=\${PORT}"
-
-      STABLE_REQUIRED=5
-      SLEEP=5
-      MAX_LOOPS=24   # 24 * 5s = 120s max
-      ok=0
-      i=1
-
-      while [ \$i -le \$MAX_LOOPS ]; do
-        if curl -fs "http://127.0.0.1:\${PORT}/actuator/health" | grep -q '"status":"UP"'; then
-          ok=\$((ok+1))
-          echo "UP (\${ok}/\${STABLE_REQUIRED})"
-          if [ "\${ok}" -ge "\${STABLE_REQUIRED}" ]; then
-            echo "Healthcheck STABLE OK"
-            exit 0
-          fi
-        else
-          echo "Not UP -> reset counter"
-          ok=0
-        fi
-        sleep \$SLEEP
-        i=\$((i+1))
-      done
-
-      echo "ERROR: Healthcheck FAILED to reach STABLE UP"
-      exit 1
-    '
-  """
-}
