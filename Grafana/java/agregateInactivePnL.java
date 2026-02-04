@@ -1,5 +1,77 @@
 
 private List<String> aggregateInactivePnL(List<String> lines) {
+    final String POST_CHANGE_HIST_PREFIX = "POS_CHANGE_HIST_";
+    final String SEP = ";";
+
+    final int PNL_TYPE_IDX = 2;
+    final int PRODUCT_TYPE_IDX = 4;      // chez toi c'est columns[4]
+    final int CURRENCY_IDX = 9;
+    final int BOOK_IDX = 11;
+
+    final int SUM_FROM = 18;
+    final int SUM_TO_EXCL = 34;          // 18..33 inclus
+
+    List<String> result = new ArrayList<>();
+    List<String> inactive = new ArrayList<>();
+
+    // 1) split inactive / autres
+    for (String line : lines) {
+        String[] cols = line.split(SEP, -1);
+        if (!"Inactive".equals(cols[PNL_TYPE_IDX])) {
+            result.add(line);
+        } else {
+            inactive.add(line);
+        }
+    }
+
+    // 2) ordre : POS_CHANGE_HIST_ d'abord
+    List<String> inactiveSorted = new ArrayList<>(inactive);
+    inactiveSorted.sort((a, b) -> {
+        boolean ap = a.contains(POST_CHANGE_HIST_PREFIX);
+        boolean bp = b.contains(POST_CHANGE_HIST_PREFIX);
+        if (ap == bp) return 0;
+        return ap ? -1 : 1;
+    });
+
+    // 3) agrégation par clé (LinkedHashMap = conserve l’ordre d’insertion)
+    Map<String, String[]> agg = new LinkedHashMap<>();
+
+    for (String line : inactiveSorted) {
+        String[] cols = line.split(SEP, -1);
+
+        String productNorm = removePrefix(cols[PRODUCT_TYPE_IDX], POST_CHANGE_HIST_PREFIX);
+        String key = cols[CURRENCY_IDX] + "|" + cols[BOOK_IDX] + "|" + productNorm;
+
+        String[] acc = agg.get(key);
+        if (acc == null) {
+            // première occurrence => on la garde telle quelle (mais productType normalisé si tu veux)
+            // si tu veux conserver le productType original (avec prefix), ne touche pas cols[PRODUCT_TYPE_IDX]
+            agg.put(key, cols);
+        } else {
+            // addition des montants
+            for (int k = SUM_FROM; k < SUM_TO_EXCL; k++) {
+                acc[k] = formatBigDecimal(
+                    convertStringToBigDecimal(acc[k]).add(convertStringToBigDecimal(cols[k]))
+                );
+            }
+        }
+    }
+
+    // 4) rebuild lignes
+    for (String[] cols : agg.values()) {
+        result.add(concatColumn(cols));
+    }
+
+    return result;
+}
+
+private String removePrefix(String s, String prefix) {
+    if (s == null) return "";
+    return s.startsWith(prefix) ? s.substring(prefix.length()) : s;
+}
+
+
+private List<String> aggregateInactivePnL(List<String> lines) {
 
     final String SEP = ";";
     final String POST_CHANGE_PREFIX = "POS_CHANGE_HIST_";
