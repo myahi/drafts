@@ -1,3 +1,5 @@
+https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-report-config/1.0.0-SNAPSHOT/eai-camel-report-config-1.0.0-20260203.133244-1.zip
+
 import groovy.json.JsonSlurper
 import java.util.Base64
 import jenkins.model.Jenkins
