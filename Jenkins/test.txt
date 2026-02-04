@@ -1,4 +1,14 @@
 @NonCPS
+def readPackagingFromPom(String pomText) {
+  def pom = new XmlSlurper(false, false).parseText(pomText)
+  def p = pom.depthFirst()
+             .find { it.name() == 'packaging' }
+             ?.text()
+             ?.trim()
+  return p ?: 'jar'
+}
+
+@NonCPS
 def extractModuleDirs(String pomText) {
   def pom = new XmlSlurper(false, false).parseText(pomText)
   pom.depthFirst()
