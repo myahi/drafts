@@ -1,0 +1,89 @@
+{
+  "uid": "camel-prom-ready",
+  "title": "Apache Camel (Prometheus) - Ready",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": { "query": "label_values(camel_route_exchanges_total, application)" },
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "camelContext",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": { "query": "label_values(camel_route_exchanges_total{application=~\"$application\"}, camelContext)" },
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "routeId",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": { "query": "label_values(camel_route_exchanges_total{application=~\"$application\", camelContext=~\"$camelContext\"}, routeId)" },
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Throughput (exchanges/s) by route",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (routeId) (rate(camel_route_exchanges_total{application=~\"$application\",camelContext=~\"$camelContext\",routeId=~\"$routeId\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Failures (exchanges failed/s) by route",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (routeId) (rate(camel_route_exchanges_failed_total{application=~\"$application\",camelContext=~\"$camelContext\",routeId=~\"$routeId\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Avg processing time (ms) by route",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1000 * ( sum by (routeId) (rate(camel_exchange_processing_seconds_sum{application=~\"$application\",camelContext=~\"$camelContext\",routeId=~\"$routeId\"}[5m])) / clamp_min(sum by (routeId) (rate(camel_exchange_processing_seconds_count{application=~\"$application\",camelContext=~\"$camelContext\",routeId=~\"$routeId\"}[5m])), 1e-9) )"
+        }
+      ]
+    }
+  ],
+  "annotations": { "list": [] },
+  "links": [],
+  "editable": true,
+  "tags": ["camel", "prometheus", "micrometer"],
+  "fiscalYearStartMonth": 0
+} 
