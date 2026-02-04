@@ -1,3 +1,47 @@
+stage('Operate application') {
+  steps {
+    script {
+      try {
+        def hosts = env.TARGET_VMS.split(',').collect { it.trim() }.findAll { it }
+
+        if (env.IS_MULTI == "true") {
+
+          // MODULE obligatoire en multi (sinon mod=null => /null/bin)
+          if (!params.MODULE?.toString()?.trim()) {
+            error("Paramètre MODULE requis en multi-module (valeurs: ALL ou un module de ${env.MODULES})")
+          }
+
+          def modules
+          if (params.MODULE == 'ALL') {
+            modules = env.MODULES.split(',').collect { it.trim() }.findAll { it }
+          } else {
+            modules = [ params.MODULE.toString().trim() ]
+          }
+
+          hosts.each { host ->
+            modules.each { mod ->
+              def binDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/${mod}/bin"
+              operate(host, binDir)
+            }
+          }
+
+        } else {
+          hosts.each { host ->
+            def binDir = "${env.BASE_DIR}/${params.APP}/${params.INSTANCE}/bin"
+            operate(host, binDir)
+          }
+        }
+
+      } catch (e) {
+        echo "Erreur pendant le stage Operate application"
+        echo e.toString()
+        throw e
+      }
+    }
+  }
+}
+
+
 @NonCPS
 def parseXmlNoNs(String xml) {
   // On ignore les namespaces pour simplifier (pas de p:)
