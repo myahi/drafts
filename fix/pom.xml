@@ -1,3 +1,10 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+private static final Logger LOGGER =
+        LoggerFactory.getLogger(FixClientStarter.class);
+
+
 java -jar fix-engine.jar \
   --spring.config.location=/serveur_apps/fix/conf/application.properties
 
