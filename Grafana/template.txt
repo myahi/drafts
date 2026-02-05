@@ -1,0 +1,27 @@
+{
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Total Exchanges per Route",
+      "targets": [
+        {
+          "expr": "sum(rate(camel_route_exchanges_total{application=\"$application\", camelContext=\"$camelContext\", routeId=\"$routeId\"}[1m]))",
+          "legendFormat": "{{routeId}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "displayName": "Exchanges"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      { "name": "application", "query": "label_values(camel_route_exchanges_total, application)" },
+      { "name": "camelContext", "query": "label_values(camel_route_exchanges_total, camelContext)" },
+      { "name": "routeId", "query": "label_values(camel_route_exchanges_total, routeId)" }
+    ]
+  }
+}
