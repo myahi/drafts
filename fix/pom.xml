@@ -1,27 +1,4 @@
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-private static final Logger LOGGER =
-        LoggerFactory.getLogger(FixClientStarter.class);
-
-
-java -jar fix-engine.jar \
-  --spring.config.location=/serveur_apps/fix/conf/application.properties
-
-<plugin>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-maven-plugin</artifactId>
-  <version>${spring.boot.version}</version>
-  <executions>
-    <execution>
-      <goals>
-        <goal>repackage</goal>
-      </goals>
-    </execution>
-  </executions>
-</plugin> 
-
-. <project xmlns="https://maven.apache.org/POM/4.0.0"
+<project xmlns="https://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -41,36 +18,9 @@ java -jar fix-engine.jar \
 
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.tibco.ems</groupId>
 			<artifactId>tibjms</artifactId>
 			<version>8.2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.tibco</groupId>
-			<artifactId>tibcrypt</artifactId>
-			<version>8.2</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.jms</groupId>
-			<artifactId>javax.jms-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.quickfixj</groupId>
@@ -105,11 +55,19 @@ java -jar fix-engine.jar \
 		</dependency>
 	</dependencies>
 	<build>
+	<finalName>fixEngineTradeWeb</finalName>
 		<plugins>
-			<!-- pour packager un jar exécutable -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring.boot.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
