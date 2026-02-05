@@ -1,1 +1,0 @@
-Cannot rename file: GenericFile[c:\serveur_apps\EAIReports\input\COLLATERAL_MANAGEMENT\CRICM_CSO_LBP_Q_20230921_200020.txt] to: GenericFile[c:\serveur_apps\EAIReports\input\COLLATERAL_MANAGEMENT\.camel\CRICM_CSO_LBP_Q_20230921_200020.txt]]
