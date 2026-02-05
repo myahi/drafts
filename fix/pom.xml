@@ -1,3 +1,6 @@
+java -jar fix-engine.jar \
+  --spring.config.location=/serveur_apps/fix/conf/application.properties
+
 <plugin>
   <groupId>org.springframework.boot</groupId>
   <artifactId>spring-boot-maven-plugin</artifactId>
