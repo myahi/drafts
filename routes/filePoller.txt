@@ -1,0 +1,3 @@
+from("file:/data/in?idempotent=false&readLock=changed")
+  // ton traitement
+  .to("file:/data/archive"); 
