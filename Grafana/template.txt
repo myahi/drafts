@@ -15,7 +15,23 @@
           "displayName": "Exchanges"
         }
       }
+    }, 
+{
+  "type": "timeseries",
+  "title": "Uptime (seconds since start)",
+  "targets": [
+    {
+      "expr": "process_uptime_seconds",
+      "legendFormat": "Uptime"
     }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "unit": "s",
+      "displayName": "Uptime (s)"
+    }
+  }
+} 
   ],
   "templating": {
     "list": [
