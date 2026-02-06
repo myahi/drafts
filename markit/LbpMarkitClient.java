@@ -70,7 +70,6 @@ public class LbpMarkitClient {
 
     private static volatile ConfigurableApplicationContext APP_CONTEXT;
 
-    // ✅ NEW: éviter logs/arrêts doublés
     private static final AtomicBoolean STOP_ONCE = new AtomicBoolean(false);
     private static final AtomicBoolean SHUTDOWN_ONCE = new AtomicBoolean(false);
 
@@ -288,42 +287,40 @@ public class LbpMarkitClient {
         LOGGER.info("Max connection retry count: {}", maxConnectionRetryCount);
     }
 
-    /**
-     * Arrêt propre Spring Boot (Tomcat, beans, etc.)
-     * et sortie du process avec un code.
-     */
     private void requestApplicationShutdown(int exitCode) {
-        // ✅ NEW: un seul shutdown
         if (!SHUTDOWN_ONCE.compareAndSet(false, true)) {
             return;
         }
 
-        try {
-            ConfigurableApplicationContext ctx = APP_CONTEXT;
-
-            if (ctx == null) {
-                LOGGER.error("ApplicationContext not set: fallback System.exit({})", exitCode);
-                System.exit(exitCode);
-                return;
-            }
-
-            new Thread(() -> {
-                try {
-                    LOGGER.error("Max retry reached: shutting down Spring application (exitCode={})", exitCode);
-
-                    int code = SpringApplication.exit(ctx, () -> exitCode);
-                    System.exit(code);
-
-                } catch (Throwable t) {
-                    LOGGER.error("Shutdown failed: forcing System.exit({})", exitCode, t);
-                    System.exit(exitCode);
-                }
-            }, "markit-shutdown").start();
-
-        } catch (Throwable t) {
-            LOGGER.error("requestApplicationShutdown failed: forcing System.exit({})", exitCode, t);
+        ConfigurableApplicationContext ctx = APP_CONTEXT;
+        if (ctx == null) {
+            LOGGER.error("ApplicationContext not set: fallback System.exit({})", exitCode);
             System.exit(exitCode);
+            return;
         }
+
+        // Watchdog: si un shutdown hook bloque, on force le kill JVM
+        Thread watchdog = new Thread(() -> {
+            try {
+                Thread.sleep(5000); // 15s (mets en conf si tu veux)
+                LOGGER.error("Shutdown watchdog triggered -> forcing Runtime.halt({})", exitCode);
+                Runtime.getRuntime().halt(exitCode);
+            } catch (InterruptedException ignored) {
+            }
+        }, "shutdown-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+
+        new Thread(() -> {
+            try {
+                LOGGER.error("Max retry reached: shutting down Spring application (exitCode={})", exitCode);
+                int code = SpringApplication.exit(ctx, () -> exitCode);
+                System.exit(code);
+            } catch (Throwable t) {
+                LOGGER.error("Shutdown failed: forcing System.exit({})", exitCode, t);
+                System.exit(exitCode);
+            }
+        }, "markit-shutdown").start();
     }
 
     public static void loggedOut() throws ErrorCode {
@@ -356,14 +353,11 @@ public class LbpMarkitClient {
     }
 
     private void stopMarkitConnectorInternal() {
-        // ✅ NEW: stop idempotent -> évite logs doublés
         if (!STOP_ONCE.compareAndSet(false, true)) {
             return;
         }
-
         DISCONNECTION_REQUEST_RECEIVED = true;
         IS_MARKIT_SESSION_CONNECTED = false;
-
         try {
             if (jmsListner != null) {
                 jmsListner.stopListening();
@@ -371,7 +365,6 @@ public class LbpMarkitClient {
         } catch (Exception e) {
             LOGGER.error("stopListening failed (ignored)", e);
         }
-
         try {
             Session session = getSession();
             if (session != null) {
@@ -389,13 +382,10 @@ public class LbpMarkitClient {
         } finally {
             setSession(null);
         }
-
-        // ⚠️ éviter deadlock: ne pas shutdown l'executor depuis le worker lui-même
         if (Thread.currentThread() == MARKIT_WORKER_THREAD) {
             LOGGER.info("Stop requested from Markit worker thread: skipping executor shutdown/await.");
             return;
         }
-
         synchronized (EXECUTOR_LOCK) {
             if (executorService != null) {
                 executorService.shutdown();
@@ -423,12 +413,9 @@ public class LbpMarkitClient {
 
             DISCONNECTION_REQUEST_RECEIVED = false;
             IS_MARKIT_SESSION_CONNECTED = false;
-
             CURRENT_CONNECTION_ERROR_COUNT.set(0);
             MAX_RETRY_ALERT_SENT.set(false);
             EMAIL_SENT.set(false);
-
-            // ✅ reset pour que stop/shutdown puissent repartir
             STOP_ONCE.set(false);
             SHUTDOWN_ONCE.set(false);
 
