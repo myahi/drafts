@@ -1,4 +1,11 @@
 
+public static void main(String[] args) {
+    ConfigurableApplicationContext ctx = SpringApplication.run(MarkitApplication.class, args);
+    LbpMarkitClient.setApplicationContext(ctx);
+}
+
+
+
 2026-02-06 18:22:00.468 ERROR 75573 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : ApplicationContext not set: fallback System.exit(2)
     
 
