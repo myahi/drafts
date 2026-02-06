@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties
+@ConfigurationProperties(prefix = "lbp")
 public class ApplicationProperties {
 
     // lbp.ems.serverUrl
