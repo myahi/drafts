@@ -1,0 +1,12 @@
+lbp.markit.email.alert.threshold=3
+lbp.markit.email.alert.enabled=true
+lbp.markit.email.alert.to=ops@domaine.fr;support@domaine.fr
+lbp.markit.email.alert.from=markit-engine@domaine.fr
+lbp.markit.email.alert.subjectPrefix=[MARKIT]
+
+spring.mail.host=smtp.domaine.fr
+spring.mail.port=587
+spring.mail.username=xxxx
+spring.mail.password=yyyy
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true 
