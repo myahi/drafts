@@ -1,2 +1,4 @@
-2026-02-06 16:01:18.595 ERROR 99209 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
-2026-02-06 16:01:18.596 ERROR 99209 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+026-02-07 00:31:43.931  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : initialize MarkitConnector with count error count: 0
+2026-02-07 00:31:43.941  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : SW_API_DLL Version =
+2026-02-07 00:31:43.946  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : initialize MarkitConnector with count error count: 0
+2026-02-07 00:31:43.947  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : SW_API_DLL Version =
