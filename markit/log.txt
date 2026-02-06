@@ -1,0 +1,248 @@
+2026-02-06 14:20:58.064  INFO 32676 --- [main] f.l.m.application.MarkitApplication      : Started MarkitApplication in 2.382 seconds (JVM running for 2.739)
+2026-02-06 14:21:05.032  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Logged in to Server
+2026-02-06 14:21:05.098  INFO 32676 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Start listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
+2026-02-06 14:21:05.098  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Registed to session callback
+2026-02-06 14:23:01.557 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Exception occurred while trying connection retry attempt 1
+2026-02-06 14:23:01.562 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -509: A reply from the server was not received in a timely fashion: Timeout was reached
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.getBookList(DealerAPIWrapper.java:324) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:127) ~[classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:23:01.562  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 1
+2026-02-06 14:23:01.563  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 5
+2026-02-06 14:23:36.647 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:24:06.701 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:24:06.703 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:135) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:24:06.703  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Connecting to https://mw.uat.api.markit.com:443
+2026-02-06 14:24:36.755 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:24:36.757 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:91) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:24:36.757 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Exception occurred while trying connection retry attempt 2
+2026-02-06 14:24:36.757 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -509: A reply from the server was not received in a timely fashion: Timeout was reached
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.connect(DealerAPIWrapper.java:23) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:59) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) ~[classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:24:36.757  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 2
+2026-02-06 14:24:36.758  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 5
+2026-02-06 14:24:41.788 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:24:41.788 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:24:41.789 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:135) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:24:41.789  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Connecting to https://mw.uat.api.markit.com:443
+2026-02-06 14:25:11.840 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:11.841 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:91) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:11.842 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Exception occurred while trying connection retry attempt 3
+2026-02-06 14:25:11.842 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -509: A reply from the server was not received in a timely fashion: Timeout was reached
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.connect(DealerAPIWrapper.java:23) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:59) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) ~[classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:11.842  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 3
+2026-02-06 14:25:11.842  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 5
+2026-02-06 14:25:16.872 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:16.873 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:16.874 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:135) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:16.874  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Connecting to https://mw.uat.api.markit.com:443
+2026-02-06 14:25:25.251  INFO 32676 --- [https-jsse-nio-8543-exec-7] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-02-06 14:25:46.925 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:46.926 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:91) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:46.926 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Exception occurred while trying connection retry attempt 4
+2026-02-06 14:25:46.926 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -509: A reply from the server was not received in a timely fashion: Timeout was reached
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.connect(DealerAPIWrapper.java:23) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:59) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) ~[classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:46.926  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 4
+2026-02-06 14:25:46.926  INFO 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 5
+2026-02-06 14:25:51.957 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:51.958 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:25:51.958 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: null: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:135) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:25:51.958  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Connecting to https://mw.uat.api.markit.com:443
+2026-02-06 14:25:52.106  INFO 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Connected to Server
+2026-02-06 14:26:27.797 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : Failed to de-register callback handlers
+2026-02-06 14:26:27.798 ERROR 32676 --- [pool-2-thread-1] fr.lbp.markit.connection.Session         : -350: The handle  passed to the function was invalid: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.disconnect(Session.java:113) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:91) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.799 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Exception occurred while trying connection retry attempt 5
+2026-02-06 14:26:27.799 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -509: A reply from the server was not received in a timely fashion: A reply from the server was not received in a timely fashion [30 seconds]
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.login(DealerAPIWrapper.java:39) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.Session.connect(Session.java:69) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:136) ~[classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.799 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Maximum try number has been reached
+2026-02-06 14:26:27.804  INFO 32676 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Stop listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
+2026-02-06 14:26:27.805 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -350: The handle  passed to the function was invalid: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.stopMarkitConnectorInternal(LbpMarkitClient.java:240) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.handleConnectionIssue(LbpMarkitClient.java:186) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:149) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.805 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : java.lang.InterruptedException
+
+java.lang.InterruptedException: null
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2067) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor.awaitTermination(ThreadPoolExecutor.java:1475) ~[na:1.8.0_402]
+	at java.util.concurrent.Executors$DelegatedExecutorService.awaitTermination(Executors.java:675) ~[na:1.8.0_402]
+	at fr.lbp.markit.controller.LbpMarkitClient.stopMarkitConnectorInternal(LbpMarkitClient.java:252) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.handleConnectionIssue(LbpMarkitClient.java:186) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:149) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.817 ERROR 32676 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Failed to send message to queue rec.re7menthe.trade.markit.in
+
+javax.jms.JMSException: InterruptedException has occurred while waiting for server response
+	at com.tibco.tibjms.Tibjmsx.buildException(Tibjmsx.java:530) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsxLink.sendRequest(TibjmsxLink.java:375) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsxLink.sendRequest(TibjmsxLink.java:286) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsxLink.sendRequestMsg(TibjmsxLink.java:261) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsConnection._createSession(TibjmsConnection.java:2797) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsConnection._createSession(TibjmsConnection.java:2741) ~[tibjms-8.2.jar!/:na]
+	at com.tibco.tibjms.TibjmsConnection.createSession(TibjmsConnection.java:4563) ~[tibjms-8.2.jar!/:na]
+	at fr.lbp.jms.connection.JMSListener.sendToQueue(JMSListener.java:155) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.jms.connection.JMSListener.send(JMSListener.java:144) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.handleConnectionIssue(LbpMarkitClient.java:191) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:149) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.819 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : -350: The handle  passed to the function was invalid: The handle 3101 passed to the function was invalid
+
+fr.lbp.markit.connection.ErrorCode: null
+	at fr.lbp.markit.connection.DealerAPIWrapper.Check(DealerAPIWrapper.java:12) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.connection.DealerAPIWrapper.logout(DealerAPIWrapper.java:43) ~[classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.stopMarkitConnectorInternal(LbpMarkitClient.java:240) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:170) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+
+2026-02-06 14:26:27.819 ERROR 32676 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : java.lang.InterruptedException
+
+java.lang.InterruptedException: null
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2067) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor.awaitTermination(ThreadPoolExecutor.java:1475) ~[na:1.8.0_402]
+	at java.util.concurrent.Executors$DelegatedExecutorService.awaitTermination(Executors.java:675) ~[na:1.8.0_402]
+	at fr.lbp.markit.controller.LbpMarkitClient.stopMarkitConnectorInternal(LbpMarkitClient.java:252) [classes!/:1.0.0-SNAPSHOT]
+	at fr.lbp.markit.controller.LbpMarkitClient.lambda$initializeMarkitConnector$0(LbpMarkitClient.java:170) [classes!/:1.0.0-SNAPSHOT]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
