@@ -1,3 +1,12 @@
+
+
+int threshold = Integer.parseInt(ApplicationProperties.LBP_MARKIT_EMAIL_ALERT_THRESHOLD);
+
+if (attempt >= threshold && EMAIL_SENT.compareAndSet(false, true)) {
+    mailService.send(...);
+}
+
+
 package fr.lbp.markit.controller;
 
 import java.io.IOException;
