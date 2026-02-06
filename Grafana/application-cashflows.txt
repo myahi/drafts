@@ -1,0 +1,63 @@
+# --- Project ---
+project.name=EAI_REPORTS
+
+
+# --- JMX ---
+management.endpoints.web.exposure.include=health,info,metrics,camel,jolokia,prometheus
+management.metrics.enable.all=true
+management.endpoint.camel.enabled=true
+management.endpoint.camel.show-extended-info=true
+management.endpoint.jolokia.enabled=true
+spring.jmx.enabled=true
+camel.springboot.main-run-controller=true
+camel.springboot.micrometer.enabled=true
+camel.springBoot.name=eai-camel-report-cashflows
+
+# --- APP Management ---
+server.port=10002
+web-application-type=none
+management.server.port=10202
+
+# --- TIBCO EMS ---
+tibco.ems.pool.enabled=true
+tibco.ems.pool.max-connections=10
+tibco.ems.reconnect.attempts=3
+tibco.ems.reconnect.delay=5000
+
+# --- Audit & Log ---
+audit.destination=jms
+audit.logging.enabled=true
+audit.error.destination=jms
+audit.error.auto-audit.enabled=true
+audit.error.logging.enabled=true
+audit.error.logging.level=ERROR
+logging.file.name=../run/logs/eai-report-cashflows.log
+audit.error.logging.include-stacktrace=true
+
+# --- Prometheus endpoint ---
+management.endpoint.prometheus.enabled=true
+
+# --- Micrometer / Camel ---
+camel.micrometer.enabled=true
+management.metrics.targs.application=eai-camel-report-cashflows
+management.metrics.targs.env=dev
+
+# --- Check BDD, JMS, System file on startup and periodically ---
+resource.check.retry.count=5
+resource.check.retry.delay-ms=5000
+resource.check.period-ms=60000
+resource.fs.path=/serveur_apps/EAIReports/
+
+# --- Camel Routes ---
+camel.springboot.auto-startup=false
+
+# --- cashflows report processing ---
+eai.report.cashflows.input.dir=/serveur_apps/EAIReports/input/CASHFLOWS/
+eai.report.cashflows.input.dir.archives.subdir=/serveur_apps/EAIReports/input/CASHFLOWS/archives
+eai.report.cashflows.input.dir.errors.subdir=/serveur_apps/EAIReports/input/CASHFLOWS/errors
+eai.report.cashflows.input.delay.ms=60000
+eai.report.cashflows.input.notification.name=start_cashflow_process.cmd
+eai.report.cashflows.input.file.pattern=MO_Cashflows_.*
+eai.report.cashflows.dollaru.ressource.name=RL_MO_ALLCASHFLOWDEALS_RES
+eai.report.cashflows.output.dir=/serveur_apps/EAIReports/input/CASHFLOWS/
+eai.report.cashflows.output.file.prefix=MO_Cashflows_
