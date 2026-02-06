@@ -1,0 +1,77 @@
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+  },
+  "description": "Application availability based on Prometheus up metric",
+  "fieldConfig": {
+    "defaults": {
+      "mappings": [
+        {
+          "type": "value",
+          "options": {
+            "0": {
+              "text": "DOWN",
+              "color": "red"
+            },
+            "1": {
+              "text": "UP",
+              "color": "green"
+            }
+          }
+        }
+      ],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "red",
+            "value": 0
+          },
+          {
+            "color": "green",
+            "value": 1
+          }
+        ]
+      },
+      "unit": "none"
+    },
+    "overrides": []
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 3,
+    "x": 4,
+    "y": 1
+  },
+  "id": 999,
+  "options": {
+    "colorMode": "background",
+    "graphMode": "none",
+    "justifyMode": "center",
+    "orientation": "vertical",
+    "reduceOptions": {
+      "calcs": ["lastNotNull"],
+      "fields": "",
+      "values": false
+    },
+    "textMode": "value",
+    "wideLayout": true
+  },
+  "pluginVersion": "12.3.2",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "editorMode": "code",
+      "expr": "min(up{job=~\"$job\",cluster=\"$cluster\",namespace=\"$namespace\",app_kubernetes_io_part_of=\"$part_of\",app_kubernetes_io_name=\"$app_name\",app_kubernetes_io_component=\"$component\",app_kubernetes_io_instance=\"$instance\",app_kubernetes_io_version=\"$version\"})",
+      "instant": true,
+      "range": false,
+      "refId": "A"
+    }
+  ],
+  "title": "Application Status",
+  "type": "stat"
+} 
