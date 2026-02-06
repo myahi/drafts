@@ -1,0 +1,17 @@
+[
+  {
+    "targets": ["sdv4eai02:10201"],
+    "labels": {
+      "application": "eai-camel-report-base",
+      "instance_name": "mono",
+      "context": "eai-report-base"
+    }
+  },
+  {
+    "targets": ["sdv4eai02:10202"],
+    "labels": {
+      "application": "eai-camel-report-cashflows",
+      "instance_name": "mono",
+      "context": "eai-report-cashflows"
+    }
+  }
