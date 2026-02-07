@@ -4,7 +4,9 @@
     "labels": {
       "application": "eai-camel-report-base",
       "instance_name": "mono",
-      "context": "eai-report-base"
+      "context": "eai-report-base",
+      "__metrics_path__": "/actuator/prometheus",
+      "__scheme__": "http"
     }
   },
   {
@@ -12,6 +14,9 @@
     "labels": {
       "application": "eai-camel-report-cashflows",
       "instance_name": "mono",
-      "context": "eai-report-cashflows"
+      "context": "eai-report-cashflows",
+      "__metrics_path__": "/actuator/prometheus",
+      "__scheme__": "http"
     }
   }
+]
