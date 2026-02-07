@@ -1,4 +1,1 @@
-026-02-07 00:31:43.931  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : initialize MarkitConnector with count error count: 0
-2026-02-07 00:31:43.941  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : SW_API_DLL Version =
-2026-02-07 00:31:43.946  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : initialize MarkitConnector with count error count: 0
-2026-02-07 00:31:43.947  INFO 40236 --- [main] f.lbp.markit.controller.LbpMarkitClient  : SW_API_DLL Version =
+026-02-07 01:41:08.067  INFO 81232 --- [markit-shutdown] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
