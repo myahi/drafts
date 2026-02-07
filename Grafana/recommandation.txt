@@ -1,0 +1,152 @@
+Excellente question — et tu touches exactement à l’articulation Prometheus ↔ Spring Boot ↔ Camel 👍
+Réponse courte : app n’est lié à aucune clé Spring Boot par défaut.
+👉 C’est toi qui décides si (et comment) tu le fais correspondre côté application.
+
+Je t’explique les 3 façons correctes, puis je te dis laquelle je recommande.
+
+
+---
+
+1️⃣ Ce que fait réellement le label app
+
+Dans ton JSON Prometheus :
+
+"labels": {
+  "app": "pizza5-camel-B",
+  "env": "prod"
+}
+
+👉 Ce label est injecté par Prometheus, au moment du scrape.
+👉 Il n’existe pas dans l’application elle-même.
+
+Donc :
+
+Spring Boot n’en sait rien
+
+Camel n’en sait rien
+
+Micrometer n’en sait rien
+
+
+C’est juste un label externe, très courant.
+
+
+---
+
+2️⃣ Option A — Label app uniquement côté Prometheus (simple et OK)
+
+Tu ne mets rien dans application.properties.
+
+Avantages :
+
+zéro config côté appli
+
+très clair pour Grafana
+
+découplé du code
+
+
+Inconvénient :
+
+les métriques Camel/Micrometer n’ont pas ce tag “natif” (mais Grafana s’en fiche)
+
+
+👉 C’est parfaitement valide, surtout si Prometheus est la source de vérité.
+
+
+---
+
+3️⃣ Option B — Synchroniser app avec Micrometer (recommandé)
+
+Tu fais correspondre le label Prometheus et un tag Micrometer.
+
+application.properties
+
+management.metrics.tags.app=pizza5-camel-B
+management.metrics.tags.env=prod
+
+Résultat :
+
+Les métriques exposées par l’appli ont déjà app et env
+
+Prometheus fusionne ces labels avec les siens
+
+Grafana filtre partout de façon cohérente
+
+
+👉 C’est la meilleure pratique en prod.
+
+
+---
+
+4️⃣ Option C — Utiliser spring.application.name (souvent utilisé, mais piège)
+
+spring.application.name=pizza5-camel-B
+
+⚠️ Attention :
+
+Micrometer mappe souvent ça vers le label application
+
+Pas toujours vers app
+
+Les dashboards Camel utilisent rarement application par défaut
+
+
+Tu peux l’utiliser en plus, mais pas comme seul repère.
+
+
+---
+
+5️⃣ Ce que je te recommande (clair et propre)
+
+Côté Spring Boot / Camel
+
+spring.application.name=pizza5-camel
+management.metrics.tags.app=pizza5-camel-B
+management.metrics.tags.env=prod
+
+Côté Prometheus (camel-B.json)
+
+"labels": {
+  "app": "pizza5-camel-B",
+  "env": "prod"
+}
+
+➡️ Les labels sont alignés partout
+➡️ Un seul dashboard Grafana fonctionne pour toutes les JVM
+➡️ Pas d’ambiguïté dans 6 mois
+
+
+---
+
+6️⃣ Vérification rapide
+
+Sur /actuator/prometheus, tu dois voir :
+
+camel_exchange_total{app="pizza5-camel-B",env="prod",...}
+
+Et dans Prometheus :
+
+up{job="camel-jvm", app="pizza5-camel-B"}
+
+
+---
+
+TL;DR
+
+app n’existe pas par défaut dans Spring Boot
+
+Soit tu le laisses 100% côté Prometheus
+
+Soit (recommandé) tu l’ajoutes via
+
+management.metrics.tags.app=...
+
+Évite de dépendre uniquement de spring.application.name
+
+
+Si tu veux, je peux te proposer :
+
+un schéma de labels standard (app / service / instance / env / version),
+
+ou un extrait de dashboard JSON Camel qui utilise exactement ces labels.
