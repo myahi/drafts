@@ -1,1 +1,23 @@
 
+{
+  "id": 4,
+  "type": "stat",
+  "title": "Routes Status",
+  "targets": [
+    {
+      "refId": "Instances",
+      "instant": true,
+      "expr": "count(\n  camel_routes_running_routes{\n    job=~\"$job\",\n    cluster=~\"${cluster:regex}|.*\",\n    namespace=~\"${namespace:regex}|.*\",\n    camelContext=~\"$context\"\n  }\n)"
+    },
+    {
+      "refId": "RunningRoutesPercentage",
+      "instant": true,
+      "expr": "100 * (\n  sum(\n    camel_routes_running_routes{\n      job=~\"$job\",\n      cluster=~\"${cluster:regex}|.*\",\n      namespace=~\"${namespace:regex}|.*\",\n      camelContext=~\"$context\"\n    }\n  )\n  /\n  sum(\n    camel_routes_added_routes{\n      job=~\"$job\",\n      cluster=~\"${cluster:regex}|.*\",\n      namespace=~\"${namespace:regex}|.*\",\n      camelContext=~\"$context\"\n    }\n  )\n)"
+    },
+    {
+      "refId": "RoutesCount",
+      "instant": true,
+      "expr": "max(\n  camel_routes_added_routes{\n    job=~\"$job\",\n    cluster=~\"${cluster:regex}|.*\",\n    namespace=~\"${namespace:regex}|.*\",\n    camelContext=~\"$context\"\n  }\n)"
+    }
+  ]
+}
