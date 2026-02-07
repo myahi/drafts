@@ -1,28 +1,31 @@
 private void requestApplicationShutdown(int exitCode) {
     if (!SHUTDOWN_ONCE.compareAndSet(false, true)) return;
 
-    ConfigurableApplicationContext ctx = APP_CONTEXT;
+    final ConfigurableApplicationContext ctx = APP_CONTEXT;
+    if (ctx == null) {
+        System.err.println("APP_CONTEXT null -> forcing halt(" + exitCode + ")");
+        Runtime.getRuntime().halt(exitCode);
+        return;
+    }
 
-    // watchdog: si un shutdown hook bloque, on force l'arrêt
     Thread watchdog = new Thread(() -> {
         try {
-            Thread.sleep(15000);
-            LOGGER.error("Shutdown stuck -> forcing Runtime.halt({})", exitCode);
+            Thread.sleep(8000); // 8s
+            System.err.println("Shutdown stuck -> forcing halt(" + exitCode + ")");
             Runtime.getRuntime().halt(exitCode);
         } catch (InterruptedException ignored) {}
     }, "shutdown-watchdog");
     watchdog.setDaemon(true);
     watchdog.start();
 
-    try {
-        if (ctx != null) {
+    new Thread(() -> {
+        try {
+            System.err.println("Shutting down Spring (exitCode=" + exitCode + ")");
             int code = SpringApplication.exit(ctx, () -> exitCode);
             System.exit(code);
-        } else {
-            System.exit(exitCode);
+        } catch (Throwable t) {
+            System.err.println("Shutdown failed -> forcing halt(" + exitCode + "): " + t);
+            Runtime.getRuntime().halt(exitCode);
         }
-    } catch (Throwable t) {
-        LOGGER.error("Shutdown failed -> forcing Runtime.halt({})", exitCode, t);
-        Runtime.getRuntime().halt(exitCode);
-    }
+    }, "markit-shutdown").start();
 }
