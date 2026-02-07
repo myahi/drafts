@@ -1,3 +1,7 @@
+2026-02-07 02:12:54.124  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 1
+2026-02-07 02:12:54.124  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Current connection retry count: 1
+2026-02-07 02:12:54.124  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 2
+2026-02-07 02:12:54.124  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Max connection retry count: 2
 2026-02-07 02:13:14.138 ERROR 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Maximum try number has been reached
 2026-02-07 02:13:14.138 ERROR 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Maximum try number has been reached
 2026-02-07 02:13:14.188  INFO 100497 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Message sent (rec.re7menthe.trade.markit.in) >>> 07/02/2026 02:13:14: Le nombre de tentative de connexion a été atteint sur le connecteur markitdealer
