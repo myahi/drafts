@@ -1,563 +1,148 @@
 {
-  "annotations": {
-    "list": [
+  "id": 4,
+  "type": "stat",
+  "title": "Routes Status",
+  "description": "",
+  "gridPos": {
+    "x": 0,
+    "y": 1,
+    "h": 6,
+    "w": 4
+  },
+  "fieldConfig": {
+    "defaults": {
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "red",
+            "value": null
+          },
+          {
+            "color": "blue",
+            "value": 100
+          }
+        ]
+      },
+      "color": {
+        "mode": "thresholds"
+      },
+      "unit": "short"
+    },
+    "overrides": [
       {
-        "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
+        "matcher": {
+          "id": "byFrameRefID",
+          "options": "RunningRoutesPercentage"
         },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
+        "properties": [
+          {
+            "id": "unit",
+            "value": "percent"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byFrameRefID",
+          "options": "RoutesCount"
         },
-        "type": "dashboard"
+        "properties": [
+          {
+            "id": "color",
+            "value": {
+              "fixedColor": "transparent",
+              "mode": "fixed"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Instances"
+        },
+        "properties": [
+          {
+            "id": "color",
+            "value": {
+              "fixedColor": "transparent",
+              "mode": "fixed"
+            }
+          }
+        ]
       }
     ]
   },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "links": [],
-  "panels": [
+  "pluginVersion": "12.3.2",
+  "targets": [
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
-      "id": 22,
-      "panels": [],
-      "title": "Global Stats Camel Context : $context",
-      "type": "row"
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8eo2eintogc"
+      },
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "count (\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=\"$context\"\n    }\n)",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Instances",
+      "range": false,
+      "refId": "Instances"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": 0 },
-              { "color": "blue", "value": 100 }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byFrameRefID", "options": "RunningRoutesPercentage" },
-            "properties": [{ "id": "unit", "value": "percent" }]
-          },
-          {
-            "matcher": { "id": "byFrameRefID", "options": "RoutesCount" },
-            "properties": [
-              {
-                "id": "color",
-                "value": { "fixedColor": "transparent", "mode": "fixed" }
-              }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Instances" },
-            "properties": [
-              {
-                "id": "color",
-                "value": { "fixedColor": "transparent", "mode": "fixed" }
-              }
-            ]
-          }
-        ]
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8eo2eintogc"
       },
-      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
-      "id": 4,
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "vertical",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "count (\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        camelContext=\"$context\"\n    }\n)",
-          "format": "time_series",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "Instances",
-          "range": false,
-          "refId": "Instances"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        camelContext=\"$context\"\n    }\n) \n/ \nsum(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        camelContext=\"$context\"\n    }\n)\n*\n100",
-          "format": "time_series",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "Running",
-          "range": false,
-          "refId": "RunningRoutesPercentage"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "max(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        camelContext=\"$context\"\n    }\n)",
-          "format": "time_series",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "Routes",
-          "range": false,
-          "refId": "RoutesCount"
-        }
-      ],
-      "title": "Routes Status",
-      "type": "stat"
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "sum(\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=\"$context\"\n    }\n) \n/ \nsum(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=\"$namespace\",\n        camelContext=\"$context\"\n    }\n)\n*\n100",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Running",
+      "range": false,
+      "refId": "RunningRoutesPercentage"
     },
-
     {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "description": "Shows completed exchanges of the camel context in the time range",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "fixedColor": "rgb(31, 120, 193)", "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] },
-          "unit": "short"
-        },
-        "overrides": []
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8eo2eintogc"
       },
-      "gridPos": { "h": 3, "w": 2, "x": 4, "y": 1 },
-      "id": 212,
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum(\n    increase(\n        camel_exchanges_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\"\n        }[$__range]\n    )\n)",
-          "format": "time_series",
-          "instant": false,
-          "legendFormat": "",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Completed",
-      "type": "stat"
-    },
-
-    {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "fixedColor": "red", "mode": "fixed" },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byFrameRefID", "options": "Failure Percentage" },
-            "properties": [{ "id": "displayName", "value": "Failure %" }]
-          },
-          {
-            "matcher": { "id": "byFrameRefID", "options": "Failure Count" },
-            "properties": [{ "id": "displayName", "value": "Failure Count" }]
-          }
-        ]
-      },
-      "gridPos": { "h": 6, "w": 3, "x": 6, "y": 1 },
-      "id": 334,
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "none",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "vertical",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum by (camelContext) (\n    increase(\n        camel_exchanges_failed_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\"\n        }[$__range]\n    )\n)",
-          "format": "time_series",
-          "range": true,
-          "refId": "Failure Count"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum by (camelContext) (\n    increase(\n        camel_exchanges_failed_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\"\n        }[$__range])\n    ) \n/ \nsum by (camelContext) (\n    increase(\n        camel_exchanges_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\"\n        }[$__range]\n    )\n)*100",
-          "range": true,
-          "refId": "Failure Percentage"
-        }
-      ],
-      "title": "Failures",
-      "type": "stat"
-    },
-
-    {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "dashed" }
-          },
-          "mappings": [],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": 0 },
-              { "color": "#EAB839", "value": 0.6 },
-              { "color": "red", "value": 0.9 }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 6, "w": 4, "x": 9, "y": 1 },
-      "id": 466,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum (\n    process_cpu_usage{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\"\n    }\n)",
-          "legendFormat": "cpu",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Saturation : CPU Usage",
-      "type": "timeseries"
-    },
-
-    {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "dashed" }
-          },
-          "mappings": [],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": 0 },
-              { "color": "#EAB839", "value": 0.6 },
-              { "color": "red", "value": 0.9 }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 6, "w": 5, "x": 13, "y": 1 },
-      "id": 497,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum(\n    jvm_memory_used_bytes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        area=\"heap\"\n    }\n) / sum(\n    jvm_memory_max_bytes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        area=\"heap\"\n    }\n)",
-          "legendFormat": "heap",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum(\n    jvm_memory_used_bytes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        area=\"nonheap\"\n    }\n) / sum(\n    jvm_memory_max_bytes{\n        job=~\"$job\",\n        cluster=\"$cluster\",\n        namespace=\"$namespace\",\n        area=\"nonheap\"\n    }\n)",
-          "legendFormat": "nonheap",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Saturation : Memory usage",
-      "type": "timeseries"
-    },
-
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
-      "id": 382,
-      "panels": [],
-      "title": "Camel Context Overview - RED Method",
-      "type": "row"
-    },
-
-    {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 13, "w": 7, "x": 0, "y": 8 },
-      "id": 368,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum by (routeId) (\n    irate(\n        camel_exchanges_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\",\n            routeId=~\"$route\"\n        }[$__rate_interval]\n    )\n)",
-          "legendFormat": "{{routeId}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Rate : Executions / sec",
-      "type": "stat"
-    },
-
-    {
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 13, "w": 9, "x": 7, "y": 8 },
-      "id": 434,
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "editorMode": "code",
-          "expr": "sum by (routeId) (\n    increase (\n        camel_route_policy_seconds_sum{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\",\n            routeId=~\"$route\"\n        }[$__range]\n    )\n) \n/ \nsum by (routeId) (\n    increase (\n        camel_route_policy_seconds_count{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\",\n            routeId=~\"$route\"\n        }[$__range]\n    )\n)",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Duration : Avg Execution time",
-      "type": "stat"
-    },
-
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
-      "id": 10,
-      "panels": [],
-      "title": "Traffic Per Route",
-      "type": "row"
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "max(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=\"$context\"\n    }\n)",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Routes",
+      "range": false,
+      "refId": "RoutesCount"
     }
-
-    /* --- le reste de tes panels "Traffic / Execution Times / Processor times"
-       est à garder pareil : il suffit d'enlever partout app_kubernetes_io_*,
-       et de laisser job/cluster/namespace/camelContext/routeId/nodeId --- */
   ],
-  "preload": false,
-  "refresh": "5s",
-  "schemaVersion": 42,
-  "tags": [],
-  "templating": {
-    "list": [
-      {
-        "current": { "text": "prometheus", "value": "dfc8eo2eintogc" },
-        "includeAll": false,
-        "label": "Data Source",
-        "name": "datasource",
-        "options": [],
-        "query": "prometheus",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
-      },
-      {
-        "current": { "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\"},job)",
-        "includeAll": true,
-        "label": "Job",
-        "multi": true,
-        "name": "job",
-        "options": [],
-        "query": { "query": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\"},job)", "refId": "StandardVariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "current": { "text": "", "value": "" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\"},cluster)",
-        "includeAll": false,
-        "label": "Cluster",
-        "name": "cluster",
-        "options": [],
-        "query": { "query": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\"},cluster)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "current": { "text": "", "value": "" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\",job=~\"${job}\",cluster=\"${cluster}\"},namespace)",
-        "includeAll": false,
-        "label": "Namespace",
-        "name": "namespace",
-        "options": [],
-        "query": { "query": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\",job=~\"${job}\",cluster=\"${cluster}\"},namespace)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "current": { "text": "", "value": "" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\",job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\"},camelContext)",
-        "includeAll": false,
-        "label": "Camel Context",
-        "name": "context",
-        "options": [],
-        "query": { "query": "label_values(camel_routes_running_routes{eventType=\"RouteEvent\",job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\"},camelContext)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "current": { "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_exchanges_succeeded_total{job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\",camelContext=\"$context\"},routeId)",
-        "includeAll": true,
-        "label": "Camel Route",
-        "multi": true,
-        "name": "route",
-        "options": [],
-        "query": { "query": "label_values(camel_exchanges_succeeded_total{job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\",camelContext=\"$context\"},routeId)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "current": { "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
-        "definition": "label_values(camel_message_history_seconds_count{job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\",camelContext=\"$context\",routeId=~\"$route\"},nodeId)",
-        "includeAll": true,
-        "label": "Camel Processor",
-        "multi": true,
-        "name": "processor",
-        "options": [],
-        "query": { "query": "label_values(camel_message_history_seconds_count{job=~\"${job}\",cluster=\"${cluster}\",namespace=\"$namespace\",camelContext=\"$context\",routeId=~\"$route\"},nodeId)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      }
-    ]
+  "maxDataPoints": 100,
+  "datasource": {
+    "type": "prometheus",
+    "uid": "dfc8eo2eintogc"
   },
-  "time": { "from": "now-24h", "to": "now" },
-  "timepicker": {},
-  "timezone": "",
-  "title": "EAI Apache Camel (no-k8s)",
-  "weekStart": ""
+  "options": {
+    "reduceOptions": {
+      "values": false,
+      "calcs": [
+        "lastNotNull"
+      ],
+      "fields": ""
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "wideLayout": true,
+    "colorMode": "background",
+    "graphMode": "none",
+    "justifyMode": "center",
+    "showPercentChange": false,
+    "percentChangeColorMode": "standard"
+  }
 }
