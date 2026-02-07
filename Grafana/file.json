@@ -1,1 +1,88 @@
 
+{
+  "id": 4,
+  "type": "stat",
+  "title": "Routes Status",
+  "description": "",
+  "gridPos": { "x": 0, "y": 1, "h": 6, "w": 4 },
+  "fieldConfig": {
+    "defaults": {
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "red", "value": null },
+          { "color": "blue", "value": 100 }
+        ]
+      },
+      "color": { "mode": "thresholds" },
+      "unit": "short"
+    },
+    "overrides": [
+      {
+        "matcher": { "id": "byFrameRefID", "options": "RunningRoutesPercentage" },
+        "properties": [{ "id": "unit", "value": "percent" }]
+      },
+      {
+        "matcher": { "id": "byFrameRefID", "options": "RoutesCount" },
+        "properties": [{ "id": "color", "value": { "fixedColor": "transparent", "mode": "fixed" } }]
+      },
+      {
+        "matcher": { "id": "byName", "options": "Instances" },
+        "properties": [{ "id": "color", "value": { "fixedColor": "transparent", "mode": "fixed" } }]
+      }
+    ]
+  },
+  "pluginVersion": "12.3.2",
+  "targets": [
+    {
+      "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "count (\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=~\"$context\"\n    }\n)",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Instances",
+      "range": false,
+      "refId": "Instances"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "sum(\n    camel_routes_running_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=~\"$context\"\n    }\n) \n/ \nsum(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=~\"$context\"\n    }\n)\n*\n100",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Running",
+      "range": false,
+      "refId": "RunningRoutesPercentage"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "max(\n    camel_routes_added_routes{\n        job=~\"$job\",\n        cluster=~\"$cluster\",\n        namespace=~\"$namespace\",\n        camelContext=~\"$context\"\n    }\n)",
+      "format": "time_series",
+      "hide": false,
+      "instant": true,
+      "legendFormat": "Routes",
+      "range": false,
+      "refId": "RoutesCount"
+    }
+  ],
+  "maxDataPoints": 100,
+  "datasource": { "type": "prometheus", "uid": "dfc8eo2eintogc" },
+  "options": {
+    "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+    "orientation": "auto",
+    "textMode": "auto",
+    "wideLayout": true,
+    "colorMode": "background",
+    "graphMode": "none",
+    "justifyMode": "center",
+    "showPercentChange": false,
+    "percentChangeColorMode": "standard"
+  }
+}
