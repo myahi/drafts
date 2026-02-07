@@ -1667,7 +1667,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 37
       },
       "id": 69,
       "panels": [],
@@ -1707,7 +1707,7 @@
         "h": 5,
         "w": 2,
         "x": 0,
-        "y": 28
+        "y": 38
       },
       "id": 96,
       "maxDataPoints": 100,
@@ -1820,7 +1820,7 @@
         "h": 5,
         "w": 5,
         "x": 2,
-        "y": 28
+        "y": 38
       },
       "id": 112,
       "options": {
@@ -1925,7 +1925,7 @@
         "h": 5,
         "w": 5,
         "x": 7,
-        "y": 28
+        "y": 38
       },
       "id": 181,
       "options": {
@@ -2044,7 +2044,7 @@
         "h": 5,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 38
       },
       "id": 189,
       "options": {
@@ -2074,7 +2074,7 @@
     }
   ],
   "preload": false,
-  "refresh": "1d",
+  "refresh": "5s",
   "schemaVersion": 42,
   "tags": [],
   "templating": {
@@ -2164,8 +2164,8 @@
       },
       {
         "current": {
-          "text": "eai-report-base",
-          "value": "eai-report-base"
+          "text": "eai-camel-report-base",
+          "value": "eai-camel-report-base"
         },
         "datasource": {
           "type": "prometheus",
@@ -2351,5 +2351,5 @@
   "timezone": "",
   "title": "EAI Apache Camel",
   "uid": "apache-camel-micrometer",
-  "version": 3
+  "version": 7
 }
