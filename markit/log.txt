@@ -1,1 +1,13 @@
-026-02-07 01:41:08.067  INFO 81232 --- [markit-shutdown] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2026-02-07 02:13:14.138 ERROR 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Maximum try number has been reached
+2026-02-07 02:13:14.138 ERROR 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Maximum try number has been reached
+2026-02-07 02:13:14.188  INFO 100497 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Message sent (rec.re7menthe.trade.markit.in) >>> 07/02/2026 02:13:14: Le nombre de tentative de connexion a été atteint sur le connecteur markitdealer
+ le connecteur a été arrété.
+2026-02-07 02:13:14.188  INFO 100497 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Message sent (rec.re7menthe.trade.markit.in) >>> 07/02/2026 02:13:14: Le nombre de tentative de connexion a été atteint sur le connecteur markitdealer
+ le connecteur a été arrété.
+2026-02-07 02:13:14.193  INFO 100497 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Stop listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
+2026-02-07 02:13:14.193  INFO 100497 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Stop listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
+2026-02-07 02:13:14.193  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Stop requested from Markit worker thread: skipping executor shutdown/await.
+2026-02-07 02:13:14.193  INFO 100497 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Stop requested from Markit worker thread: skipping executor shutdown/await.
+Shutting down Spring (exitCode=2)
+2026-02-07 02:13:14.257  INFO 100497 --- [markit-shutdown] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2026-02-07 02:13:14.257  INFO 100497 --- [markit-shutdown] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
