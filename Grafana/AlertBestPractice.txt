@@ -1,0 +1,129 @@
+Très bonne intuition 👍
+Mais la réponse “pro” est non :
+👉 ne tague pas des instructions du type “sendAlert” dans l’application.
+
+Je t’explique pourquoi, puis ce que tu peux taguer sans problème.
+
+
+---
+
+🚫 Pourquoi ne PAS taguer “sendAlert”
+
+Si tu ajoutes un tag du style :
+
+sendAlert=true
+
+tu crées :
+
+un couplage fort application → outil d’alerte
+
+une logique d’action côté app (“quoi faire”)
+
+une confusion de responsabilités
+
+
+Aujourd’hui : Grafana
+Demain : Alertmanager / Opsgenie / autre
+➡️ ton code ne devrait jamais décider quoi faire en supervision.
+
+
+---
+
+✅ Ce que tu PEUX (et dois) taguer
+
+🧠 Des faits métier / techniques, pas des actions
+
+Exemples très bons tags :
+
+Tag	Exemple	Pourquoi
+
+criticality	high / medium / low	niveau d’impact
+businessDomain	payments	tri / ownership
+sla	99.9	seuils
+customerImpact	true/false	priorisation
+dataType	financial	conformité
+routeType	batch / realtime	règles différentes
+
+
+Ces tags disent “ce que c’est”, pas “quoi faire”.
+
+
+---
+
+🎯 Comment Grafana décide “quoi faire”
+
+Dans Grafana / Alertmanager :
+
+if criticality=high AND errors>0
+→ alert severity=critical → PagerDuty
+
+if criticality=low AND errors>5
+→ email only
+
+👉 La décision est centralisée 👉 Changeable sans redeployer 👉 Auditable
+
+
+---
+
+🔧 Concrètement avec Camel + Prometheus
+
+Côté Camel (exposer le fait)
+
+from("direct:sendMail")
+  .routeId("core-send-mail")
+  .routeProperty("criticality", "high");
+
+(ou via Micrometer tags selon ta version)
+
+Côté PromQL
+
+camel_exchanges_failed_total{routeId="core-send-mail",criticality="high"}
+
+Côté Grafana
+
+règle d’alerte
+
+routing
+
+silencing
+
+escalation
+
+
+
+---
+
+🧠 Règle d’or
+
+> L’application décrit la réalité.
+La supervision décide de l’action.
+
+
+
+
+---
+
+TL;DR
+
+Tag	OK ?
+
+criticality=high	✅
+businessDomain=mail	✅
+sendAlert=true	❌
+notifyPagerDuty=true	❌
+customerImpact=true	✅
+
+
+
+---
+
+Si tu veux, dis-moi :
+
+version Camel
+
+Micrometer activé ou non
+
+Prometheus / Alertmanager utilisés
+
+
+Je te dis exactement comment exposer les tags Camel pour que Grafana les voie.
