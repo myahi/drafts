@@ -1,0 +1,66 @@
+{
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dfc8eo2eintogc"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 13,
+            "w": 7,
+            "x": 0,
+            "y": 8
+          },
+          "id": 368,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "12.3.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "dfc8eo2eintogc"
+              },
+              "editorMode": "code",
+              "expr": "sum by (routeId) (\n    irate(\n        camel_exchanges_total{\n            job=~\"$job\",\n            cluster=\"$cluster\",\n            namespace=\"$namespace\",\n            camelContext=\"$context\",\n            app_kubernetes_io_part_of=\"$part_of\",\n            app_kubernetes_io_name=\"$app_name\",\n            app_kubernetes_io_component=\"$component\",\n            app_kubernetes_io_instance=\"$instance\", \n            app_kubernetes_io_version=\"$version\",\n            routeId=~\"$route\"\n        }[$__rate_interval]\n    )\n)",
+              "legendFormat": "{{routeId}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Rate : Executions / sec",
+          "type": "stat"
+        }
