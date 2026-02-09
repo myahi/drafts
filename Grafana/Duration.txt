@@ -1,0 +1,73 @@
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "dfc8eo2eintogc"
+  },
+  "description": "",
+  "fieldConfig": {
+    "defaults": {
+      "color": {
+        "mode": "thresholds"
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "blue",
+            "value": 0
+          }
+        ]
+      },
+      "unit": "s"
+    },
+    "overrides": []
+  },
+  "gridPos": {
+    "h": 13,
+    "w": 9,
+    "x": 7,
+    "y": 8
+  },
+  "id": 434,
+  "maxDataPoints": 100,
+  "options": {
+    "colorMode": "background",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "percentChangeColorMode": "standard",
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ],
+      "fields": "",
+      "values": false
+    },
+    "showPercentChange": false,
+    "text": {},
+    "textMode": "auto",
+    "wideLayout": true
+  },
+  "pluginVersion": "12.3.2",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dfc8eo2eintogc"
+      },
+      "editorMode": "code",
+      "exemplar": false,
+      "expr": "sum by (routeId) (\n  increase(\n    camel_route_policy_seconds_sum{\n      camelContext=~\"$context\",\n      routeId=~\"$route\"\n    }[$__range]\n  )\n)\n/\nsum by (routeId) (\n  increase(\n    camel_route_policy_seconds_count{\n      camelContext=~\"$context\",\n      routeId=~\"$route\"\n    }[$__range]\n  )\n)",
+      "format": "time_series",
+      "hide": false,
+      "instant": false,
+      "intervalFactor": 1,
+      "legendFormat": "__auto",
+      "range": true,
+      "refId": "A"
+    }
+  ],
+  "title": "Duration : Avg Execution time",
+  "type": "stat"
+}
