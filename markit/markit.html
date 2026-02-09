@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alerte perturbations - Connexion Markit</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f7f9;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
+    <tr>
+      <td align="center" style="padding:0 12px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="width:100%;max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background:#f97316;padding:18px 22px;color:#ffffff;">
+              <div style="font-size:18px;font-weight:bold;">Alerte de service</div>
+              <div style="font-size:13px;opacity:0.95;margin-top:4px;">Perturbations de connexion – Markit</div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:22px;">
+              <div style="font-size:16px;line-height:1.5;color:#111827;">
+                Bonjour <span style="font-weight:bold;">{{userName}}</span>,
+              </div>
+
+              <div style="margin-top:12px;font-size:14px;line-height:1.6;color:#374151;">
+                Nous constatons actuellement des <b>perturbations de connexion</b> affectant le service
+                <b>Markit</b>. Cela peut entraîner des lenteurs, des échecs d’authentification ou des
+                coupures temporaires.
+              </div>
+
+              <!-- Status box -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;">
+                <tr>
+                  <td style="padding:14px 14px;color:#9a3412;">
+                    <div style="font-size:13px;">
+                      <b>Statut :</b> Incident en cours<br>
+                      <b>Début :</b> {{startTime}}<br>
+                      <b>Impact :</b> {{impact}}<br>
+                      <b>Dernière mise à jour :</b> {{lastUpdate}}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top:16px;font-size:14px;line-height:1.6;color:#374151;">
+                Nos équipes investiguent et travaillent au rétablissement du service. Aucune action n’est requise de votre part
+                pour le moment.
+              </div>
+
+              <!-- CTA -->
+              <div style="margin-top:18px;">
+                <a href="{{statusUrl}}"
+                   style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:8px;font-size:14px;">
+                  Consulter le statut du service
+                </a>
+              </div>
+
+              <div style="margin-top:18px;font-size:12px;line-height:1.6;color:#6b7280;">
+                Référence incident : <b>{{incidentId}}</b><br>
+                Si vous recevez cet email par erreur, vous pouvez l’ignorer.
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;">
+
+              <div style="font-size:12px;color:#6b7280;line-height:1.6;">
+                — L’équipe Support<br>
+                <span style="color:#9ca3af;">Ne répondez pas à ce message (adresse automatique).</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9fafb;padding:14px 22px;color:#6b7280;font-size:12px;">
+              © {{year}} Votre Société — Notifications système
+            </td>
+          </tr>
+        </table>
+
+        <div style="max-width:640px;color:#9ca3af;font-size:11px;line-height:1.5;margin-top:10px;text-align:center;">
+          Astuce : Ajoutez notre adresse d’envoi à vos expéditeurs de confiance pour éviter la mise en spam.
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
