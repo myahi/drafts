@@ -1,1 +1,3 @@
-Failed delivery for (MessageId: 290DC1BDCF2A9EF-0000000000000000 on ExchangeId: 290DC1BDCF2A9EF-0000000000000000). Exhausted after delivery attempt: 1 caught: java.lang.IllegalArgumentException: The mail message does not have any recipients set.
+22:17:46.371 [1;31m[0;39m [Camel (camel-1) thread #8 - Delay] o.a.c.p.e.DefaultErrorHandler -  - Failed delivery for (MessageId: 71115289DBABC4C-0000000000000000 on ExchangeId: 71115289DBABC4C-0000000000000000). Exhausted after delivery attempt: 1 caught: jakarta.mail.MessagingException: Exception reading response;
+  nested exception is:
+	java.net.SocketException: Connection reset
