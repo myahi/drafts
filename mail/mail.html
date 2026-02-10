@@ -1,3 +1,19 @@
+from("direct:sendAlertMail")
+    .process(exchange -> {
+        String templatePath = exchange.getContext()
+            .resolvePropertyPlaceholders("{{mail.template.alert}}");
+
+        String html = Files.readString(Path.of(templatePath), StandardCharsets.UTF_8);
+
+        exchange.getMessage().setBody(html);
+        exchange.getMessage().setHeader("Content-Type", "text/html; charset=UTF-8");
+        exchange.getMessage().setHeader("subject", "Alerte applicative");
+        exchange.getMessage().setHeader("listName", "OPS_ALERT");
+    })
+    .to("direct:MailRoute");
+
+
+
 <p  style="font-family:calibri;font-size:14px;">Bonjour,','<br><br>',
 "Veuillez trouver ci-joint le fichier du jour.",
 '<br><br>',
