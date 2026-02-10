@@ -1,1 +1,5 @@
+
+.to("mail://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?protocol=smtp&from={{core.mail.from}}");
+
+
 .to("mail:smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}");
