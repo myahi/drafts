@@ -1,3 +1,8 @@
+logging.level.org.apache.camel=INFO
+logging.level.org.apache.camel.impl=INFO
+logging.level.org.apache.camel.support=WARN
+
+
 public static List<Path> listFiles(
         Exchange exchange,
         Path dir,
