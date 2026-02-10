@@ -1,5 +1,1 @@
-
-.to("mail://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?protocol=smtp&from={{core.mail.from}}");
-
-
-.to("mail:smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}");
+Failed delivery for (MessageId: 290DC1BDCF2A9EF-0000000000000000 on ExchangeId: 290DC1BDCF2A9EF-0000000000000000). Exhausted after delivery attempt: 1 caught: java.lang.IllegalArgumentException: The mail message does not have any recipients set.
