@@ -1,1 +1,1 @@
-No endpoint could be found for: mail://smtp://relais-mail-qualif.f1nom0a.local:25?from=dpmo-mar-eai@rf.labanquepostale.fr, please check your classpath contains the needed Camel component jar.
+.to("mail:smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}");
