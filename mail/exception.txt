@@ -1,3 +1,6 @@
+openssl s_client -starttls smtp -connect relais-mail-qualif.f1nom0a.local:25
+
+
 ComputerName     : relais-mail-qualif.f1nom0a.local
 RemoteAddress    : 100.64.2.161
 RemotePort       : 25
