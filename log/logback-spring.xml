@@ -11,7 +11,7 @@
     <property name="FILE_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"/>
 
-    <!-- Pattern console (tu peux reprendre ton ancien pattern console commenté) -->
+    <!-- Pattern console -->
     <property name="CONSOLE_PATTERN"
               value="%d{HH:mm:ss.SSS} %highlight{%-5level} [%thread] %logger{36} - %X{correlationId} - %msg%n"/>
 
@@ -50,23 +50,25 @@
         </root>
     </springProfile>
 
-    <!-- Tous les autres profils : fichier uniquement (comme aujourd'hui) -->
+    <!-- Tous les autres profils : fichier uniquement -->
     <springProfile name="!local">
         <root level="INFO">
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
 
-    <!-- Niveaux spécifiques (reprend tes niveaux) -->
-    
+    <!-- ========================= -->
+    <!-- NIVEAUX SPECIFIQUES -->
+    <!-- ========================= -->
+
     <logger name="org.apache.camel" level="INFO"/>
+    <logger name="org.apache.camel.impl" level="INFO"/>
+    <logger name="org.apache.camel.processor" level="INFO"/>
+    <logger name="org.apache.camel.support" level="WARN"/>
+
     <logger name="org.apache.cxf" level="INFO"/>
     <logger name="org.springframework" level="WARN"/>
-    <logger name="logging.level.root" level="WARN"/>
-    <logger name="logging.level.org.apache.camel" level="INFO"/>
-    <logger name="logging.level.org.apache.camel.impl" level="INFO"/>
-    <logger name="logging.level.org.apache.camel.processor" level="INFO"/>
-    <logger name="logging.level.org.apache.camel.support" level="WARN"/>
-    <logger name="logging.level.fr.labanquepostale" level="INFO"/>
+
+    <logger name="fr.labanquepostale" level="INFO"/>
 
 </configuration>
