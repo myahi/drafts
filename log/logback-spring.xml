@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Récupère la propriété Spring Boot -->
+    <springProperty scope="context" name="LOG_FILE" source="logging.file.name"/>
+
+    <!-- Valeur par défaut si jamais logging.file.name n'est pas défini -->
+    <property name="LOG_FILE" value="${LOG_FILE:-../logs/eai-report-base.log}"/>
+
+    <!-- Pattern fichier : reprend le tien -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - correlationId=%X{correlationId} userId=%X{userId} executionId=%X{executionId} - %msg%n"/>
+
+    <!-- Pattern console (tu peux reprendre ton ancien pattern console commenté) -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} %highlight{%-5level} [%thread] %logger{36} - %X{correlationId} - %msg%n"/>
+
+    <!-- Rolling file appender -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender console (utilisé uniquement en local) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ========================= -->
+    <!-- ROOT LOGGER SELON PROFIL -->
+    <!-- ========================= -->
+
+    <!-- Profil local : console + fichier -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- Tous les autres profils : fichier uniquement (comme aujourd'hui) -->
+    <springProfile name="!local">
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- Niveaux spécifiques (reprend tes niveaux) -->
+    
+    <logger name="org.apache.camel" level="INFO"/>
+    <logger name="org.apache.cxf" level="INFO"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="logging.level.root" level="WARN"/>
+    <logger name="logging.level.org.apache.camel" level="INFO"/>
+    <logger name="logging.level.org.apache.camel.impl" level="INFO"/>
+    <logger name="logging.level.org.apache.camel.processor" level="INFO"/>
+    <logger name="logging.level.org.apache.camel.support" level="WARN"/>
+    <logger name="logging.level.fr.labanquepostale" level="INFO"/>
+
+</configuration>
