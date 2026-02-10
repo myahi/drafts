@@ -1,0 +1,121 @@
+Oui ✅ complètement, et il y a plusieurs niveaux de “paramétrage”, du plus simple au plus propre.
+Vu ton contexte Camel/Spring, je te les classe par ordre de simplicité et de bon sens.
+
+
+---
+
+✅ Option 1 — Remplacement simple (le plus léger, sans lib)
+
+Parfait si tu as peu de variables.
+
+Template HTML
+
+<p>Bonjour {{prenom}},</p>
+<p>Veuillez trouver ci-joint le fichier {{filename}} du {{date}}.</p>
+<p>Cordialement</p>
+
+Côté route appelante
+
+String html = Files.readString(templatePath, StandardCharsets.UTF_8);
+
+html = html.replace("{{prenom}}", prenom)
+           .replace("{{filename}}", fileName)
+           .replace("{{date}}", LocalDate.now().toString());
+
+exchange.getMessage().setBody(html);
+exchange.getMessage().setHeader("Content-Type", "text/html; charset=UTF-8");
+
+✔️ ultra simple
+✔️ zéro dépendance
+❌ pas de conditions/boucles
+
+👉 Très bien pour 80% des mails métiers
+
+
+---
+
+✅ Option 2 — Freemarker (propre et standard Camel)
+
+👉 Recommandé si tu veux des if, list, format, etc.
+
+Dépendance
+
+<dependency>
+  <groupId>org.apache.camel.springboot</groupId>
+  <artifactId>camel-freemarker-starter</artifactId>
+</dependency>
+
+Template mail.ftl
+
+<p>Bonjour ${prenom},</p>
+
+<p>
+  Veuillez trouver ci-joint le fichier <b>${filename}</b>
+  du ${date}.
+</p>
+
+<#if comment??>
+<p>${comment}</p>
+</#if>
+
+<p>Cordialement</p>
+
+Route appelante
+
+exchange.getMessage().setHeader("prenom", prenom);
+exchange.getMessage().setHeader("filename", fileName);
+exchange.getMessage().setHeader("date", LocalDate.now());
+exchange.getMessage().setHeader("comment", comment);
+
+.to("freemarker:classpath:templates/mail.ftl")
+.setHeader("Content-Type", constant("text/html; charset=UTF-8"))
+.to("direct:MailRoute");
+
+✔️ très propre
+✔️ maintenable
+✔️ lisible pour le métier
+
+
+---
+
+✅ Option 3 — Thymeleaf (si tu l’utilises déjà)
+
+Plus lourd, plutôt orienté MVC.
+👉 Pas nécessaire pour des mails simples Camel.
+
+
+---
+
+🧠 Bonne pratique (important)
+
+📌 Paramétrage côté route appelante (comme tu le fais)
+
+📌 MailRoute = transport uniquement
+
+📌 Le template ne connaît pas Camel
+
+
+Tu es exactement dans la bonne approche.
+
+
+---
+
+TL;DR
+
+Peu de variables → replace simple
+
+HTML un peu riche → Freemarker
+
+Garde la route mail générique ✅
+
+
+Si tu veux, dis-moi :
+
+combien de variables
+
+si tu veux des conditions (si erreur, si succès)
+
+si les métiers modifient le HTML
+
+
+et je te propose la solution la plus simple possible, pas plus.
