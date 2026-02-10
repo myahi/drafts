@@ -1,0 +1,210 @@
+Bonne question 👍
+Je te donne la méthode simple et propre, sans Kubernetes, Grafana + Loki sur la même VM (ce que tu décrivais).
+
+
+---
+
+🧩 Important d’abord : Loki ≠ plugin Grafana
+
+👉 Loki ne “s’installe pas dans Grafana”
+👉 C’est un service à part, que Grafana consomme comme datasource.
+
+Donc il y a 3 étapes :
+
+1. Installer Loki
+
+
+2. (Optionnel mais recommandé) Installer Promtail
+
+
+3. Déclarer Loki comme datasource dans Grafana
+
+
+
+
+---
+
+1️⃣ Installer Loki (sur la VM Grafana)
+
+a) Télécharger Loki
+
+cd /opt
+curl -LO https://github.com/grafana/loki/releases/latest/download/loki-linux-amd64
+chmod +x loki-linux-amd64
+mv loki-linux-amd64 loki
+
+
+---
+
+b) Config minimale Loki
+
+Créer /etc/loki/loki.yaml :
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /var/lib/loki
+  storage:
+    filesystem:
+      chunks_directory: /var/lib/loki/chunks
+      rules_directory: /var/lib/loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2023-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 168h   # 7 jours
+
+Créer les dossiers :
+
+mkdir -p /var/lib/loki/{chunks,rules}
+
+
+---
+
+c) Lancer Loki
+
+/opt/loki -config.file=/etc/loki/loki.yaml
+
+Test :
+
+curl http://localhost:3100/ready
+
+👉 doit répondre ready
+
+
+---
+
+2️⃣ Installer Promtail (sur chaque VM applicative)
+
+a) Télécharger
+
+curl -LO https://github.com/grafana/loki/releases/latest/download/promtail-linux-amd64
+chmod +x promtail-linux-amd64
+mv promtail-linux-amd64 promtail
+
+
+---
+
+b) Config minimale Promtail
+
+/etc/promtail/promtail.yaml :
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://VM_GRAFANA:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: spring-boot
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          app: eai-core
+          env: prod
+          __path__: /var/log/app/*.log
+
+
+---
+
+c) Lancer Promtail
+
+/opt/promtail -config.file=/etc/promtail/promtail.yaml
+
+
+---
+
+3️⃣ Ajouter Loki dans Grafana
+
+a) UI Grafana
+
+Settings → Data sources
+
+Add data source
+
+Choisir Loki
+
+
+b) Config
+
+URL :
+
+http://localhost:3100
+
+Save & Test → ✅
+
+
+
+---
+
+4️⃣ Vérifier que ça marche
+
+Dans Grafana → Explore :
+
+Datasource : Loki
+
+Requête :
+
+
+{app="eai-core"}
+
+👉 tu dois voir les logs arriver.
+
+
+---
+
+🔥 Résumé ultra-court
+
+Loki = service
+
+Promtail = agent
+
+Grafana = UI
+
+1 port à ouvrir : 3100 vers la VM Grafana
+
+Pas de plugin à installer
+
+
+
+---
+
+Tu veux aller plus loin ?
+
+Je peux te fournir :
+
+un service systemd pour Loki & Promtail
+
+un logback-spring.xml JSON optimisé Loki
+
+une requête LogQL prête pour Camel
+
+une alerte Grafana basée sur logs ERROR
+
+
+Dis-moi 👍
+
+
+logging.level.root=WARN
+logging.level.org.apache.camel=WARN
+logging.level.fr.labanquepostale=INFO
