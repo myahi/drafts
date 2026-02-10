@@ -1,3 +1,6 @@
+telnet relais-mail-qualif.f1nom0a.local 25
+
+
 CONNECTED(000001CC)
 ---
 no peer certificate available
