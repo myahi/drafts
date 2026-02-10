@@ -35,14 +35,19 @@ public final class FileListingUtil {
     }
 
     private static Comparator<Path> comparator(SortCriterion sort) {
-        if (sort == null) sort = SortCriterion.NAME;
+        if (sort == null) {
+            sort = SortCriterion.NAME;
+        }
 
         switch (sort) {
             case LAST_MODIFIED_TIME:
                 return Comparator.comparing(FileListingUtil::safeLastModifiedTime);
             case NAME:
             default:
-                return Comparator.comparing(p -> p.getFileName().toString(), String.CASE_INSENSITIVE_ORDER);
+                return Comparator.comparing(
+                        p -> p.getFileName().toString(),
+                        String.CASE_INSENSITIVE_ORDER
+                );
         }
     }
 
@@ -58,12 +63,12 @@ public final class FileListingUtil {
     /**
      * @param exchange        Camel exchange (can be null). If not null, sets:
      *                        - exchangeProperty("inputFiles")     : List<Path>
-     *                        - exchangeProperty("inputFileNames") : List<String>
+     *                        - exchangeProperty("inputFileNames"): List<String>
      * @param dir             directory to scan
      * @param recursive       if true uses Files.walk, else Files.list
      * @param sort            sorting criterion
      * @param direction       sorting direction
-     * @param filenamePattern Linux-like glob (recommended), e.g. "A_*.txt", "Test_*_20260213.csv".
+     * @param filenamePattern Linux-like glob (e.g. "A_*.txt", "Test_*_20260213.csv").
      *                        If null/blank => no filter.
      */
     public static List<Path> listFiles(
@@ -75,25 +80,26 @@ public final class FileListingUtil {
             String filenamePattern
     ) throws IOException {
 
+        // Prepare filename matcher (outside try, lambda-safe)
+        PathMatcher matcher = null;
+        if (filenamePattern != null && !filenamePattern.isBlank()) {
+            try {
+                matcher = FileSystems.getDefault()
+                        .getPathMatcher("glob:" + filenamePattern.trim());
+            } catch (PatternSyntaxException | IllegalArgumentException ex) {
+                throw new IllegalArgumentException(
+                        "Invalid filename glob pattern: '" + filenamePattern + "'. " +
+                        "Example: A_*.txt or Test_*_20260213.csv",
+                        ex
+                );
+            }
+        }
+
         try (Stream<Path> s = recursive ? Files.walk(dir) : Files.list(dir)) {
 
             Comparator<Path> cmp = comparator(sort);
             if (direction == SortDirection.DESC) {
                 cmp = cmp.reversed();
-            }
-
-            PathMatcher matcher = null;
-            if (filenamePattern != null && !filenamePattern.isBlank()) {
-                try {
-                    // Linux-like patterns via Java NIO glob:
-                    // Examples: "*.csv", "A_*.txt", "Test_*_20260213.csv"
-                    matcher = FileSystems.getDefault().getPathMatcher("glob:" + filenamePattern.trim());
-                } catch (PatternSyntaxException | IllegalArgumentException ex) {
-                    // If user provides an invalid glob, fail fast with a clear message
-                    throw new IllegalArgumentException(
-                            "Invalid filename glob pattern: '" + filenamePattern + "'. " +
-                            "Example: A_*.txt or Test_*_20260213.csv", ex);
-                }
             }
 
             List<Path> files = s
