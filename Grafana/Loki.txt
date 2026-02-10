@@ -1,3 +1,168 @@
+{
+  "uid": "loki-camel-logs-all",
+  "title": "Apache Camel - Logs (All levels)",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "DS_LOKI",
+        "label": "Loki datasource",
+        "query": "loki",
+        "current": {
+          "text": "Loki",
+          "value": "Loki"
+        }
+      },
+      {
+        "type": "query",
+        "name": "app",
+        "label": "app",
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_LOKI}"
+        },
+        "refresh": 1,
+        "query": "label_values(app)",
+        "current": {
+          "text": "eai-core",
+          "value": "eai-core"
+        }
+      },
+      {
+        "type": "query",
+        "name": "env",
+        "label": "env",
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_LOKI}"
+        },
+        "refresh": 1,
+        "query": "label_values(env)",
+        "current": {
+          "text": "prod",
+          "value": "prod"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "contains",
+        "label": "Text contains (optional)",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Optionnel: filtre texte libre (ex: routeId=core-send-mail). Laisse vide pour tout."
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Camel logs (stream) - all levels",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 12 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{app=\"$app\", env=\"$env\"} |= \"org.apache.camel\" ${contains:raw}",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Logs per minute (Camel) - all levels",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({app=\"$app\", env=\"$env\"} |= \"org.apache.camel\" ${contains:raw} [1m]))",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Logs per 10s (Camel) - live-ish",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({app=\"$app\", env=\"$env\"} |= \"org.apache.camel\" ${contains:raw} [10s]))",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Top log lines (approx) - last 15m",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 9 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "options": { "showHeader": true },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (line) (count_over_time({app=\"$app\", env=\"$env\"} |= \"org.apache.camel\" ${contains:raw} | line_format \"{{.}}\" [15m])))",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": { "Value": "count" }
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": { "list": [] },
+  "links": []
+}
+
+
+
 Bonne question 👍
 Je te donne la méthode simple et propre, sans Kubernetes, Grafana + Loki sur la même VM (ce que tu décrivais).
 
