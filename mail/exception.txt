@@ -1,3 +1,10 @@
+ComputerName     : relais-mail-qualif.f1nom0a.local
+RemoteAddress    : 100.64.2.161
+RemotePort       : 25
+InterfaceAlias   : Wi-Fi
+SourceAddress    : 192.168.1.143
+TcpTestSucceeded : True
+
 Test-NetConnection relais-mail-qualif.f1nom0a.local -Port 25
 
 
