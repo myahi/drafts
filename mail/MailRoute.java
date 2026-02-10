@@ -51,13 +51,13 @@ public class MailRoute extends RouteBuilder {
                 }
 
                 // Set Camel Mail headers (comma-separated)
-                exchange.getMessage().setHeader("CamelMailTo", String.join(",", to));
+                exchange.getMessage().setHeader("to", String.join(",", to));
                 if (!cc.isEmpty()) {
-                    exchange.getMessage().setHeader("CamelMailCc", String.join(",", cc));
+                    exchange.getMessage().setHeader("cc", String.join(",", cc));
                 }
 
                 // Subject (Camel standard)
-                exchange.getMessage().setHeader("CamelMailSubject", subject);
+                exchange.getMessage().setHeader("subject", subject);
 
                 // Attachments:
                 // Nothing to do here if the caller already added them via AttachmentMessage.
@@ -72,6 +72,8 @@ public class MailRoute extends RouteBuilder {
 
             // Send SMTP (body + Content-Type + attachments pass through)
             .to("smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}");
+            //.to("mail:smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}");
+           // .to("mail://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?protocol=smtp&from={{core.mail.from}}");
     }
 
     private static void mergeEmails(Set<String> target, Object headerValue) {
