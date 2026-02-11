@@ -1,1 +1,209 @@
+// --- CONFIG ---
+def fixedInputs = [
+  "bw-eai-bofi",
+  "bw-eai-bofi-swift",
+  "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux",
+  "bw-eai-ftp",
+  "bw-eai-http",
+  "bw-eai-maestro",
+  "bw-eai-market-data",
+  "bw-eai-ref",
+  "bw-eai-reports",
+  "bw-eai-rgv",
+  "bw-eai-monitoring"
+]
 
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+  def out = cmd.execute().text?.trim()
+  def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+  if (tokens.isEmpty()) tokens = ["(aucune option)"]
+  return tokens
+}
+
+// --- HTML (Jenkins-ish look) ---
+def sb = new StringBuilder()
+
+sb << """
+<style>
+/* Tenter de coller au style Jenkins sans dépendre des classes internes */
+.ac-wrap{
+  max-width: 980px;
+}
+.ac-panel{
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+.ac-header{
+  padding: 10px 12px;
+  background: rgba(0,0,0,.03);
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  font-weight: 600;
+}
+.ac-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+.ac-table th, .ac-table td{
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  vertical-align: middle;
+}
+.ac-table th{
+  font-weight: 600;
+  color: rgba(0,0,0,.75);
+  background: rgba(0,0,0,.02);
+  text-align: left;
+  white-space: nowrap;
+}
+.ac-table tr:hover td{
+  background: rgba(0,0,0,.015);
+}
+.ac-input, .ac-select{
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid rgba(0,0,0,.2);
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 18px;
+}
+.ac-input[readonly]{
+  background: rgba(0,0,0,.03);
+  color: rgba(0,0,0,.75);
+}
+.ac-check{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  font-size: 13px;
+}
+.ac-muted{
+  color: rgba(0,0,0,.6);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.ac-col-art{ width: 44%; }
+.ac-col-ver{ width: 40%; }
+.ac-col-on { width: 16%; text-align: left; }
+code{ background: rgba(0,0,0,.05); padding: 1px 4px; border-radius: 3px; }
+</style>
+
+<div class="ac-wrap">
+
+  <!-- ✅ C’est CE champ que Jenkins lira côté build -->
+  <input type="hidden" id="COMPONENT_DATA" name="COMPONENT_DATA" value="" />
+
+  <div class="ac-panel">
+    <div class="ac-header">Sélection des versions par artifact</div>
+    <table class="ac-table" id="acTable">
+      <thead>
+        <tr>
+          <th class="ac-col-art">Artifact</th>
+          <th class="ac-col-ver">Version (API)</th>
+          <th class="ac-col-on">Inclure</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+
+fixedInputs.eachWithIndex { fixedValue, i ->
+  def options = fetchOptions(fixedValue)
+
+  def keyName = "line_${i}_key"
+  def selName = "line_${i}_version"
+  def chkName = "line_${i}_enabled"
+
+  sb << "<tr>"
+
+  // 1) input read-only
+  sb << """
+    <td>
+      <input class="ac-input" type="text" name="${esc(keyName)}" value="${esc(fixedValue)}" readonly />
+    </td>
+  """
+
+  // 2) select version
+  sb << """
+    <td>
+      <select class="ac-select" name="${esc(selName)}" onchange="updateComponentData()">
+  """
+  options.each { opt ->
+    sb << "<option value='${esc(opt)}'>${esc(opt)}</option>"
+  }
+  sb << """
+      </select>
+    </td>
+  """
+
+  // 3) checkbox (✅ classe => on sélectionne par .ac-enabled, pas par name$=)
+  sb << """
+    <td class="ac-col-on">
+      <label class="ac-check">
+        <input class="ac-enabled" type="checkbox" name="${esc(chkName)}" value="true" onclick="updateComponentData()"/>
+      </label>
+    </td>
+  """
+
+  sb << "</tr>"
+}
+
+sb << """
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-muted">
+    Les lignes cochées sont sérialisées dans <code>COMPONENT_DATA</code> (format <code>artifact=version</code>, une par ligne).
+  </div>
+</div>
+
+<script>
+function updateComponentData() {
+  var lines = [];
+  var cbs = document.querySelectorAll('input.ac-enabled');
+
+  cbs.forEach(function(cb) {
+    if (!cb.checked) return;
+
+    // cb.name = "line_0_enabled"
+    var m = cb.name.match(/line_(\\d+)_enabled/);
+    if (!m) return;
+
+    var i = m[1];
+
+    var artEl = document.querySelector('input[name="line_' + i + '_key"]');
+    var verEl = document.querySelector('select[name="line_' + i + '_version"]');
+
+    var art = artEl ? artEl.value : '';
+    var ver = verEl ? verEl.value : '';
+
+    if (art && ver) lines.push(art + '=' + ver);
+  });
+
+  var hidden = document.getElementById('COMPONENT_DATA');
+  if (hidden) hidden.value = lines.join('\\n');
+}
+
+// init
+updateComponentData();
+</script>
+"""
+
+return sb.toString()
