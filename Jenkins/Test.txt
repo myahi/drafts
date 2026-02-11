@@ -1,3 +1,7 @@
+startup failed:
+Script1: 97: expecting ''', found '\n' @ line 97, column 43.
+   e("${tmpFile}").text = """' +
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
