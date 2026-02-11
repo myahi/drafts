@@ -369,8 +369,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "All",
-          "value": "$__all"
+          "text": "mono",
+          "value": "mono"
         },
         "datasource": {
           "type": "loki",
@@ -387,8 +387,8 @@
       {
         "allValue": ".*",
         "current": {
-          "text": "All",
-          "value": "$__all"
+          "text": "base",
+          "value": "base"
         },
         "datasource": {
           "type": "loki",
@@ -430,5 +430,5 @@
   "timezone": "browser",
   "title": "Apache Camel - Logs",
   "uid": "loki-camel-logs-all",
-  "version": 2
+  "version": 3
 }
