@@ -1,5 +1,0 @@
-/serveur_apps/eai-camel-report/mono/eai-camel-report-base/run/logs/
-/serveur_apps/eai-camel-report/mono/eai-camel-report-cashflows/run/logs/
-
-/serveur_apps/eai-camel-report/rouge/eai-camel-report-base/run/logs/
-/serveur_apps/eai-camel-report/rouge/eai-camel-report-cashflows/run/logs/
