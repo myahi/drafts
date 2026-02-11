@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Saa:DataPDU
+    xmlns:Saa="urn:swift:saa:xsd:saa.2.0"
+    xmlns:Sw="urn:swift:snl:ns.Sw"
+    xmlns:SwInt="urn:swift:snl:ns.SwInt"
+    xmlns:SwGbl="urn:swift:snl:ns.SwGbl"
+    xmlns:SwSec="urn:swift:snl:ns.SwSec">
+    <Saa:Revision>2.0.15</Saa:Revision>
+    <Saa:Header>
+        <Saa:Message>
+            <Saa:SenderReference>OPSSTFRPPXXX053$26013024853</Saa:SenderReference>
+            <Saa:MessageIdentifier>camt.053.001.02.stm</Saa:MessageIdentifier> <!-- à récupérer -->
+            <Saa:Format>File</Saa:Format>
+            <Saa:SubFormat>Output</Saa:SubFormat>
+            <Saa:Sender>
+                <Saa:DN>o=psstfrpp,o=swift</Saa:DN>
+                <Saa:FullName>
+                    <Saa:X1>PSSTFRPPXXX</Saa:X1><!-- à récupérer -->
+                </Saa:FullName>
+            </Saa:Sender>
+            <Saa:Receiver>
+                <Saa:DN>ou=tre,o=psstfrpp,o=swift</Saa:DN>
+                <Saa:FullName>
+                    <Saa:X1>PSSTFRPPXXX</Saa:X1>
+                    <Saa:X2>tre</Saa:X2>
+                </Saa:FullName>
+            </Saa:Receiver>
+            <Saa:InterfaceInfo>
+                <Saa:MessageCreator>SWIFTNetInterface</Saa:MessageCreator>
+                <Saa:MessageContext>Original</Saa:MessageContext>
+                <Saa:MessageNature>Financial</Saa:MessageNature>
+                <Saa:Sumid>16838EADFFFF9EEA</Saa:Sumid>
+            </Saa:InterfaceInfo>
+            <Saa:NetworkInfo>
+                <Saa:Priority>Normal</Saa:Priority>
+                <Saa:IsPossibleDuplicate>false</Saa:IsPossibleDuplicate>
+                <Saa:Service>psstfr.macugsb!p</Saa:Service>
+                <Saa:Network>SWIFTNet</Saa:Network>
+                <Saa:SessionNr>000060</Saa:SessionNr>
+                <Saa:SeqNr>000000001</Saa:SeqNr>
+                <Saa:SWIFTNetNetworkInfo>
+                    <Saa:RequestType>camt.053.001.02.stm</Saa:RequestType>
+                    <Saa:SNLRef>SNL50081-2026-01-30T08:48:18.18547030.000462Z</Saa:SNLRef>
+                    <Saa:Reference>604daa40-fdb8-41f0-9297-172cb9b28915</Saa:Reference>
+                    <Saa:SNLEndPoint>psstfr_macugsb</Saa:SNLEndPoint>
+                    <Saa:IsPossibleDuplicateResponse>false</Saa:IsPossibleDuplicateResponse>
+                    <Saa:TransferRef>SNL50081D11769762898223139S</Saa:TransferRef>
+                    <Saa:FileInfo>SwCompression=GZip</Saa:FileInfo> <!-- à récupérer -->
+                    <Saa:FileStartTime>20260130094818</Saa:FileStartTime>
+                    <Saa:FileEndTime>20260130094819</Saa:FileEndTime>
+                </Saa:SWIFTNetNetworkInfo>
+            </Saa:NetworkInfo>
+            <Saa:SecurityInfo>
+                <Saa:SWIFTNetSecurityInfo>
+                    <Saa:SignerDN>cn=test01,ou=test,o=psstfrpp,o=swift</Saa:SignerDN>
+                    <Saa:NRType>SvcOpt</Saa:NRType>
+                    <Saa:SignatureResult>Success</Saa:SignatureResult>
+                    <Saa:SignatureValue>
+                        <SwInt:RequestPayload type="swift.fileact.secsecureddata">
+                            <Sw:FileRequestHeader>
+                                <SwInt:Requestor>o=psstfrpp,o=swift</SwInt:Requestor>
+                                <SwInt:Responder>ou=tre,o=psstfrpp,o=swift</SwInt:Responder>
+                                <SwInt:Service>psstfr.macugsb!p</SwInt:Service>
+                                <SwInt:RequestType>camt.053.001.02.stm</SwInt:RequestType>
+                                <SwInt:Priority>Normal</SwInt:Priority>
+                            </Sw:FileRequestHeader>
+                            <Sw:TransferRef>SNL50081D11769762898223139</Sw:TransferRef>
+                            <Sw:Digest>
+                                <Sw:DigestAlgorithm>SHA-256</Sw:DigestAlgorithm>
+                                <Sw:DigestValue>jrOVOEIMnxME2yT/c5PmDdLmqCVfi3cedLK+anqdqV8=</Sw:DigestValue>
+                            </Sw:Digest>
+                        </SwInt:RequestPayload>
+                        <SwSec:Crypto>
+                            <SwSec:CryptoInternal>
+                                <SwSec:CipherKey>UEVNRkBQcm9jLVR5cGU6IDQsTUlDLU9OTFkNCkNvbnRlbnQtRG9tYWluOiBSRkM4MjINCkVudHJ1c3RGaWxlLVZlcnNpb246IDIuMA0KT3JpZ2luYXRvci1ETjogY249dGVzdDAxLG91PXRlc3Qsbz1wc3N0ZnJwcCxvPXN3aWZ0DQpPcmlnLVNOOiAxNzM0MjE0Nzg5DQpNSUMtSW5mbzogU0hBMjU2LCBSU0EsDQogVGJneWMyUUFmYTM3VjFQamxjM0RqNC91YnMvallMa25ZRWJUVkhyb1FYSXdxTlNYUFEvR0lSOGRDYlVoR3dMMQ0KIDRQSWhPeSt4U2p1bFFqVFZoa253T1hRY0poQlMwY2l5b2o0c3VkMEw5UVJJRC84OWlPU0daTVdwNDRkUGhjYkcNCiBkSTJqdEtEdEtKcWZ0bGYrSTVzY1ZHcTNnY3lvbitsZXJ4b0FKc3B1V0hIVDVhc0o2dEhZOWoxa1JDdG1RaVYyDQogQ2IxNVBpUGFVV2cxWFlSZDUvVXhnWGVsWDVWWjZDbmJLWWd1eFBYK2l5NzVFOXdjc1pJc3ZSa0xZMmhrVDk0Lw0KIGV6Z003bWlFcG5PM1REcHZzT2lqYjFWMTZQaWhBNEZSTVhiamZ5aUtpeWUrUFZUUGdlTkxZNVZSSGlHLzVIamkNCiBuRXdvV2ZHKzU3WHMreVlURndONjBRPT0NCg==</SwSec:CipherKey>
+                                <SwSec:CryptoProtocol>4.0:3.0</SwSec:CryptoProtocol>
+                            </SwSec:CryptoInternal>
+                            <SwSec:CryptoInfo>
+                                <SwSec:MemberRef>RequestPayload</SwSec:MemberRef>
+                                <SwSec:SignDN>cn=test01,ou=test,o=psstfrpp,o=swift</SwSec:SignDN>
+                            </SwSec:CryptoInfo>
+                        </SwSec:Crypto>
+                    </Saa:SignatureValue>
+                    <Saa:FileDigestAlgorithm>SHA-256</Saa:FileDigestAlgorithm>
+                    <Saa:FileDigestValue>jrOVOEIMnxME2yT/c5PmDdLmqCVfi3cedLK+anqdqV8=</Saa:FileDigestValue>
+                </Saa:SWIFTNetSecurityInfo>
+            </Saa:SecurityInfo>
+            <Saa:FileLogicalName>PSSTFRPPTRE_TE007774_FA382258886_F6RCR053.gz</Saa:FileLogicalName> <!-- à récupérer -->
+            <Saa:ExpiryDateTime>20260219084819</Saa:ExpiryDateTime>
+        </Saa:Message>
+    </Saa:Header>
+</Saa:DataPDU>
