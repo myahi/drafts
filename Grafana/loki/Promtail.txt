@@ -1,0 +1,34 @@
+scrape_configs:
+  - job_name: eai-camel-report
+    static_configs:
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: mono
+          module: base
+          __path__: /serveur_apps/eai-camel-report/mono/eai-camel-report-base/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: mono
+          module: cashflows
+          __path__: /serveur_apps/eai-camel-report/mono/eai-camel-report-cashflows/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: rouge
+          module: base
+          __path__: /serveur_apps/eai-camel-report/rouge/eai-camel-report-base/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: rouge
+          module: cashflows
+          __path__: /serveur_apps/eai-camel-report/rouge/eai-camel-report-cashflows/run/logs/*.log
