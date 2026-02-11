@@ -1,8 +1,0 @@
-2026-02-07 00:09:55.260  INFO 26503 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Stop listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
-2026-02-07 00:09:55.261  INFO 26503 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Stop requested from Markit worker thread: skipping executor shutdown/await.
-2026-02-07 00:09:55.262  INFO 26503 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Stop requested from Markit worker thread: skipping executor shutdown/await.
-2026-02-07 00:09:55.262  INFO 26503 --- [pool-2-thread-1] fr.lbp.jms.connection.JMSListener        : Stop listening incoming messages on queue >>> rec.re7menthe.trade.markit.out
-2026-02-07 00:09:55.262  INFO 26503 --- [pool-2-thread-1] f.lbp.markit.controller.LbpMarkitClient  : Stop requested from Markit worker thread: skipping executor shutdown/await.
-2026-02-07 00:09:55.262 ERROR 26503 --- [markit-shutdown] f.lbp.markit.controller.LbpMarkitClient  : Max retry reached: shutting down Spring application (exitCode=2)
-2026-02-07 00:09:55.263 ERROR 26503 --- [markit-shutdown] f.lbp.markit.controller.LbpMarkitClient  : Max retry reached: shutting down Spring application (exitCode=2)
-2026-02-07 00:09:55.267 ERROR 26503 --- [markit-shutdown] f.lbp.markit.controller.LbpMarkitClient  : Max retry reached: shutting down Spring application (exitCode=2)
