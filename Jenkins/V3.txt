@@ -1,1 +1,108 @@
 
+pipeline {
+  agent any
+
+  stages {
+    stage('Generate CDC CSV') {
+      steps {
+        script {
+          // 1) CDC (input user)
+          String cdc = (params.CDC ?: "").trim()
+          if (!cdc) {
+            error("CDC est vide")
+          }
+
+          // 2) Dossier cible
+          String baseDir = "/eai/livraison/CDC_${cdc}"
+          sh "mkdir -p '${baseDir}'"
+
+          // 3) Entête fixe
+          String header =
+            "source_vm_name;source_os_type;source_file;target_vm_name;target_os_type;username;target_path;unzip_copied_file;archive_existed_file\n"
+
+          // 4) Extraire les lignes issues du HTML:
+          //    On cherche tous les index i pour lesquels on a un champ line_i_key / line_i_version / line_i_enabled
+          def idxSet = new TreeSet<Integer>()
+          params.each { k, v ->
+            def m = (k =~ /^line_(\d+)_/)
+            if (m.matches()) {
+              idxSet.add(Integer.parseInt(m[0][1]))
+            }
+          }
+
+          if (idxSet.isEmpty()) {
+            error("Aucune ligne HTML détectée. Vérifie que ton rendu HTML utilise bien name=\"line_0_key\", name=\"line_0_version\", name=\"line_0_enabled\" etc.")
+          }
+
+          // 5) Construire les couples Artifact/Version sélectionnés
+          def selected = []
+          idxSet.each { i ->
+            String artifact = (params["line_${i}_key"] ?: "").trim()
+            String version  = (params["line_${i}_version"] ?: params["line_${i}_env"] ?: "").trim()
+
+            // Checkbox HTML: selon Jenkins/plugin ça peut être "on", "true", "1", ou null si décoché
+            def enabledRaw = params["line_${i}_enabled"]
+            boolean enabled = false
+            if (enabledRaw != null) {
+              String s = enabledRaw.toString().trim().toLowerCase()
+              enabled = (s == "on" || s == "true" || s == "1" || s == "yes")
+            }
+
+            if (enabled && artifact && version) {
+              selected << [artifact: artifact, version: version]
+            }
+          }
+
+          if (selected.isEmpty()) {
+            error("Aucune ligne activée (checkbox cochée) ou Artifact/Version manquants.")
+          }
+
+          // 6) Générer le CSV (2 lignes par composant)
+          StringBuilder csv = new StringBuilder()
+          csv.append(header)
+
+          selected.each { r ->
+            String artifact = r.artifact
+            String version  = r.version
+
+            String sourceDir  = "/eai/livraison/CDC_${cdc}/${artifact}"
+            String targetPath = "D:\\Serveur_apps\\tools\\repo_maven\\fr\\labanquepostale\\marches\\eai\\${artifact}\\${version}"
+
+            // Ligne 1 : ear.tare
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${artifact}-${version}-ear.tare",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+
+            // Ligne 2 : pom
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${artifact}-${version}.pom",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+          }
+
+          // 7) Écrire le fichier
+          String outFile = "${baseDir}/conf.csv"
+          writeFile file: outFile, text: csv.toString(), encoding: "UTF-8"
+
+          echo "CSV généré : ${outFile}"
+          echo "Artifacts activés : ${selected.size()} => ${selected.size() * 2} lignes + entête"
+        }
+      }
+    }
+  }
+}
