@@ -1,5 +1,6 @@
-pourquoi cette exception généré par l'envoi de mail
-n'atteint pas le onException de la route prinicipale
+pourquoi cette exception générée par la route:MailRoute (envoi de mail)
+
+n'atteint pas le onException de la route prinicipale (PositionTitresRoute)
 
 jakarta.mail.MessagingException: Exception reading response
 	at org.eclipse.angus.mail.smtp.SMTPTransport.readServerResponse(SMTPTransport.java:2509)
