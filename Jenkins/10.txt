@@ -1,0 +1,122 @@
+// --- CONFIG ---
+def fixedInputs = [
+  "bw-eai-bofi",
+  "bw-eai-bofi-swift",
+  "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux",
+  "bw-eai-ftp",
+  "bw-eai-http",
+  "bw-eai-maestro",
+  "bw-eai-market-data",
+  "bw-eai-ref",
+  "bw-eai-reports",
+  "bw-eai-rgv",
+  "bw-eai-monitoring"
+]
+
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    return out ? out.tokenize(",").collect { it.trim() } : ["(aucune option)"]
+  } catch (Exception e) {
+    return ["(erreur API)"]
+  }
+}
+
+def sb = new StringBuilder()
+def buildId = binding.hasVariable('env') ? env.BUILD_ID : '0'
+def tmpFile = "/tmp/component_data_${buildId}.tmp"
+
+// --- HTML MINIMALISTE SANS RISQUE ---
+sb.append("""
+<div style="padding:10px; font-family:monospace;">
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f0f0f0;">
+        <th style="padding:8px; text-align:left;">Artifact</th>
+        <th style="padding:8px; text-align:left;">Version</th>
+        <th style="padding:8px; text-align:left;">Inclure</th>
+      </tr>
+    </thead>
+    <tbody>
+""")
+
+fixedInputs.eachWithIndex { artifact, idx ->
+  def options = fetchOptions(artifact)
+  sb.append("<tr>")
+  sb.append("<td style='padding:4px;'><input type='text' style='width:100%;' name='key_${idx}' value='${esc(artifact)}' readonly></td>")
+  sb.append("<td style='padding:4px;'><select style='width:100%;' name='ver_${idx}'>")
+  options.each { opt -> sb.append("<option value='${esc(opt)}'>${esc(opt)}</option>") }
+  sb.append("</select></td>")
+  sb.append("<td style='padding:4px; text-align:center;'><input type='checkbox' name='chk_${idx}'></td>")
+  sb.append("</tr>")
+}
+
+sb.append("""
+    </tbody>
+  </table>
+  <div id="status" style="margin-top:10px; padding:8px; background:#e0e0e0;">Initialisation...</div>
+</div>
+
+<script>
+(function() {
+  // Met à jour le statut
+  function updateStatus() {
+    var checks = document.querySelectorAll('[name^="chk_"]');
+    var count = 0;
+    for(var i=0; i<checks.length; i++) {
+      if(checks[i].checked) count++;
+    }
+    document.getElementById('status').innerHTML = count + ' artifact(s) sÃ©lectionnÃ©(s)';
+    
+    // Construire les donnÃ©es
+    var lines = [];
+    for(var i=0; i<checks.length; i++) {
+      if(!checks[i].checked) continue;
+      var idx = checks[i].name.split('_')[1];
+      var art = document.querySelector('[name="key_' + idx + '"]').value;
+      var ver = document.querySelector('[name="ver_' + idx + '"]').value;
+      if(art && ver && ver !== '(aucune option)') {
+        lines.push(art + '=' + ver);
+      }
+    }
+    
+    // Envoyer au serveur
+    if(lines.length > 0) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/scriptApproval/submit', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.send('script=' + encodeURIComponent(
+        'new File("${tmpFile}").text = """' + 
+        lines.join('\\n').replace(/"/g, '\\\\"') + 
+        '"""'
+      ));
+    }
+  }
+  
+  // Ajouter les listeners
+  setTimeout(function() {
+    var checks = document.querySelectorAll('[name^="chk_"], [name^="ver_"]');
+    for(var i=0; i<checks.length; i++) {
+      checks[i].addEventListener('change', updateStatus);
+      checks[i].addEventListener('click', updateStatus);
+    }
+    updateStatus();
+  }, 100);
+})();
+</script>
+""")
+
+return sb.toString()
