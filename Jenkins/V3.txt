@@ -1,3 +1,34 @@
+pipeline {
+    agent any
+    stages {
+        stage('Récupérer COMPONENT_DATA') {
+            steps {
+                script {
+                    // Récupère la valeur depuis la requête HTTP
+                    def componentData = currentBuild.rawBuild.getAction(hudson.model.ParametersAction)?.getParameter('COMPONENT_DATA')?.value
+                    
+                    if (componentData) {
+                        env.COMPONENT_DATA = componentData
+                    } else {
+                        env.COMPONENT_DATA = ''
+                    }
+                    
+                    echo "COMPONENT_DATA = ${env.COMPONENT_DATA}"
+                }
+            }
+        }
+        stage('Utilisation shell') {
+            steps {
+                sh '''
+                    echo "$COMPONENT_DATA"
+                    echo "$COMPONENT_DATA" > components.txt
+                '''
+            }
+        }
+    }
+}
+
+
 <script>
 (function(){
   function setStatus(txt) {
