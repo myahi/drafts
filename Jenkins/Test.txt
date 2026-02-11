@@ -1,3 +1,16 @@
+// Remplacer CETTE PARTIE (vers la fin) :
+
+sb.append("""
+  // Écriture fichier
+  var form = new URLSearchParams();
+  form.append('script', 
+    'new File("${tmpFile}").text = """' + 
+    data.replace(/"/g, '\\\\"') + 
+    '"""'
+  );
+""")
+
+
 startup failed:
 Script1: 97: expecting ''', found '\n' @ line 97, column 43.
    e("${tmpFile}").text = """' +
