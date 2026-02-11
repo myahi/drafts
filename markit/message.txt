@@ -1,3 +1,23 @@
+import org.springframework.web.bind.annotation.GetMapping;
+// ...
+
+@GetMapping("/markit/reconnect")
+@ResponseBody
+public ResponseEntity<ResponseMessage> reconnectMarkit() {
+    LOGGER.info("Receive reconnect request");
+
+    try {
+        markitApplication.restartConnector();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseMessage("Markit reconnect triggered"));
+    } catch (RuntimeException | ErrorCode e) {
+        LOGGER.error("Reconnect failed", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ResponseMessage("Could not reconnect Markit, please check the log files"));
+    }
+}
+
+
 j'ai besoin d'exposer un endpoint dans le controller (MarkitController) ci-dessous qui permet de relancer la connexion dans la class LbpMarkitClient
 propose moi les modification minimal à apporter pour pouvoir l'exposer ?
 package fr.lbp.markit.controller;
