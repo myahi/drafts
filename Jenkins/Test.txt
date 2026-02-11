@@ -1,3 +1,44 @@
+
+pipeline {
+    agent any
+    stages {
+        stage('Récupérer composants') {
+            steps {
+                script {
+                    // 🔥 Utilise le MÊME BUILD_ID
+                    def tmpFile = "/tmp/component_data_${env.BUILD_ID}.tmp"
+                    
+                    // Attendre que le JS ait écrit le fichier
+                    sleep 3
+                    
+                    // Lire le fichier
+                    if (fileExists(tmpFile)) {
+                        env.COMPONENT_DATA = readFile(tmpFile).trim()
+                        sh "rm -f ${tmpFile}"
+                        echo "✅ Composants récupérés"
+                    } else {
+                        env.COMPONENT_DATA = ""
+                        echo "⚠️ Aucun composant sélectionné"
+                    }
+                }
+            }
+        }
+        
+        stage('Utilisation Shell') {
+            steps {
+                sh '''
+                    echo "=== COMPOSANTS SÉLECTIONNÉS ==="
+                    echo "$COMPONENT_DATA"
+                    echo "================================"
+                    echo "$COMPONENT_DATA" > composants.txt
+                '''
+            }
+        }
+    }
+}
+
+
+
 sb.append('''
 <script>
 window.update = function() {
