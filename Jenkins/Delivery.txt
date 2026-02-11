@@ -1,3 +1,16 @@
+
+def opts = []
+def body = /* ton texte retour API */
+
+opts = body.trim().tokenize(",").collect { it.trim() }
+
+if (opts.isEmpty()) {
+  opts << "(aucune option)"
+}
+return opts
+
+
+
 String cmd = "curl -H -s -k https://"+host +":9091/rest/livraison/getEnvList?art="+ARTIFACT
 return cmd.execute().text.tokenize(",")
 
