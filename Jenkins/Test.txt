@@ -1,0 +1,159 @@
+// --- CONFIG ---
+def fixedInputs = [
+  "bw-eai-bofi",
+  "bw-eai-bofi-swift",
+  "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux",
+  "bw-eai-ftp",
+  "bw-eai-http",
+  "bw-eai-maestro",
+  "bw-eai-market-data",
+  "bw-eai-ref",
+  "bw-eai-reports",
+  "bw-eai-rgv",
+  "bw-eai-monitoring"
+]
+
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+  } catch (Exception e) {
+    return ["(erreur API)"]
+  }
+}
+
+def sb = new StringBuilder()
+
+// --- Récupération du BUILD_ID ---
+def buildId = "${env.BUILD_ID ?: '0'}"
+def tmpFile = "/tmp/component_data_${buildId}.tmp"
+
+sb.append('''
+<style>
+.ac-table { border-collapse: collapse; width: 100%; }
+.ac-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+.ac-input, .ac-select { width: 100%; padding: 6px; }
+</style>
+
+<table class="ac-table">
+  <thead>
+    <tr><th>Artifact</th><th>Version</th><th>Inclure</th></tr>
+  </thead>
+  <tbody>
+''')
+
+fixedInputs.eachWithIndex { artifact, idx ->
+  def options = fetchOptions(artifact)
+  
+  sb.append("<tr>")
+  sb.append("<td><input type='text' name='key_${idx}' value='${esc(artifact)}' readonly></td>")
+  sb.append("<td><select name='ver_${idx}' onchange='updateComponentData()'>")
+  options.each { opt -> sb.append("<option value='${esc(opt)}'>${esc(opt)}</option>") }
+  sb.append("</select></td>")
+  sb.append("<td><input type='checkbox' name='chk_${idx}' onclick='updateComponentData()'></td>")
+  sb.append("</tr>")
+}
+
+// --- FICHIER TEMPORAIRE avec BUILD_ID ---
+sb.append("""
+  </tbody>
+</table>
+
+<div style='margin-top:10px; padding:8px; background:#f0f0f0;'>
+  <span id='status'>🔄 Calcul...</span>
+</div>
+
+<script>
+window.updateComponentData = function() {
+  var lines = [];
+  var checkboxes = document.querySelectorAll('[name^="chk_"]');
+  
+  checkboxes.forEach(function(cb) {
+    if (!cb.checked) return;
+    var i = cb.name.split('_')[1];
+    var art = document.querySelector('[name="key_' + i + '"]').value;
+    var ver = document.querySelector('[name="ver_' + i + '"]').value;
+    if (art && ver && ver !== '(aucune option)') {
+      lines.push(art + '=' + ver);
+    }
+  });
+  
+  var data = lines.join('\\n');
+  console.log('Données:', data);
+  
+  // 🔥 ÉCRITURE DANS LE FICHIER AVEC BUILD_ID
+  fetch('/scriptApproval/submit', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'script=' + encodeURIComponent(
+      'new File("${tmpFile}").text = """' + 
+      data.replace(/"/g, '\\\\"') + 
+      '"""'
+    )
+  }).then(function(response) {
+    if (response.ok) {
+      document.getElementById('status').innerHTML = '✅ Données sauvegardées (' + lines.length + ' ligne(s))';
+    }
+  });
+};
+
+// Initialisation
+window.updateComponentData();
+</script>
+""")
+
+return sb.toString()
+
+
+
+pipeline {
+    agent any
+    stages {
+        stage('Récupérer composants') {
+            steps {
+                script {
+                    // 🔥 Utilise le MÊME BUILD_ID
+                    def tmpFile = "/tmp/component_data_${env.BUILD_ID}.tmp"
+                    
+                    // Attendre que le JS ait écrit le fichier
+                    sleep 3
+                    
+                    // Lire le fichier
+                    if (fileExists(tmpFile)) {
+                        env.COMPONENT_DATA = readFile(tmpFile).trim()
+                        sh "rm -f ${tmpFile}"
+                        echo "✅ Composants récupérés"
+                    } else {
+                        env.COMPONENT_DATA = ""
+                        echo "⚠️ Aucun composant sélectionné"
+                    }
+                }
+            }
+        }
+        
+        stage('Utilisation Shell') {
+            steps {
+                sh '''
+                    echo "=== COMPOSANTS SÉLECTIONNÉS ==="
+                    echo "$COMPONENT_DATA"
+                    echo "================================"
+                    echo "$COMPONENT_DATA" > composants.txt
+                '''
+            }
+        }
+    }
+}
