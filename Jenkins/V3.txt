@@ -1,3 +1,57 @@
+<script>
+(function(){
+  function setStatus(txt) {
+    var s = document.getElementById('js_status');
+    if (s) s.textContent = txt;
+  }
+
+  window.updateComponentData = function() {
+    try {
+      setStatus('JS: calcul…');
+
+      var lines = [];
+      var cbs = document.querySelectorAll('input.ac-enabled');
+
+      cbs.forEach(function(cb) {
+        if (!cb.checked) return;
+
+        var m = cb.name.match(/line_(\\d+)_enabled/);
+        if (!m) return;
+        var i = m[1];
+
+        var artEl = document.querySelector('input[name="line_' + i + '_key"]');
+        var verEl = document.querySelector('select[name="line_' + i + '_version"]');
+
+        var art = artEl ? artEl.value : '';
+        var ver = verEl ? verEl.value : '';
+
+        if (art && ver) lines.push(art + '=' + ver);
+      });
+
+      var value = lines.join('\\n');
+      console.log('[COMPONENT] computed selection:\\n' + value);
+
+      // ✅ ÉCRITURE DANS NOTRE PROPRE CHAMP CACHÉ
+      var field = document.getElementById('COMPONENT_DATA');
+      if (field) {
+        field.value = value;
+        field.dispatchEvent(new Event('input',  { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+        setStatus('JS: OK (' + lines.length + ' ligne(s))');
+      } else {
+        setStatus('JS: champ caché introuvable !');
+      }
+    } catch (e) {
+      console.error('[COMPONENT] error', e);
+      setStatus('JS: erreur (console)');
+    }
+  };
+
+  setStatus('JS: chargé ✅');
+  setTimeout(window.updateComponentData, 100);
+})();
+</script>
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
