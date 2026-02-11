@@ -1,3 +1,11 @@
+const hidden = document.querySelector('input[name="COMPONENT_DATA"]');
+
+if (hidden) {
+  hidden.value = lines.join('\n');
+  hidden.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+
 <div id="js_status" style="font-size:12px;color:#666;">JS: pas chargé</div>
 
 document.getElementById('js_status').innerText = 'JS: chargé ✅';
