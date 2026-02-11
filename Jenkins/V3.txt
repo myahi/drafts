@@ -1,13 +1,3 @@
-echo "---- PARAMS line_* ----"
-params.each { k, v ->
-  if (k.toString().startsWith("line_") || k == "COMPONENT" || k == "CDC") {
-    echo "${k} = ${v}"
-  }
-}
-echo "------------------------"
-
-
-
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
