@@ -1,9 +1,17 @@
 // --- CONFIG ---
-def host = "monhost"   // ou utilise une variable/paramètre Jenkins si tu en as une
 def fixedInputs = [
-  "APP_A",
-  "APP_B",
-  "APP_C"
+  "bw-eai-bofi",
+"bw-eai-bofi-swift",
+"bw-eai-bofi-batch",
+"bw-eai-framework-ear-linux",
+"bw-eai-ftp",
+"bw-eai-http",
+"bw-eai-maestro",
+"bw-eai-market-data",
+"bw-eai-ref",
+"bw-eai-reports",
+"bw-eai-rgv",
+"bw-eai-monitoring"
 ]
 
 // --- Helpers ---
@@ -19,7 +27,7 @@ def esc = { s ->
 
 def fetchOptions = { String artifactOrKey ->
   // API -> renvoie une string "v1,v2,v3"
-  def cmd = "curl -s -k https://${host}:9091/rest/livraison/getEnvList?art=${artifactOrKey}"
+  def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
   def out = cmd.execute().text?.trim()
   def tokens = out ? out.tokenize(",").collect { it.trim() } : []
   if (tokens.isEmpty()) tokens = ["(aucune option)"]
