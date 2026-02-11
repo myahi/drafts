@@ -1,3 +1,45 @@
+sb.append('''
+<script>
+window.update = function() {
+  var lines = [];
+  var checks = document.querySelectorAll('[name^="chk_"]');
+  
+  for (var i = 0; i < checks.length; i++) {
+    if (!checks[i].checked) continue;
+    var idx = checks[i].name.split('_')[1];
+    var art = document.querySelector('[name="key_' + idx + '"]').value;
+    var ver = document.querySelector('[name="ver_' + idx + '"]').value;
+    if (art && ver && ver !== '(aucune option)') {
+      lines.push(art + '=' + ver);
+    }
+  }
+  
+  var data = lines.join('\\n');
+  document.getElementById('status').innerHTML = '✅ ' + lines.length + ' sÃ©lectionnÃ©(s)';
+  
+  // 🔥 CORRECTION ICI - plus de triple guillemets dans le Groovy
+  var form = new URLSearchParams();
+  form.append('script', 
+    'new File("' + '${tmpFile}' + '").text = """' + 
+    data.replace(/"/g, '\\\\"') + 
+    '"""'
+  );
+  
+  fetch('/scriptApproval/submit', {
+    method: 'POST',
+    body: form
+  }).catch(function(e) {
+    console.log('Erreur fetch:', e);
+  });
+};
+
+setTimeout(window.update, 200);
+</script>
+''')
+
+
+
+
 // Remplacer CETTE PARTIE (vers la fin) :
 
 sb.append("""
