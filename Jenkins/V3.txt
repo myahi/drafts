@@ -1,3 +1,7 @@
+<div id="js_status" style="font-size:12px;color:#666;">JS: pas chargé</div>
+
+document.getElementById('js_status').innerText = 'JS: chargé ✅';
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
