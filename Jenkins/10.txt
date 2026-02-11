@@ -1,1 +1,120 @@
+// --- CONFIGURATION ---
+def fixedInputs = [
+  "bw-eai-bofi", "bw-eai-bofi-swift", "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux", "bw-eai-ftp", "bw-eai-http",
+  "bw-eai-maestro", "bw-eai-market-data", "bw-eai-ref",
+  "bw-eai-reports", "bw-eai-rgv", "bw-eai-monitoring"
+]
+
+// --- HELPERS ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString().replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;").replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+  } catch (e) {
+    return ["Erreur API"]
+  }
+}
+
+// --- GÉNÉRATION HTML ---
+def sb = new StringBuilder()
+
+sb << """
+<style>
+.ac-wrap { max-width: 980px; font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+.ac-panel { border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: #fff; overflow: hidden; }
+.ac-header { padding: 10px 12px; background: rgba(0,0,0,.03); border-bottom: 1px solid rgba(0,0,0,.08); font-weight: 600; }
+.ac-table { width: 100%; border-collapse: collapse; }
+.ac-table th, .ac-table td { padding: 8px 12px; border-bottom: 1px solid rgba(0,0,0,.08); vertical-align: middle; }
+.ac-table th { font-weight: 600; background: rgba(0,0,0,.02); text-align: left; }
+.ac-input, .ac-select { width: 100%; padding: 6px; border: 1px solid rgba(0,0,0,.2); border-radius: 4px; }
+.ac-input[readonly] { background: rgba(0,0,0,.05); cursor: not-allowed; }
+.ac-col-on { text-align: center; width: 60px; }
+</style>
+
+<div class="ac-wrap" id="artifact-container">
+  <div class="ac-panel">
+    <div class="ac-header">Gestion des Déploiements EAI</div>
+    
+    <input type="hidden" name="value" id="final-json-output" value="" />
+
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Artifact</th>
+          <th>Version (API)</th>
+          <th class="ac-col-on">Inclure</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+
+fixedInputs.eachWithIndex { artifact, i ->
+  def options = fetchOptions(artifact)
+  
+  sb << """
+    <tr class="artifact-row" data-name="${esc(artifact)}">
+      <td><input class="ac-input" type="text" value="${esc(artifact)}" readonly /></td>
+      <td>
+        <select class="ac-select js-version-select">
+  """
+  options.each { opt ->
+    sb << """<option value="${esc(opt)}">${esc(opt)}</option>"""
+  }
+  sb << """
+        </select>
+      </td>
+      <td class="ac-col-on">
+        <input type="checkbox" class="js-include-checkbox" />
+      </td>
+    </tr>
+  """
+}
+
+sb << """
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+    const container = document.getElementById('artifact-container');
+    const finalInput = document.getElementById('final-json-output');
+
+    function updateJenkinsValue() {
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            if (isChecked) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: row.querySelector('.js-version-select').value
+                });
+            }
+        });
+
+        // On sérialise en JSON pour le pipeline
+        finalInput.value = JSON.stringify(selection);
+    }
+
+    // On écoute les changements sur les selects et les checkboxes
+    container.addEventListener('change', updateJenkinsValue);
+
+    // Initialisation au chargement de la page
+    updateJenkinsValue();
+})();
+</script>
+"""
+
+return sb.toString()
 
