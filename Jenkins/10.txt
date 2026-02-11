@@ -1,3 +1,19 @@
+pipeline {
+    agent any
+    stages {
+        stage('Debug Selection') {
+            steps {
+                script {
+                    // Affiche le JSON brut reçu du paramètre HTML
+                    echo "Contenu reçu : ${params.CONFIG_LIVRAISON}"
+                }
+            }
+        }
+    }
+}
+
+
+
 // --- CONFIGURATION ---
 def fixedInputs = [
   "bw-eai-bofi", "bw-eai-bofi-swift", "bw-eai-bofi-batch",
