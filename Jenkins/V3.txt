@@ -1,3 +1,27 @@
+<script>
+function updateComponentData() {
+  var lines = [];
+
+  var cbs = document.querySelectorAll('input[name\\$="_enabled"]');
+
+  cbs.forEach(function(cb) {
+    if (!cb.checked) return;
+
+    var m = cb.name.match(/line_(\\d+)_enabled/);
+    if (!m) return;
+
+    var i = m[1];
+    var art = document.querySelector('input[name="line_' + i + '_key"]').value;
+    var ver = document.querySelector('select[name="line_' + i + '_version"]').value;
+
+    if (art && ver) lines.push(art + '=' + ver);
+  });
+
+  document.getElementById('COMPONENT_DATA').value = lines.join('\\n');
+}
+updateComponentData();
+</script>
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
