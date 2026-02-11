@@ -1,1 +1,117 @@
+// --- CONFIG ---
+def fixedInputs = [
+  "bw-eai-bofi",
+  "bw-eai-bofi-swift",
+  "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux",
+  "bw-eai-ftp",
+  "bw-eai-http",
+  "bw-eai-maestro",
+  "bw-eai-market-data",
+  "bw-eai-ref",
+  "bw-eai-reports",
+  "bw-eai-rgv",
+  "bw-eai-monitoring"
+]
+
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    return out ? out.tokenize(",").collect { it.trim() } : ["(aucune option)"]
+  } catch (Exception e) {
+    return ["(erreur API)"]
+  }
+}
+
+def sb = new StringBuilder()
+
+// --- BUILD_ID ---
+def buildId = binding.hasVariable('env') ? env.BUILD_ID : '0'
+def tmpFile = "/tmp/component_data_${buildId}.tmp"
+
+sb.append("""
+<style>
+  body { font-family: sans-serif; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 8px; border-bottom: 1px solid #ddd; }
+  input, select { width: 100%; padding: 6px; box-sizing: border-box; }
+</style>
+
+<table>
+  <thead>
+    <tr><th>Artifact</th><th>Version</th><th>Inclure</th></tr>
+  </thead>
+  <tbody>
+""")
+
+fixedInputs.eachWithIndex { artifact, idx ->
+  def options = fetchOptions(artifact)
+  sb.append("<tr>")
+  sb.append("<td><input type='text' name='key_${idx}' value='${esc(artifact)}' readonly></td>")
+  sb.append("<td><select name='ver_${idx}' onchange='update()'>")
+  options.each { opt -> sb.append("<option value='${esc(opt)}'>${esc(opt)}</option>") }
+  sb.append("</select></td>")
+  sb.append("<td><input type='checkbox' name='chk_${idx}' onclick='update()'></td>")
+  sb.append("</tr>")
+}
+
+sb.append("""
+  </tbody>
+</table>
+
+<div id="status">Prêt</div>
+
+<script>
+window.update = function() {
+  var lines = [];
+  var checks = document.querySelectorAll('[name^="chk_"]');
+  
+  for (var i = 0; i < checks.length; i++) {
+    if (!checks[i].checked) continue;
+    var idx = checks[i].name.split('_')[1];
+    var art = document.querySelector('[name="key_' + idx + '"]').value;
+    var ver = document.querySelector('[name="ver_' + idx + '"]').value;
+    if (art && ver && ver !== '(aucune option)') {
+      lines.push(art + '=' + ver);
+    }
+  }
+  
+  var data = lines.join('\\n');
+  document.getElementById('status').innerHTML = '✅ ' + lines.length + ' sélectionné(s)';
+  
+  // Écriture fichier
+  var form = new URLSearchParams();
+  form.append('script', 
+    'new File("${tmpFile}").text = """' + 
+    data.replace(/"/g, '\\\\"') + 
+    '"""'
+  );
+  
+  fetch('/scriptApproval/submit', {
+    method: 'POST',
+    body: form
+  }).catch(function(e) {
+    console.log('Erreur fetch:', e);
+  });
+};
+
+setTimeout(window.update, 200);
+</script>
+""")
+
+return sb.toString()
+
+
 
