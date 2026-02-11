@@ -1,3 +1,49 @@
+// ... (reste du code identique jusqu'au début du script JS) ...
+
+<script>
+(function() {
+    // On utilise un sélecteur plus large pour être sûr de trouver l'input
+    // car Jenkins peut parfois encapsuler le HTML
+    const container = document.getElementById('artifact-container');
+    
+    function updateJenkinsValue() {
+        // On cherche l'input 'value' spécifiquement dans le contexte du paramètre
+        const finalInput = container.querySelector('input[name="value"]');
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            if (isChecked) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: row.querySelector('.js-version-select').value
+                });
+            }
+        });
+
+        const jsonResult = JSON.stringify(selection);
+        finalInput.value = jsonResult;
+        
+        // --- ASTUCE POUR LA FIABILITÉ ---
+        // On déclenche un événement 'change' manuel pour que Jenkins 
+        // détecte que le paramètre a été modifié.
+        finalInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // On écoute les clics et les changements de sélection
+    container.addEventListener('change', function(e) {
+        updateJenkinsValue();
+    });
+
+    // TRÈS IMPORTANT : On attend que le DOM soit bien stable avant l'initialisation
+    setTimeout(updateJenkinsValue, 500);
+})();
+</script>
+
+
+
+
 pipeline {
     agent any
     stages {
