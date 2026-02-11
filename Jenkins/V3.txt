@@ -1,3 +1,26 @@
+<script>
+(function(){
+  window.updateComponentData = function() {
+    var lines = [];
+    var cbs = document.querySelectorAll('input.ac-enabled');
+    
+    cbs.forEach(function(cb) {
+      if (!cb.checked) return;
+      var i = cb.name.match(/line_(\\d+)_enabled/)[1];
+      var art = document.querySelector('input[name="line_' + i + '_key"]').value;
+      var ver = document.querySelector('select[name="line_' + i + '_version"]').value;
+      if (art && ver) lines.push(art + '=' + ver);
+    });
+    
+    // ✅ Écriture dans VOTRE champ caché - C'EST TOUT !
+    document.getElementById('COMPONENT_DATA').value = lines.join('\\n');
+  };
+  
+  // Init
+  setTimeout(window.updateComponentData, 100);
+})();
+</script>
+
 pipeline {
     agent any
     stages {
