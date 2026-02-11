@@ -1,3 +1,7 @@
+String cmd = "curl -H -s -k https://"+host +":9091/rest/livraison/getEnvList?art="+ARTIFACT
+return cmd.execute().text.tokenize(",")
+
+
 import groovy.json.JsonSlurper
 import java.net.URLEncoder
 
