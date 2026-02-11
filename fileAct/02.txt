@@ -1,0 +1,36 @@
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.zip.GZIPInputStream;
+
+public final class Base64GzipToString {
+
+    private Base64GzipToString() {}
+
+    public static String decodeBase64GzipToString(String base64Gz, Charset charset) throws IOException {
+        byte[] gzBytes = Base64.getDecoder().decode(base64Gz);
+
+        // Check rapide: gzip magic bytes 1F 8B
+        if (gzBytes.length < 2 || (gzBytes[0] & 0xFF) != 0x1F || (gzBytes[1] & 0xFF) != 0x8B) {
+            throw new IOException("Le contenu décodé Base64 ne commence pas par 1F 8B (pas un GZIP valide).");
+        }
+
+        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(gzBytes));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = gis.read(buf)) != -1) {
+                out.write(buf, 0, n);
+            }
+            return new String(out.toByteArray(), charset);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        String input = args[0]; // ou colle ta string ici
+        String text = decodeBase64GzipToString(input, StandardCharsets.UTF_8);
+        System.out.println(text.substring(0, Math.min(2000, text.length())));
+    }
+}
