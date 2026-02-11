@@ -1,3 +1,23 @@
+pipeline {
+    agent any
+    stages {
+        stage('Init') {
+            steps {
+                script {
+                    // 🔥 LIT LA REQUÊTE HTTP DIRECTEMENT - AUCUN PARAMÈRE NÉCESSAIRE
+                    def req = currentBuild.rawBuild.getAction(hudson.model.ParametersAction)
+                    env.COMPONENT_DATA = req?.getParameter('COMPONENT_DATA')?.value ?: ''
+                    
+                    // DEBUG : vérifions
+                    echo "COMPONENT_DATA = '${env.COMPONENT_DATA}'"
+                }
+            }
+        }
+        // ... vos autres stages
+    }
+} 
+
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
