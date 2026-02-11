@@ -1,0 +1,122 @@
+import groovy.json.JsonSlurper
+import java.net.URLEncoder
+
+// ---- Config (à adapter) ----
+def apiBase = "https://mon-api.exemple.local"     // <-- base URL
+def connectTimeoutMs = 4000
+def readTimeoutMs = 8000
+
+// Les valeurs "read-only" par ligne (en dur)
+def fixedInputs = [
+  "APP_A",
+  "APP_B",
+  "APP_C"
+]
+
+// ---- Helpers ----
+def htmlEscape = { s ->
+  if (s == null) return ""
+  return s.toString()
+          .replace("&","&amp;")
+          .replace("<","&lt;")
+          .replace(">","&gt;")
+          .replace("\"","&quot;")
+          .replace("'","&#39;")
+}
+
+def fetchOptions = { String fixedValue ->
+  // Exemple d'endpoint: GET /options?key=APP_A
+  def q = URLEncoder.encode(fixedValue, "UTF-8")
+  def url = new URL("${apiBase}/options?key=${q}")
+
+  def conn = (HttpURLConnection) url.openConnection()
+  conn.setRequestMethod("GET")
+  conn.setConnectTimeout(connectTimeoutMs)
+  conn.setReadTimeout(readTimeoutMs)
+  conn.setRequestProperty("Accept", "application/json")
+  // Si besoin d'auth:
+  // conn.setRequestProperty("Authorization", "Bearer xxx")
+
+  int code = conn.getResponseCode()
+  def stream = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream()
+  def body = stream != null ? stream.getText("UTF-8") : ""
+
+  if (!(code >= 200 && code < 300)) {
+    // En cas d'erreur, on retourne une option "erreur"
+    return [[value: "", label: "Erreur API (${code})"]]
+  }
+
+  // Suppose que l'API renvoie: ["opt1","opt2"] ou [{value:"v",label:"l"}]
+  def parsed = new JsonSlurper().parseText(body)
+
+  def opts = []
+  if (parsed instanceof List) {
+    parsed.each { item ->
+      if (item instanceof Map) {
+        opts << [value: item.value?.toString() ?: "", label: item.label?.toString() ?: item.value?.toString() ?: ""]
+      } else {
+        opts << [value: item?.toString() ?: "", label: item?.toString() ?: ""]
+      }
+    }
+  }
+  if (opts.isEmpty()) {
+    opts << [value: "", label: "(aucune option)"]
+  }
+  return opts
+}
+
+// ---- Build HTML ----
+def sb = new StringBuilder()
+sb << """
+<style>
+  .ac-grid { display: grid; grid-template-columns: 220px 320px 140px; gap: 10px; align-items: center; }
+  .ac-head { font-weight: 600; margin-bottom: 6px; }
+  .ac-row { padding: 6px 0; border-bottom: 1px solid #eee; }
+  .ac-input { width: 210px; }
+  .ac-select { width: 320px; }
+</style>
+
+<div class="ac-grid ac-head">
+  <div>Clé (read-only)</div>
+  <div>Choix (API)</div>
+  <div>Prendre en compte</div>
+</div>
+"""
+
+fixedInputs.eachWithIndex { fixedValue, i ->
+  def opts = fetchOptions(fixedValue)
+
+  // Noms des champs (important pour récupérer ensuite)
+  def keyName   = "line_${i}_key"
+  def selName   = "line_${i}_choice"
+  def chkName   = "line_${i}_enabled"
+
+  sb << """<div class="ac-grid ac-row">"""
+
+  // 1) Read-only fixed input
+  sb << """<div>
+      <input class="ac-input" type="text" name="${keyName}" value="${htmlEscape(fixedValue)}" readonly />
+    </div>"""
+
+  // 2) Select options from REST
+  sb << """<div>
+      <select class="ac-select" name="${selName}">
+  """
+  opts.each { o ->
+    sb << """<option value="${htmlEscape(o.value)}">${htmlEscape(o.label)}</option>"""
+  }
+  sb << """</select>
+    </div>"""
+
+  // 3) Checkbox
+  sb << """<div>
+      <label>
+        <input type="checkbox" name="${chkName}" checked />
+        Oui
+      </label>
+    </div>"""
+
+  sb << """</div>"""
+}
+
+sb.toString() 
