@@ -1,0 +1,224 @@
+pourquoi cette exception généré par l'envoi de mail
+n'atteint pas le onException de la route prinicipale
+
+jakarta.mail.MessagingException: Exception reading response
+	at org.eclipse.angus.mail.smtp.SMTPTransport.readServerResponse(SMTPTransport.java:2509)
+	at org.eclipse.angus.mail.smtp.SMTPTransport.openServer(SMTPTransport.java:2205)
+	at org.eclipse.angus.mail.smtp.SMTPTransport.protocolConnect(SMTPTransport.java:729)
+	at jakarta.mail.Service.connect(Service.java:345)
+	at org.apache.camel.component.mail.DefaultJavaMailSender.send(DefaultJavaMailSender.java:153)
+	at org.apache.camel.component.mail.MailProducer.process(MailProducer.java:71)
+	at org.apache.camel.processor.SendProcessor.process(SendProcessor.java:208)
+	at org.apache.camel.processor.errorhandler.RedeliveryErrorHandler$SimpleTask.handleFirst(RedeliveryErrorHandler.java:440)
+	at org.apache.camel.processor.errorhandler.RedeliveryErrorHandler$SimpleTask.run(RedeliveryErrorHandler.java:416)
+	at org.apache.camel.impl.engine.DefaultReactiveExecutor$Worker.doRun(DefaultReactiveExecutor.java:199)
+	at org.apache.camel.impl.engine.DefaultReactiveExecutor$Worker.executeReactiveWork(DefaultReactiveExecutor.java:189)
+	at org.apache.camel.impl.engine.DefaultReactiveExecutor$Worker.tryExecuteReactiveWork(DefaultReactiveExecutor.java:166)
+	at org.apache.camel.impl.engine.DefaultReactiveExecutor$Worker.schedule(DefaultReactiveExecutor.java:148)
+	at org.apache.camel.impl.engine.DefaultReactiveExecutor.schedule(DefaultReactiveExecutor.java:54)
+	at org.apache.camel.processor.errorhandler.RedeliveryErrorHandler$RedeliveryTask.lambda$doRun$1(RedeliveryErrorHandler.java:813)
+	at org.apache.camel.processor.DelayProcessorSupport$ProcessCall$1.done(DelayProcessorSupport.java:80)
+	at org.apache.camel.support.AsyncProcessorConverterHelper$ProcessorToAsyncProcessorBridge.process(AsyncProcessorConverterHelper.java:61)
+	at org.apache.camel.processor.DelayProcessorSupport$ProcessCall.run(DelayProcessorSupport.java:71)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.net.SocketException: Connection reset
+	at java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:328)
+	at java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:355)
+	at java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:808)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:966)
+	at org.eclipse.angus.mail.util.TraceInputStream.read(TraceInputStream.java:107)
+	at java.base/java.io.BufferedInputStream.fill(BufferedInputStream.java:244)
+	at java.base/java.io.BufferedInputStream.read(BufferedInputStream.java:263)
+	at org.eclipse.angus.mail.util.LineInputStream.readLine(LineInputStream.java:104)
+	at org.eclipse.angus.mail.smtp.SMTPTransport.readServerResponse(SMTPTransport.java:2489)
+	... 23 common frames omitted
+15:11:25.908 [31m[0;39m [Camel (camel-1) thread #8 - Delay] o.a.c.c.file.GenericFileOnCompletion -  - Rollback file strategy: org.apache.camel.component.file.strategy.GenericFileRenameProcessStrategy@1cf8ede1 for file: GenericFile[c:\serveur_apps\EAIReports\input\POSITIONS_TITRES\START_EXTRACTION_DU_RESULTAT_DU_RAPPROCHEMENT_PROCESS.cmd]
+
+
+voici le code la route:
+
+package fr.labanquepostale.report.base.routes;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import fr.labanquepostale.marches.eai.core.dollaru.DollarUUtil;
+import fr.labanquepostale.marches.eai.core.helper.AuditHelper;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortCriterion;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortDirection;
+import fr.labanquepostale.marches.eai.core.io.FileMergeUtil;
+import fr.labanquepostale.marches.eai.core.io.FileMoveUtil;
+import fr.labanquepostale.marches.eai.core.model.audit.Codifier;
+import fr.labanquepostale.marches.eai.core.model.audit.Metadata;
+import fr.labanquepostale.marches.eai.core.model.audit.Reference;
+import fr.labanquepostale.marches.eai.core.model.audit.Status;
+
+//Tibco BW process
+//bw_eaireports/Process/Starters/POSITIONS_TITRES/GetExtractionDuResultatDuRapprochement.process
+@Component
+@SuppressWarnings("unchecked")
+public class PositionTitresRoute extends RouteBuilder {
+
+
+    @Autowired
+    private AuditHelper auditHelper;
+    
+    @Override
+    public void configure() {
+
+    	// Catch-all        
+        onException(Exception.class)
+        .handled(true)
+        .process(this::handleException);
+
+        fromF("file:{{eai.report.position.titres.input.dir}}"
+                + "?include={{eai.report.position.titres.input.notification.name}}"
+                + "&delay={{eai.report.position.titres.input.delay.ms}}"
+                + "&noop=true"
+                + "&idempotent=false"
+                + "&readLock=changed")
+        	.routeId("PositionTitresRoute")
+
+            // Save notification file path for cleanup
+            .setProperty("notifPath", header("CamelFilePath"))
+
+            // Cache parameters as exchange properties (easy to reuse)
+            .setProperty("notificationContent",simple("${body}"))
+            .setProperty("notifcationFileName", simple("{{eai.report.position.titres.input.notification.name}}"))
+            .setProperty("dollarURessourceName", simple("{{eai.report.position.titres.input.notification.name}}"))
+            .setProperty("inputDir", simple("{{eai.report.position.titres.input.dir}}"))
+            .setProperty("filePattern", simple("{{eai.report.position.titres.input.file.pattern}}"))
+            .setProperty("fileExtension", simple("{{eai.report.position.titres.input.file.extension}}"))
+            .setProperty("outputDir", simple("{{eai.report.position.titres.output.dir}}"))
+            .setProperty("outputPrefix", simple("{{eai.report.position.titres.output.file.prefix}}"))
+            .setProperty("archivesSubdir", simple("{{eai.report.position.titres.input.dir.archives.subdir}}"))
+            .setProperty("errorsSubdir", simple("{{eai.report.position.titres.input.dir.errors.subdir}}"))
+            .setProperty("listName", simple("{{eai.report.position.titres.mailing.list}}"))
+            
+            
+            .process(exchange->{
+            	String filePatten = exchange.getProperty("filePattern", String.class)+ "_" + StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=") + exchange.getProperty("fileExtension", String.class);
+            	FileListingUtil.listFiles(exchange,Path.of(exchange.getProperty("inputDir", String.class)), false, SortCriterion.NAME, SortDirection.ASC,filePatten);	
+            })
+            .choice()
+            .when(exchangeProperty("inputFiles").isNull())
+                // --- AUCUN FICHIER ---
+                .process(exchange -> {
+                    auditHelper.audit(exchange)
+                        .ref(Codifier.FILE_NAME.getCodifier(),exchange.getProperty("notifcationFileName", String.class))
+                        .desc("Notification position titre reçue mais aucun fichier n'a été détecté")
+                        .status(Status.Info.getStatus())
+                        .data("")
+                        .meta("PROCESS_NAME", this.getClass().getName())
+                        .send();
+                })
+                .process(this::deleteNotification)
+                .log("Aucun fichier détecté avec le pattern ${exchangeProperty.filePattern} dans le repertoire mergedFile: ${exchangeProperty.inputDir}")
+                .stop()
+             
+            .otherwise()
+            .process(exchange->{
+	        	 auditHelper.audit(exchange)
+	        	.ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName",String.class))
+               .desc("Fichiers Position titres MO Calypso reçu")
+               .status(Status.Info.getStatus())
+               .data(exchange.getProperty("inputFileNames",String.class))
+               .meta("PROCESS_NAME", this.getClass().getName())
+               .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName",String.class))
+               .send();
+	         })
+            
+            .process(exchange -> {
+            	String targetPath = exchange.getProperty("outputDir", String.class) + exchange.getProperty("outputPrefix", String.class) + "_" + StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=") + exchange.getProperty("fileExtension", String.class) ;
+            	exchange.setProperty("outputFile", targetPath);
+            	FileMergeUtil.merge(Path.of(exchange.getProperty("outputFile",String.class)),(List<Path>) exchange.getProperty("inputFiles"),65536, false);
+            })
+                        
+            // DollarU OK
+            .process(exchange -> {
+            	List<Metadata> metadatas = new ArrayList<Metadata>();
+            	metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(),this.getClass().getName()));
+            	List<Reference> references = new ArrayList<Reference>();
+            	references.add(new Reference(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName",String.class)));
+            	exchange.getMessage().setBody(DollarUUtil.buildOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class),references,metadatas));
+            }).to("direct:dollarUCommand")
+            
+			.process(exchange -> {
+				//moveListedFiles(exchange, exchange.getProperty("archivesSubdir", String.class));
+				FileMoveUtil.move(exchange, exchange.getProperty("archivesSubdir", String.class), exchange.getProperty("inputFiles", String.class));
+			})
+			
+			.process(exchange -> {
+                exchange.getMessage().setHeader("listName", exchange.getProperty("listName",String.class));
+                exchange.getMessage().setHeader("subject", "Rapport");
+                
+                // content-type du body
+                String templatePath = exchange.getContext().resolvePropertyPlaceholders("{{eai.report.position.titres.mailing.template}}");
+                String htmlBody = Files.readString(Path.of(templatePath), StandardCharsets.UTF_8);
+                exchange.getMessage().setBody(htmlBody);
+                exchange.getMessage().setHeader("Content-Type", "text/html; charset=UTF-8");
+                //exchange.getMessage().setBody("Bonjour, rapport en pièce jointe.");
+
+                // pièce jointe
+                var am = exchange.getMessage(org.apache.camel.attachment.AttachmentMessage.class);
+                var file = new java.io.File("/tmp/report.csv");
+                var ds = new jakarta.activation.FileDataSource(file);
+                am.addAttachment("report.csv", new jakarta.activation.DataHandler(ds));
+              })
+              .to("direct:MailRoute")
+            
+            .process(exchange->{
+	            auditHelper.audit(exchange)
+	           .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName",String.class))
+              .desc("POSITIONS_TITRES rapports Calypso traités")
+              .status(Status.Success.getStatus())
+              .data("")
+              .meta("PROCESS_NAME", this.getClass().getName())
+              .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName",String.class))
+              .send();
+	         })
+            
+            .process(this::deleteNotification)
+            
+            .log("Merge OK: mergedFile=${exchangeProperty.outputFile}");
+    }
+
+
+
+    private void deleteNotification(Exchange e) throws Exception {
+        String notifPathStr = e.getProperty("notifPath", String.class);
+        if (notifPathStr == null) {
+            return;
+        }
+        Files.deleteIfExists(Paths.get(notifPathStr));
+    }
+
+    
+    private void handleException(Exchange exchange) throws Exception {
+        Exception ex = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+        List<Metadata> metadatas = new ArrayList<Metadata>();
+    	metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(),this.getClass().getName()));
+    	List<Reference> references = new ArrayList<Reference>();
+    	references.add(new Reference(Codifier.FILE_NAME.getCodifier(),exchange.getProperty("inputFileName", String.class)));
+        exchange.getMessage().setBody(DollarUUtil.buildNOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class),references,metadatas));
+        exchange.getContext().createProducerTemplate().send("direct:dollarUCommand", exchange);
+        deleteNotification(exchange);
+        FileMoveUtil.move(exchange, exchange.getProperty("errorsSubdir", String.class), exchange.getProperty("inputFiles", String.class));
+        log.error("Merge NOK: reason={}", (ex != null ? ex.getMessage() : "unknown"), ex);
+    }
+}
