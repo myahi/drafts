@@ -1,0 +1,504 @@
+pourquoi je ne vois pas toutes les lignes dans le dashboard loki/grafana, j'ai la configuration suivante:
+
+promtail:
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://sdv4ems01:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: spring-boot
+    static_configs:
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: mono
+          module: base
+          __path__: /serveur_apps/eai-camel-report/mono/eai-camel-report-base/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: mono
+          module: cashflows
+          __path__: /serveur_apps/eai-camel-report/mono/eai-camel-report-cashflows/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: rouge
+          module: base
+          __path__: /serveur_apps/eai-camel-report/rouge/eai-camel-report-base/run/logs/*.log
+
+      - targets: [localhost]
+        labels:
+          app: eai-camel-report
+          env: dev
+          instance: rouge
+          module: cashflows
+          __path__: /serveur_apps/eai-camel-report/rouge/eai-camel-report-cashflows/run/logs/*.log
+
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}'
+          max_wait_time: 3s
+
+le json du dashboard:
+
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 18,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableInfiniteScrolling": false,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showControls": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "expr": "{app=\"$app\", env=\"$env\", instance=~\"$instance\", module=~\"$module\"} |= \"org.apache.camel\" ${contains:raw}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Camel logs (stream) - all levels",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "expr": "sum(count_over_time({app=\"$app\", env=\"$env\", instance=~\"$instance\", module=~\"$module\"} |= \"org.apache.camel\" ${contains:raw} [1m]))",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs per minute (Camel) - all levels",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "expr": "sum(count_over_time({app=\"$app\", env=\"$env\", instance=~\"$instance\", module=~\"$module\"} |= \"org.apache.camel\" ${contains:raw} [10s]))",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs per 10s (Camel) - live-ish",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "expr": "topk(10, sum by (line) (count_over_time({app=\"$app\", env=\"$env\", instance=~\"$instance\", module=~\"$module\"} |= \"org.apache.camel\" ${contains:raw} | line_format \"{{.}}\" [15m])))",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Top log lines (approx) - last 15m",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "count"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "10s",
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "loki",
+          "value": "afcth5xe1vqbkb"
+        },
+        "label": "Loki datasource",
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "eai-camel-report",
+          "value": "eai-camel-report"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "afcth5xe1vqbkb"
+        },
+        "label": "app",
+        "name": "app",
+        "options": [],
+        "query": "label_values(app)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "dev",
+          "value": "dev"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "afcth5xe1vqbkb"
+        },
+        "label": "env",
+        "name": "env",
+        "options": [],
+        "query": "label_values(env)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "mono",
+          "value": "mono"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "afcth5xe1vqbkb"
+        },
+        "includeAll": true,
+        "label": "instance",
+        "name": "instance",
+        "options": [],
+        "query": "label_values({app=\"$app\", env=\"$env\"}, instance)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "base",
+          "value": "base"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "afcth5xe1vqbkb"
+        },
+        "includeAll": true,
+        "label": "module",
+        "name": "module",
+        "options": [],
+        "query": "label_values({app=\"$app\", env=\"$env\", instance=~\"$instance\"}, module)",
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "description": "Optionnel: filtre texte libre (ex: routeId=core-send-mail). Laisse vide pour tout.",
+        "label": "Text contains (optional)",
+        "name": "contains",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Apache Camel - Logs",
+  "uid": "loki-camel-logs-all",
+  "version": 3
+}
+
+exemple de ligne que je ne vois pas:
+
+2026-02-11 11:46:57.630 INFO  [https-jsse-nio-10201-exec-4] o.a.c.c.C.[Tomcat-1].[localhost].[/] - correlationId= userId= executionId= - Initializing Spring DispatcherServlet 'dispatcherServletRegistration'
+2026-02-11 11:47:02.782 INFO  [main] o.a.c.i.engine.AbstractCamelContext - correlationId= userId= executionId= - Routes startup (total:0)
+2026-02-11 11:47:02.782 INFO  [main] o.a.c.i.engine.AbstractCamelContext - correlationId= userId= executionId= - Apache Camel 4.7.0 (eai-camel-report-base) started in 6s133ms (build:0ms init:0ms start:6s133ms)
+2026-02-11 11:47:02.785 INFO  [main] f.l.r.base.EAIReportBaseApplication - correlationId= userId= executionId= - Started EAIReportBaseApplication in 24.253 seconds (process running for 25.401)
+2026-02-11 11:47:02.794 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - CamelContext status =Started
+2026-02-11 11:47:02.883 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - routeId: CollateralManagementRoute, status: Started
+2026-02-11 11:47:02.888 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - routeId: PositionTitresRoute, status: Started
+2026-02-11 11:47:02.889 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - routeId: DollarURoute, status: Started
+2026-02-11 11:47:02.890 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - routeId: MailRoute, status: Started
+2026-02-11 11:47:02.894 INFO  [main] f.l.m.e.c.r.l.RouteStartupManager - correlationId= userId= executionId= - routeId: AuditTracetRoute, status: Started
+2026-02-11 11:47:09.819 INFO  [https-jsse-nio-10201-exec-1] o.a.c.c.C.[Tomcat-1].[localhost].[/] - correlationId= userId= executionId= - jolokia-actuator-endpoint: No access restrictor found, access to any MBean is allowed
