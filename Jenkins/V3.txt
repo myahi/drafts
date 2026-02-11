@@ -1,1 +1,100 @@
+// --- CONFIG ---
+def fixedInputs = [
+  "bw-eai-bofi",
+  "bw-eai-bofi-swift",
+  "bw-eai-bofi-batch",
+  "bw-eai-framework-ear-linux",
+  "bw-eai-ftp",
+  "bw-eai-http",
+  "bw-eai-maestro",
+  "bw-eai-market-data",
+  "bw-eai-ref",
+  "bw-eai-reports",
+  "bw-eai-rgv",
+  "bw-eai-monitoring"
+]
 
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifact ->
+  def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifact}"
+  def out = cmd.execute().text?.trim()
+  def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+  tokens ?: ["(aucune option)"]
+}
+
+// --- HTML ---
+def sb = new StringBuilder()
+
+sb << """
+<input type="hidden" name="COMPONENT_DATA" id="COMPONENT_DATA"/>
+
+<style>
+table{ width:100%; border-collapse:collapse }
+th,td{ padding:6px; border-bottom:1px solid #ddd }
+input[readonly]{ background:#f3f3f3 }
+</style>
+
+<table>
+<tr>
+  <th>Artifact</th>
+  <th>Version</th>
+  <th>Inclure</th>
+</tr>
+"""
+
+fixedInputs.eachWithIndex { art, i ->
+  def options = fetchOptions(art)
+
+  sb << """
+<tr>
+  <td>
+    <input type="text" name="line_${i}_key" value="${esc(art)}" readonly/>
+  </td>
+  <td>
+    <select name="line_${i}_version">
+"""
+  options.each {
+    sb << "<option value='${esc(it)}'>${esc(it)}</option>"
+  }
+  sb << """
+    </select>
+  </td>
+  <td>
+    <input type="checkbox" name="line_${i}_enabled" onclick="updateComponentData()"/>
+  </td>
+</tr>
+"""
+}
+
+sb << """
+</table>
+
+<script>
+function updateComponentData(){
+  let lines = [];
+  document.querySelectorAll('input[name$="_enabled"]').forEach(cb => {
+    if(cb.checked){
+      const i = cb.name.match(/line_(\\d+)_/)[1];
+      const art = document.querySelector('input[name="line_'+i+'_key"]').value;
+      const ver = document.querySelector('select[name="line_'+i+'_version"]').value;
+      if(art && ver){
+        lines.push(art + "=" + ver);
+      }
+    }
+  });
+  document.getElementById("COMPONENT_DATA").value = lines.join("\\n");
+}
+</script>
+"""
+
+return sb.toString()
