@@ -1,0 +1,88 @@
+// --- CONFIG ---
+def host = "monhost"   // ou utilise une variable/paramètre Jenkins si tu en as une
+def fixedInputs = [
+  "APP_A",
+  "APP_B",
+  "APP_C"
+]
+
+// --- Helpers ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString()
+   .replace("&","&amp;")
+   .replace("<","&lt;")
+   .replace(">","&gt;")
+   .replace("\"","&quot;")
+   .replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  // API -> renvoie une string "v1,v2,v3"
+  def cmd = "curl -s -k https://${host}:9091/rest/livraison/getEnvList?art=${artifactOrKey}"
+  def out = cmd.execute().text?.trim()
+  def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+  if (tokens.isEmpty()) tokens = ["(aucune option)"]
+  return tokens
+}
+
+// --- HTML ---
+def sb = new StringBuilder()
+
+sb << """
+<style>
+  .ac-grid { display: grid; grid-template-columns: 220px 320px 160px; gap: 10px; align-items: center; }
+  .ac-head { font-weight: 600; margin: 6px 0; }
+  .ac-row { padding: 6px 0; border-bottom: 1px solid #eee; }
+  .ac-input { width: 210px; }
+  .ac-select { width: 320px; }
+</style>
+
+<div class="ac-grid ac-head">
+  <div>Artifact (read-only)</div>
+  <div>Environnement (API)</div>
+  <div>Activer</div>
+</div>
+"""
+
+fixedInputs.eachWithIndex { fixedValue, i ->
+  def options = fetchOptions(fixedValue)
+
+  // Noms uniques (important)
+  def keyName = "line_${i}_key"
+  def selName = "line_${i}_env"
+  def chkName = "line_${i}_enabled"
+
+  sb << """<div class="ac-grid ac-row">"""
+
+  // 1) input read-only
+  sb << """
+    <div>
+      <input class="ac-input" type="text" name="${esc(keyName)}" value="${esc(fixedValue)}" readonly />
+    </div>
+  """
+
+  // 2) listbox dynamique
+  sb << """
+    <div>
+      <select class="ac-select" name="${esc(selName)}">
+  """
+  options.each { opt ->
+    sb << """<option value="${esc(opt)}">${esc(opt)}</option>"""
+  }
+  sb << """
+      </select>
+    </div>
+  """
+
+  // 3) checkbox activer
+  sb << """
+    <div>
+      <label><input type="checkbox" name="${esc(chkName)}" checked /> Oui</label>
+    </div>
+  """
+
+  sb << "</div>"
+}
+
+return sb.toString()
