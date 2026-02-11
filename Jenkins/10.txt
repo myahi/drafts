@@ -1,3 +1,52 @@
+sb.append("""
+<script>
+(function() {
+  function updateStatus() {
+    var checks = document.querySelectorAll('[name^="chk_"]');
+    var count = 0;
+    for(var i=0; i<checks.length; i++) {
+      if(checks[i].checked) count++;
+    }
+    document.getElementById('status').innerHTML = count + ' artifact(s) sélectionné(s)';
+    
+    var lines = [];
+    for(var i=0; i<checks.length; i++) {
+      if(!checks[i].checked) continue;
+      var idx = checks[i].name.split('_')[1];
+      var art = document.querySelector('[name="key_' + idx + '"]').value;
+      var ver = document.querySelector('[name="ver_' + idx + '"]').value;
+      if(art && ver && ver !== '(aucune option)') {
+        lines.push(art + '=' + ver);
+      }
+    }
+    
+    if(lines.length > 0) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/scriptApproval/submit', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      
+      // 🔥 SOLUTION ULTIME - Utilisation d'apostrophes
+      var script = "new File('${tmpFile}').text = '''" + 
+                    lines.join('\\\\n').replace(/'/g, "\\\\'") + 
+                    "'''";
+      
+      xhr.send('script=' + encodeURIComponent(script));
+    }
+  }
+  
+  setTimeout(function() {
+    var inputs = document.querySelectorAll('[name^="chk_"], [name^="ver_"]');
+    for(var i=0; i<inputs.length; i++) {
+      inputs[i].addEventListener('change', updateStatus);
+      inputs[i].addEventListener('click', updateStatus);
+    }
+    updateStatus();
+  }, 100);
+})();
+</script>
+""")
+
+
 startup failed:
 Script1: 102: expecting ''', found '\n' @ line 102, column 47.
    e("${tmpFile}").text = """' +
