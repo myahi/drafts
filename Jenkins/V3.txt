@@ -1,3 +1,30 @@
+pipeline {
+    agent any
+    stages {
+        stage('Déploiement') {
+            steps {
+                // ✅ COMPONENT_DATA est automatiquement disponible !
+                sh '''
+                    echo "Composants sélectionnés :"
+                    echo "$COMPONENT_DATA"
+                    
+                    # Sauvegarde dans un fichier
+                    echo "$COMPONENT_DATA" > selected_components.txt
+                    
+                    # Traitement ligne par ligne
+                    echo "$COMPONENT_DATA" | while IFS='=' read -r artifact version; do
+                        echo "Déploiement de $artifact version $version"
+                        # Votre logique ici
+                    done
+                '''
+            }
+        }
+    }
+}
+
+
+
+
 // --- CONFIG ---
 def fixedInputs = [
   "bw-eai-bofi",
