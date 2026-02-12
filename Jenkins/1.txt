@@ -1,19 +1,46 @@
-def tokens = out ?
-    out.tokenize(",")
-       .collect { it.trim() }
-       .findAll { !it.toUpperCase().contains("SNAPSHOT") }
-       .sort { a, b ->
+def fetchOptions = { String artifactOrKey ->
+    try {
+        def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+        def process = cmd.execute()
+        process.waitFor()
 
-           def pa = a.tokenize('.').collect { it.replaceAll('[^0-9]', '') }
-                                     .collect { it ? it.toInteger() : 0 }
+        if (process.exitValue() != 0) {
+            return ["Erreur API"]
+        }
 
-           def pb = b.tokenize('.').collect { it.replaceAll('[^0-9]', '') }
-                                     .collect { it ? it.toInteger() : 0 }
+        def out = process.text?.trim()
 
-           def max = [pa.size(), pb.size()].max()
-           pa += [0] * (max - pa.size())
-           pb += [0] * (max - pb.size())
+        if (!out) {
+            return ["(aucune option)"]
+        }
 
-           pb <=> pa
-       }
-    : []
+        def tokens = out
+            .tokenize(",")
+            .collect { it.trim() }
+            .findAll { it && !it.toUpperCase().contains("SNAPSHOT") }
+            .sort { a, b ->
+
+                // Extraction sécurisée des parties numériques
+                def pa = a.tokenize('.')
+                          .collect { it.replaceAll('[^0-9]', '') }
+                          .collect { it ? it.toInteger() : 0 }
+
+                def pb = b.tokenize('.')
+                          .collect { it.replaceAll('[^0-9]', '') }
+                          .collect { it ? it.toInteger() : 0 }
+
+                // Normalisation des longueurs
+                def max = [pa.size(), pb.size()].max()
+                pa += [0] * (max - pa.size())
+                pb += [0] * (max - pb.size())
+
+                // Tri décroissant
+                return pb <=> pa
+            }
+
+        return tokens.isEmpty() ? ["(aucune option)"] : tokens
+
+    } catch (Exception e) {
+        return ["Erreur API"]
+    }
+}
