@@ -1,7 +1,156 @@
-def tokens = out ?
+est-ce-que tu peux modifier le groovy pour ajouter un select box "Action", cette dernière est passe à readonly avec la valeur "TIB_BW_UPDATE" si le user coche la case "inclure" sinon il pourra choisir parmis les actions choix suivants:
+-Vide
+-TIB_BW_UPDATE
+-TIB_BW_RESTART
+-TIB_BW_STOP
+-TIB_BW_START
+// --- CONFIGURATION ---
+def fixedInputs = [
+  "bw-eai-bofi", 
+ "bw-eai-bofi-swift", 
+  "bw-eai-maestro", 
+  "bw-eai-market-data",
+  "bw-eai-reports", 
+  "bw-eai-ref",
+ "bw-eai-bofi-batch",
+  "bw-eai-ftp", 
+  "bw-eai-http",
+  "bw-eai-framework-ear-linux", 
+  "bw-eai-rgv", 
+  "bw-eai-monitoring"
+]
+
+// --- HELPERS ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString().replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;").replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    def tokens = out ?
   out.tokenize(",")
      .collect { it.trim() }
      .findAll { !it.toUpperCase().contains("SNAPSHOT") }
   : []
+    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+  } catch (e) {
+    return ["Erreur API"]
+  }
+}
 
-def tokens = out ? out.tokenize(",").collect { it.trim() } : []
+// --- GÉNÉRATION HTML ---
+def sb = new StringBuilder()
+
+sb << """
+<style>
+.ac-wrap { max-width: 980px; font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+.ac-panel { border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: #fff; overflow: hidden; }
+.ac-table { width: 100%; border-collapse: collapse; }
+.ac-table th, .ac-table td { padding: 8px 12px; border-bottom: 1px solid rgba(0,0,0,.08); vertical-align: middle; }
+.ac-table th { font-weight: 600; background: rgba(0,0,0,.02); text-align: left; }
+.ac-input, .ac-select { width: 100%; padding: 6px; border: 1px solid rgba(0,0,0,.2); border-radius: 4px; }
+.ac-input[readonly] { background: rgba(0,0,0,.05); cursor: not-allowed; }
+.ac-col-on { text-align: center; width: 60px; }
+</style>
+
+<div class="ac-wrap" id="artifact-container">
+  <div class="ac-panel">
+    
+    <input type="hidden" name="value" id="final-json-output" value="" />
+
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Artifact</th>
+          <th>Version (API)</th>
+          <th class="ac-col-on">Inclure</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+
+fixedInputs.eachWithIndex { artifact, i ->
+  def options = fetchOptions(artifact)
+  
+  sb << """
+    <tr class="artifact-row" data-name="${esc(artifact)}">
+      <td><input class="ac-input" type="text" value="${esc(artifact)}" readonly /></td>
+      <td>
+        <select class="ac-select js-version-select">
+  """
+  options.each { opt ->
+    sb << """<option value="${esc(opt)}">${esc(opt)}</option>"""
+  }
+  sb << """
+        </select>
+      </td>
+      <td class="ac-col-on">
+        <input type="checkbox" class="js-include-checkbox" />
+      </td>
+    </tr>
+  """
+}
+
+sb << """
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+    // 1. Fonction de mise à jour centrale
+    function forceUpdate() {
+        const container = document.getElementById('artifact-container');
+        const finalInput = document.getElementById('final-json-output');
+        
+        if (!container || !finalInput) return;
+
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            if (isChecked) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: row.querySelector('.js-version-select').value
+                });
+            }
+        });
+
+        const newValue = JSON.stringify(selection);
+        if (finalInput.value !== newValue) {
+            finalInput.value = newValue;
+            // Notification pour Jenkins
+            finalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    // 2. DÉLÉGATION D'ÉVÉNEMENTS : On écoute sur le document entier
+    // Cela survit même si Jenkins vide et remplace le contenu du paramètre
+    document.addEventListener('change', function(e) {
+        // On ne réagit que si l'élément modifié est à l'intérieur de notre conteneur
+        if (e.target && e.target.closest('#artifact-container')) {
+            // Si c'est notre propre input caché qui change, on ignore pour éviter la boucle
+            if (e.target.id === 'final-json-output') return;
+            
+            forceUpdate();
+        }
+    }, true); // 'true' pour capturer l'événement en phase de capture
+
+    // 3. INITIALISATION ET SURVIE
+    // On lance une mise à jour initiale
+    forceUpdate();
+    
+    // On relance une mise à jour régulière (toutes les 2 sec) juste au cas où 
+    // Jenkins aurait fait une mise à jour silencieuse du DOM sans déclencher 'change'
+    setInterval(forceUpdate, 2000);
+})();
+</script>
+"""
+
+return sb.toString()
