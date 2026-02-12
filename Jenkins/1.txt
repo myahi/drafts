@@ -1,0 +1,94 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Generate CDC CSV') {
+      steps {
+        script {
+          // ---- Inputs Jenkins (GUI) ----
+          String cdc = (params.CDC ?: "").trim()
+          if (!cdc) error("CDC est vide")
+
+          // 👉 adapte le nom du paramètre qui contient ton JSON
+          // (mets ici le vrai nom : COMPONENT_DATA, COMPONENT_JSON, etc.)
+          String raw = (params.COMPONENT_DATA ?: "").trim()
+          if (!raw) error("JSON de sélection vide (params.COMPONENT_DATA)")
+
+          echo "CDC=${cdc}"
+          echo "RAW_JSON=${raw}"
+
+          // ---- Parse JSON ----
+          // Ton exemple est souvent “JSON échappé” (avec \") => on dés-échappe si besoin
+          String jsonText = raw
+          if (jsonText.startsWith("[{\\\"")) {
+            jsonText = jsonText.replace("\\\"", "\"")
+          }
+
+          def selected
+          try {
+            selected = new groovy.json.JsonSlurperClassic().parseText(jsonText)
+          } catch (Exception e) {
+            error("Impossible de parser le JSON. Texte reçu: ${jsonText}\nErreur: ${e.message}")
+          }
+
+          if (!(selected instanceof List) || selected.isEmpty()) {
+            error("JSON parsé mais liste vide / format invalide: ${selected?.getClass()?.name}")
+          }
+
+          // ---- Target dir ----
+          String baseDir = "/eai/livraison/CDC_${cdc}"
+          sh "mkdir -p '${baseDir}'"
+
+          // ---- CSV header ----
+          String header = "source_vm_name;source_os_type;source_file;target_vm_name;target_os_type;username;target_path;unzip_copied_file;archive_existed_file\n"
+          StringBuilder csv = new StringBuilder(header)
+
+          // ---- Build CSV: 2 lines per element ----
+          selected.each { item ->
+            String artifact = (item.artifact ?: "").toString().trim()
+            String version  = (item.version  ?: "").toString().trim()
+            if (!artifact || !version) {
+              error("Entrée JSON invalide (artifact/version manquant): ${item}")
+            }
+
+            String sourceDir  = "/eai/livraison/CDC_${cdc}/${artifact}"
+            String targetPath = "D:\\Serveur_apps\\tools\\repo_maven\\fr\\labanquepostale\\marches\\eai\\${artifact}\\${version}"
+
+            // 1) ear.tare
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${artifact}-${version}-ear.tare",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+
+            // 2) pom
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${artifact}-${version}.pom",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+          }
+
+          // ---- Write file (overwrite) ----
+          String outFile = "${baseDir}/conf.csv"
+          writeFile file: outFile, text: csv.toString(), encoding: "UTF-8"
+
+          echo "CSV généré : ${outFile}"
+          echo "Composants : ${selected.size()} => lignes CSV: ${selected.size() * 2} + entête"
+        }
+      }
+    }
+  }
+}
