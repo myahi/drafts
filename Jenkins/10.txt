@@ -1,3 +1,48 @@
+
+<script>
+(function() {
+    const container = document.getElementById('artifact-container');
+    
+    // Fonction robuste pour trouver l'input de sortie de Jenkins
+    function getJenkinsInput() {
+        return container.querySelector('input[name="value"]');
+    }
+
+    function update() {
+        const finalInput = getJenkinsInput();
+        if (!finalInput) return; // Sécurité si le DOM n'est pas prêt
+
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            if (isChecked) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: row.querySelector('.js-version-select').value
+                });
+            }
+        });
+
+        finalInput.value = JSON.stringify(selection);
+        
+        // On informe Jenkins que la valeur a changé pour qu'il la valide
+        finalInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // ÉCOUTEUR PERMANENT : 
+    // On écoute 'change' sur le container. Cela ne s'arrête JAMAIS.
+    container.addEventListener('change', update);
+
+    // INITIALISATION :
+    // Au lieu d'un timeout fixe, on essaie d'initialiser immédiatement
+    // et on ré-essaie par sécurité une fois très vite, sans bloquer la suite.
+    update();
+    window.addEventListener('load', update); 
+})();
+</script>
+
 // ... (reste du code identique jusqu'au début du script JS) ...
 
 <script>
@@ -7,7 +52,9 @@
     const container = document.getElementById('artifact-container');
     
     function updateJenkinsValue() {
-        // On cherche l'input 'value' spécifiquement dans le contexte du paramètre
+        // 
+
+On cherche l'input 'value' spécifiquement dans le contexte du paramètre
         const finalInput = container.querySelector('input[name="value"]');
         const rows = container.querySelectorAll('.artifact-row');
         const selection = [];
