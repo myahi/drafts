@@ -1,6 +1,1 @@
-deux points si la propriété json included=false:
-1. le fichier copie_binaires_eai_cdc_$cdc.conf ne doit pas contenir les 2 lignes correspondantes
-   pas de copie du fichier .tar et .pom
-2. la ligne correspondante dans fichier livraison_eai_cdc_12345.conf ne doit pas contenir de valeur package_file
-
 
