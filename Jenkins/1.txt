@@ -1,9 +1,1 @@
-ajoute moi l'étape qui permet de copier le pom et le tar depuis de chaque entrée du tableau json comme ceci:
 
-depuis: /eai/maven_eai_conf/.m2/repository/fr/labanquepostale/marches/eai/bw-eai-bofi/7.28.0
-vers: /eai/livraison/CDC_$CDC/$arifact
-
-dont:
-/eai/maven_eai_conf/.m2/repository/fr/labanquepostale/marches/eai: chemin fix de tous mes artifact 
-bw-eai-bofi: $arifact
-7.28.0: $version
