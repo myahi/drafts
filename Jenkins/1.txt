@@ -1,1 +1,7 @@
+def tokens = out ?
+  out.tokenize(",")
+     .collect { it.trim() }
+     .findAll { !it.toUpperCase().contains("SNAPSHOT") }
+  : []
+
 def tokens = out ? out.tokenize(",").collect { it.trim() } : []
