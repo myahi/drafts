@@ -1,4 +1,9 @@
-out.tokenize(",")
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    def tokens = out ? 
+     out.tokenize(",")
    .collect { it.trim() }
    .findAll { !it.toUpperCase().contains("SNAPSHOT") }
    .sort { a, b ->
@@ -11,4 +16,9 @@ out.tokenize(",")
        pb = pb + ([0] * (max - pb.size()))
 
        pb <=> pa   // ordre décroissant
-   }
+   }: []
+    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+  } catch (e) {
+    return ["Erreur API"]
+  }
+}
