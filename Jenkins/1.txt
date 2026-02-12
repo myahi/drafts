@@ -4,6 +4,9 @@ est-ce-que tu peux modifier le groovy pour ajouter un select box "Action", cette
 -TIB_BW_RESTART
 -TIB_BW_STOP
 -TIB_BW_START
+
+et inclure le contenu de la selection dans le json (non de la proriété bwActionType) en sortie 
+
 // --- CONFIGURATION ---
 def fixedInputs = [
   "bw-eai-bofi", 
