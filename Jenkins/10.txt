@@ -1,3 +1,50 @@
+<script>
+(function() {
+    const container = document.getElementById('artifact-container');
+    const finalInput = document.getElementById('final-json-output');
+
+    function update() {
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            if (isChecked) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: row.querySelector('.js-version-select').value
+                });
+            }
+        });
+
+        const newValue = JSON.stringify(selection);
+        
+        // CONDITION CRUCIALE : On ne met à jour et on ne déclenche 
+        // l'événement que si la valeur a réellement changé.
+        if (finalInput.value !== newValue) {
+            finalInput.value = newValue;
+            // On déclenche l'événement pour Jenkins, mais sans que 
+            // cela ne boucle à l'infini grâce au check ci-dessus.
+            finalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    // On n'écoute que les changements provenant des éléments enfants réels
+    container.addEventListener('change', function(e) {
+        // Si l'événement vient de notre input caché, on l'ignore pour éviter la boucle
+        if (e.target === finalInput) return;
+        
+        update();
+    });
+
+    // Initialisation
+    update();
+})();
+</script>
+
+
+
+
 [COMPONENT] - renderDynamicRenderParameter - Updating cascade of parameter [COMPONENT] ...
 build?delay=0sec:267 Uncaught RangeError: Maximum call stack size exceeded.
 
