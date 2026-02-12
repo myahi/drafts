@@ -1,1 +1,160 @@
+// --- CONFIGURATION ---
+def fixedInputs = [
+  "bw-eai-bofi", "bw-eai-bofi-swift", "bw-eai-maestro", "bw-eai-market-data",
+  "bw-eai-reports", "bw-eai-ref", "bw-eai-bofi-batch", "bw-eai-ftp", 
+  "bw-eai-http", "bw-eai-framework-ear-linux", "bw-eai-rgv", "bw-eai-monitoring"
+]
+
+def actionOptions = ["", "TIB_BW_UPDATE", "TIB_BW_RESTART", "TIB_BW_STOP", "TIB_BW_START"]
+
+// --- HELPERS ---
+def esc = { s ->
+  if (s == null) return ""
+  s.toString().replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;").replace("'","&#39;")
+}
+
+def fetchOptions = { String artifactOrKey ->
+  try {
+    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
+    def out = cmd.execute().text?.trim()
+    def tokens = out ? 
+        out.tokenize(",")
+           .collect { it.trim() }
+           .findAll { !it.toUpperCase().contains("SNAPSHOT") } // Filtre SNAPSHOT
+           .sort().reverse() // Plus récent en haut
+        : []
+    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+  } catch (e) {
+    return ["Erreur API"]
+  }
+}
+
+// --- GÉNÉRATION HTML ---
+def sb = new StringBuilder()
+
+sb << """
+<style>
+.ac-wrap { max-width: 1000px; font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+.ac-panel { border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: #fff; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.ac-table { width: 100%; border-collapse: collapse; }
+.ac-table th, .ac-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,.08); vertical-align: middle; font-size: 13px; }
+.ac-table th { font-weight: 600; background: rgba(0,0,0,.03); text-align: left; color: #333; }
+.ac-input, .ac-select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+.ac-input[readonly], .ac-select:disabled { background: #f5f5f5; color: #666; cursor: not-allowed; border-color: #ddd; }
+.ac-col-on { text-align: center; width: 60px; }
+.artifact-row:hover { background-color: rgba(0,0,0,0.01); }
+</style>
+
+<div class="ac-wrap" id="artifact-container">
+  <div class="ac-panel">
+    <input type="hidden" name="value" id="final-json-output" value="" />
+
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Artifact</th>
+          <th>Version</th>
+          <th style="width: 200px;">Action</th>
+          <th class="ac-col-on">Inclure</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+
+fixedInputs.each { artifact ->
+  def versions = fetchOptions(artifact)
+  
+  sb << """
+    <tr class="artifact-row" data-name="${esc(artifact)}">
+      <td><input class="ac-input" type="text" value="${esc(artifact)}" readonly /></td>
+      <td>
+        <select class="ac-select js-version-select">
+          ${versions.collect { "<option value='${esc(it)}'>${esc(it)}</option>" }.join('')}
+        </select>
+      </td>
+      <td>
+        <select class="ac-select js-action-select">
+          ${actionOptions.collect { "<option value='${esc(it)}'>${esc(it)}</option>" }.join('')}
+        </select>
+      </td>
+      <td class="ac-col-on">
+        <input type="checkbox" class="js-include-checkbox" />
+      </td>
+    </tr>
+  """
+}
+
+sb << """
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+    const container = document.getElementById('artifact-container');
+    const finalInput = document.getElementById('final-json-output');
+
+    // Met à jour l'état visuel d'une ligne
+    function updateRowUI(row) {
+        const isChecked = row.querySelector('.js-include-checkbox').checked;
+        const actionSelect = row.querySelector('.js-action-select');
+        
+        if (isChecked) {
+            actionSelect.value = "TIB_BW_UPDATE";
+            actionSelect.disabled = true;
+        } else {
+            actionSelect.disabled = false;
+        }
+    }
+
+    // Compile les données pour Jenkins
+    function forceUpdate() {
+        if (!container || !finalInput) return;
+
+        const rows = container.querySelectorAll('.artifact-row');
+        const selection = [];
+
+        rows.forEach(row => {
+            updateRowUI(row);
+            
+            const isChecked = row.querySelector('.js-include-checkbox').checked;
+            const actionValue = row.querySelector('.js-action-select').value;
+            const versionValue = row.querySelector('.js-version-select').value;
+            
+            // On envoie l'élément si coché OU si une action spécifique est choisie
+            if (isChecked || (actionValue !== "" && actionValue !== "null")) {
+                selection.push({
+                    artifact: row.getAttribute('data-name'),
+                    version: versionValue,
+                    action: isChecked ? "TIB_BW_UPDATE" : actionValue,
+                    included: isChecked
+                });
+            }
+        });
+
+        const newValue = JSON.stringify(selection);
+        if (finalInput.value !== newValue) {
+            finalInput.value = newValue;
+            // Informe Jenkins du changement
+            finalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    // Délégation d'événement sur le document (survie aux rafraîchissements AJAX)
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.closest('#artifact-container')) {
+            if (e.target === finalInput) return;
+            forceUpdate();
+        }
+    }, true);
+
+    // Initialisation immédiate et sécurité périodique
+    forceUpdate();
+    setInterval(forceUpdate, 2000);
+})();
+</script>
+"""
+
+return sb.toString()
 
