@@ -1,3 +1,1 @@
-WorkflowScript: 71: Method definition not expected here. Please define the method at an appropriate place or perhaps try using a block/Closure instead. at line: 71 column: 11. File: WorkflowScript @ line 71, column 11.
-12:12:31               boolean isTrueish(def v) {
-12:12:31               ^
+
