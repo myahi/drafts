@@ -1,1 +1,206 @@
+pipeline {
+  agent any
 
+  stages {
+
+    stage('Purge + Generate CDC CSV + Delivery conf + Copy artifacts') {
+      steps {
+        script {
+          // ---- Inputs Jenkins (GUI) ----
+          String cdc = (params.CDC ?: "").trim()
+          if (!cdc) error("CDC est vide")
+
+          String raw = (params.COMPONENT ?: "").trim()
+          if (!raw) error("JSON de sélection vide (params.COMPONENT)")
+
+          echo "CDC=${cdc}"
+          echo "RAW_JSON=${raw}"
+
+          // ---- Parse JSON ----
+          String jsonText = raw
+          if (jsonText.startsWith("[{\\\"")) {
+            jsonText = jsonText.replace("\\\"", "\"")
+          }
+
+          def selected
+          try {
+            selected = new groovy.json.JsonSlurperClassic().parseText(jsonText)
+          } catch (Exception e) {
+            error("Impossible de parser le JSON. Texte reçu: ${jsonText}\nErreur: ${e.message}")
+          }
+
+          if (!(selected instanceof List) || selected.isEmpty()) {
+            error("JSON parsé mais liste vide / format invalide: ${selected?.getClass()?.name}")
+          }
+
+          // ---- Base dirs ----
+          String baseDir = "/eai/livraison/CDC_${cdc}"
+
+          // Sécurité purge
+          if (!baseDir.startsWith("/eai/livraison/CDC_")) {
+            error("Refus de purge : chemin non sécurisé -> ${baseDir}")
+          }
+
+          echo "Purge du répertoire ${baseDir}"
+          sh """
+            set -euo pipefail
+            rm -rf '${baseDir}'
+            mkdir -p '${baseDir}'
+          """
+
+          // Repo Maven fixe (LINUX)
+          String mavenRoot = "/eai/maven_eai_conf/.m2/repository/fr/labanquepostale/marches/eai"
+
+          // ---- Application map (artifact -> application_name) ----
+          Map<String, String> appNameByArtifact = [
+            "bw-eai-bofi"               : "BOFI/BOFI-UX",
+            "bw-eai-bofi-swift"         : "BOFI/BOFI-UX-UPGRADE",
+            "bw-eai-maestro"            : "MAESTRO/MAESTRO-UX",
+            "bw-eai-market-data"        : "EAIRef/EAIMarketData-UX",
+            "bw-eai-reports"            : "Reports/EAI_Reports-UX",
+            "bw-eai-ref"                : "EAIRef/EAIRef-UX",
+            "bw-eai-bofi-batch"         : "BOFI/BOFI_BATCH-UX",
+            "bw-eai-ftp"                : "EAIftp/EAIftp-EXC",
+            "bw-eai-http"               : "EAIhttp/EAIhttp-EXC",
+            "bw-eai-framework-ear-linux": "EAIFramework/EAIFramework-Linux",
+            "bw-eai-rgv"                : "BOFI/RGV-UX",
+            "bw-eai-monitoring"         : "Tools/bw-eai-monitoring"
+          ]
+
+          // ---- Helper: included parsing (robuste: bool, "false", "0", etc.) ----
+          boolean isIncluded(def v) {
+            if (v == null) return true // défaut: inclus
+            if (v instanceof Boolean) return (boolean) v
+            String s = v.toString().trim().toLowerCase()
+            return (s in ["true", "1", "yes", "y", "oui"])
+          }
+
+          // ---- CSV header (copie binaires) ----
+          String csvHeader =
+            "source_vm_name;source_os_type;source_file;target_vm_name;target_os_type;username;target_path;unzip_copied_file;archive_existed_file\n"
+          StringBuilder csv = new StringBuilder(csvHeader)
+
+          // ---- Delivery conf header ----
+          String deliveryHeader = "delivery_type;package_file;target_path;application_name;configuration_file\n"
+          StringBuilder deliveryConf = new StringBuilder(deliveryHeader)
+
+          int copiedArtifacts = 0
+          int csvLines = 0
+
+          // ---- For each element ----
+          selected.each { item ->
+            String artifact = (item.artifact ?: "").toString().trim()
+            String version  = (item.version  ?: "").toString().trim()
+            String action   = (item.action   ?: "").toString().trim()
+            boolean included = isIncluded(item.included)
+
+            if (!artifact || !version) {
+              error("Entrée JSON invalide (artifact/version manquant): ${item}")
+            }
+            if (!action) {
+              error("Entrée JSON invalide (action manquant): ${item}")
+            }
+
+            String appName = appNameByArtifact[artifact]
+            if (!appName) {
+              error("Aucun application_name trouvé pour l'artifact '${artifact}' (map manquante).")
+            }
+
+            // ---- livraison_eai_cdc_$cdc.conf : 1 ligne par entrée JSON ----
+            // package_file doit être vide si included=false
+            String packageFile = included
+              ? "D:\\\\Serveur_apps\\\\tools\\\\repo_maven\\\\fr\\\\labanquepostale\\\\marches\\\\eai\\\\${artifact}\\\\${version}\\\\${artifact}-${version}.ear"
+              : ""
+
+            // target_path & configuration_file: règles non fournies => vides
+            String deliveryTargetPath = ""
+            String configurationFile  = ""
+
+            deliveryConf.append([
+              action,
+              packageFile,
+              deliveryTargetPath,
+              appName,
+              configurationFile
+            ].join(";")).append("\n")
+
+            // ---- included=false => pas de copie + pas de lignes CSV ----
+            if (!included) {
+              echo "[SKIP] included=false => pas de copie ni lignes CSV pour ${artifact}:${version}"
+              return
+            }
+
+            // ---- Copy + CSV (seulement si included=true) ----
+            String srcDir  = "${mavenRoot}/${artifact}/${version}"
+            String destDir = "${baseDir}/${artifact}"
+            sh "mkdir -p '${destDir}'"
+
+            String tarName = "${artifact}-${version}-ear.tar"
+            String pomName = "${artifact}-${version}.pom"
+
+            sh """
+              set -euo pipefail
+              echo "[COPY] ${artifact}:${version}"
+              echo "  from: ${srcDir}"
+              echo "  to  : ${destDir}"
+
+              test -f '${srcDir}/${tarName}' || { echo "Missing: ${srcDir}/${tarName}"; exit 2; }
+              test -f '${srcDir}/${pomName}' || { echo "Missing: ${srcDir}/${pomName}"; exit 2; }
+
+              cp -f '${srcDir}/${tarName}' '${destDir}/'
+              cp -f '${srcDir}/${pomName}' '${destDir}/'
+            """
+
+            String sourceDir  = "${baseDir}/${artifact}"
+            String targetPath = "D:\\\\Serveur_apps\\\\tools\\\\repo_maven\\\\fr\\\\labanquepostale\\\\marches\\\\eai\\\\${artifact}\\\\${version}"
+
+            // 1) ear.tar
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${tarName}",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+            csvLines++
+
+            // 2) pom
+            csv.append([
+              "sgl4shn04",
+              "LINUX",
+              "${sourceDir}/${pomName}",
+              "SPR1EMS01",
+              "WINDOWS",
+              "usr_svc_eai_qlf",
+              targetPath,
+              "true",
+              "false"
+            ].join(";")).append("\n")
+            csvLines++
+
+            copiedArtifacts++
+          }
+
+          // ---- Write files ----
+          String outFile = "${baseDir}/copie_binaires_eai_cdc_${cdc}.conf"
+          writeFile file: outFile, text: csv.toString(), encoding: "UTF-8"
+          echo "CSV généré : ${outFile}"
+
+          String deliveryFile = "${baseDir}/livraison_eai_cdc_${cdc}.conf"
+          writeFile file: deliveryFile, text: deliveryConf.toString(), encoding: "UTF-8"
+          echo "Delivery conf généré : ${deliveryFile}"
+
+          echo "Composants total : ${selected.size()}"
+          echo "Composants inclus (copiés) : ${copiedArtifacts} => fichiers copiés: ${copiedArtifacts * 2} (pom+tar)"
+          echo "Lignes CSV ajoutées : ${csvLines} (+ entête)"
+          echo "Lignes livraison ajoutées : ${selected.size()} (+ entête)"
+        }
+      }
+    }
+
+  }
+}
