@@ -6,7 +6,9 @@ def fetchOptions = { String artifactOrKey ->
         out.tokenize(",")
            .collect { it.trim() }
            .findAll { !it.toUpperCase().contains("SNAPSHOT") } // Filtre SNAPSHOT
-           .sort().reverse() // Plus récent en haut
+           .sort { a, b -> 
+               b.tokenize('.')*.toInteger() <=> a.tokenize('.')*.toInteger()
+           } // Plus récent en haut (tri numérique)
         : []
 	
     return tokens.isEmpty() ? ["(aucune option)"] : tokens
