@@ -1,3 +1,8 @@
+pourquoi la pipeline genere cette exception:
+File: WorkflowScript @ line 71, column 11.
+19:53:11               boolean isIncluded(def v) {
+19:53:11               ^
+
 pipeline {
   agent any
 
