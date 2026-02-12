@@ -1,3 +1,10 @@
+pourquoi ne pas avoir cette ligne dans les logs
+
+INF|103242|18:46:47.023715|api.cpp[301] - [Env]
+IniPathname=
+remap=
+
+
 pourquoi le isConnected() retourne toujours true meme quand le user appel stopMarkitConnector via le controller ?
 voici le code de la classe:
 package fr.lbp.markit.controller;
