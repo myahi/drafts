@@ -5,17 +5,12 @@ def fetchOptions = { String artifactOrKey ->
     def tokens = out ? 
         out.tokenize(",")
            .collect { it.trim() }
-           .findAll { !it.toUpperCase().contains("SNAPSHOT") }
-           .sort { a, b ->
-               def pa = a.tokenize('.').collect { it.isInteger() ? it.toInteger() : 0 }
-               def pb = b.tokenize('.').collect { it.isInteger() ? it.toInteger() : 0 }
-               pb <=> pa
-           }
+           .findAll { !it.toUpperCase().contains("SNAPSHOT") } // Filtre SNAPSHOT
+           .sort().reverse() // Plus récent en haut
         : []
 	
     return tokens.isEmpty() ? ["(aucune option)"] : tokens
   } catch (e) {
-    println e   // <-- pour voir la vraie erreur
     return ["Erreur API"]
   }
 }
