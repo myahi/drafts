@@ -2,14 +2,28 @@ def fetchOptions = { String artifactOrKey ->
   try {
     def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
     def out = cmd.execute().text?.trim()
-    def tokens = out ? 
-        out.tokenize(",")
-           .collect { it.trim() }
-           .findAll { !it.toUpperCase().contains("SNAPSHOT") } // Filtre SNAPSHOT
-           .sort().reverse() // Plus récent en haut
-        : []
-	
-    return tokens.isEmpty() ? ["(aucune option)"] : tokens
+    
+    if (!out) return ["(aucune option)"]
+
+    def tokens = out.tokenize(",")
+        .collect { it.trim() }
+        .findAll { !it.toUpperCase().contains("SNAPSHOT") }
+        .sort { a, b ->
+            // On sépare par les points et on transforme en entiers pour comparer numériquement
+            def v1 = a.tokenize('.').collect { it.isInteger() ? it.toInteger() : 0 }
+            def v2 = b.tokenize('.').collect { it.isInteger() ? it.toInteger() : 0 }
+            
+            // Comparaison de listes de tailles potentiellement différentes
+            for (int i = 0; i < Math.max(v1.size(), v2.size()); i++) {
+                def part1 = i < v1.size() ? v1[i] : 0
+                def part2 = i < v2.size() ? v2[i] : 0
+                if (part1 != part2) return part1 <=> part2
+            }
+            return 0
+        }
+        .reverse() // Pour avoir le plus récent en haut
+
+    return tokens.isEmpty() ? ["(aucune version stable)"] : tokens
   } catch (e) {
     return ["Erreur API"]
   }
