@@ -1,24 +1,19 @@
-def fetchOptions = { String artifactOrKey ->
-  try {
-    def cmd = "curl -s -k https://src1ems02:9091/rest/livraison/getVersionList?art=${artifactOrKey}"
-    def out = cmd.execute().text?.trim()
-    def tokens = out ? 
-     out.tokenize(",")
-   .collect { it.trim() }
-   .findAll { !it.toUpperCase().contains("SNAPSHOT") }
-   .sort { a, b ->
-       def pa = a.tokenize('.').collect { it as int }
-       def pb = b.tokenize('.').collect { it as int }
+def tokens = out ?
+    out.tokenize(",")
+       .collect { it.trim() }
+       .findAll { !it.toUpperCase().contains("SNAPSHOT") }
+       .sort { a, b ->
 
-       // Complète avec des 0 si longueur différente
-       def max = [pa.size(), pb.size()].max()
-       pa = pa + ([0] * (max - pa.size()))
-       pb = pb + ([0] * (max - pb.size()))
+           def pa = a.tokenize('.').collect { it.replaceAll('[^0-9]', '') }
+                                     .collect { it ? it.toInteger() : 0 }
 
-       pb <=> pa   // ordre décroissant
-   }: []
-    return tokens.isEmpty() ? ["(aucune option)"] : tokens
-  } catch (e) {
-    return ["Erreur API"]
-  }
-}
+           def pb = b.tokenize('.').collect { it.replaceAll('[^0-9]', '') }
+                                     .collect { it ? it.toInteger() : 0 }
+
+           def max = [pa.size(), pb.size()].max()
+           pa += [0] * (max - pa.size())
+           pb += [0] * (max - pb.size())
+
+           pb <=> pa
+       }
+    : []
