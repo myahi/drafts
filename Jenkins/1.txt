@@ -1,5 +1,4 @@
-  out.tokenize(",")
-           .collect { it.trim() }
-           .findAll { !it.toUpperCase().contains("SNAPSHOT") } // Filtre SNAPSHOT
-           .sort().reverse() // Plus récent en haut
-        : []
+out.tokenize(",")
+   .collect { it.trim() }
+   .findAll { !it.toUpperCase().contains("SNAPSHOT") }
+   .sort { a, b -> b <=> a }  // Tri décroissant
