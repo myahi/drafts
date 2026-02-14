@@ -1,12 +1,20 @@
-comment je ferai pour ne pas avoir cette ligne dans les logs
+Modifier la classe ci-dessous (modification minimal) pour envoyer une petite structure xml par jms
+contenant les informations ci-dessous:
+ENVIRONMENT: récupéré depuis ApplicationProperties.LBP_ENVIRONEMET
+TIMESTAMP: le temps ou la dernière exception a été captée
+ROOT_CAUSE: le message de la dernière exception
 
-INF|103242|18:46:47.023715|api.cpp[301] - [Env]
-IniPathname=
-remap=
+exemple xml:
+<root>
+<ENVIRONMENT></ENVIRONMENT>
+<TIMESTAMP></TIMESTAMP>
+<ROOT_CAUSE></ROOT_CAUSE>
+</root>
 
+je pense que la partie responsable de l'envoi du message est la suivante:
 
-pourquoi le isConnected() retourne toujours true meme quand le user appel stopMarkitConnector via le controller ?
-voici le code de la classe:
+jmsListner.send(JMSListener.OutgoingType.TECHNICAL_ERROR,dateFormat.format(currentDate) + ": Le nombre de tentative de connexion a été atteint sur le connecteur markitdealer\n" + " le connecteur a été arrété.");
+
 package fr.lbp.markit.controller;
 
 import static fr.lbp.markit.configuration.ApplicationProperties.LBP_MARKIT_CONNECTION_TESTDURATION;
@@ -280,7 +288,7 @@ public class LbpMarkitClient {
             }
 
             stopMarkitConnectorInternal();
-            requestApplicationShutdown(2);
+            //requestApplicationShutdown(2);
             return;
         }
 
