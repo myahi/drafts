@@ -1,0 +1,101 @@
+Voici une modif minimale centrée sur la zone que tu as identifiée : on remplace le texte libre par un petit XML contenant ENVIRONMENT, TIMESTAMP, ROOT_CAUSE, et on l’envoie via jmsListner.send(...).
+
+> Hypothèses raisonnables (vu ton code) :
+
+JMSListener#send(OutgoingType, String) accepte une String (payload) → OK pour envoyer du XML.
+
+ApplicationProperties.LBP_ENVIRONEMET existe (tu l’as cité).
+
+TIMESTAMP = date/heure au moment où l’exception est traitée (celle qui a déclenché handleConnectionIssue(err)).
+
+ROOT_CAUSE = err.getMessage() (ou fallback si null).
+
+
+
+
+
+---
+
+1) Ajoute l’import de l’environnement (tout en haut avec les autres static import)
+
+import static fr.lbp.markit.configuration.ApplicationProperties.LBP_ENVIRONEMET;
+
+
+---
+
+2) Ajoute 2 petites méthodes utilitaires (dans la classe, par ex. près de safeMsg)
+
+private static String xmlEscape(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;");
+}
+
+private static String buildTechnicalErrorXml(String environment, String timestamp, String rootCause) {
+    return "<root>"
+            + "<ENVIRONMENT>" + xmlEscape(environment) + "</ENVIRONMENT>"
+            + "<TIMESTAMP>" + xmlEscape(timestamp) + "</TIMESTAMP>"
+            + "<ROOT_CAUSE>" + xmlEscape(rootCause) + "</ROOT_CAUSE>"
+            + "</root>";
+}
+
+> xmlEscape est important : si le message d’exception contient & ou <, ton XML casserait sinon.
+
+
+
+
+---
+
+3) Remplace la partie d’envoi JMS dans handleConnectionIssue (modif minimale)
+
+Remplace ce bloc :
+
+Date currentDate = new Date();
+DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+if (jmsListner != null) {
+    jmsListner.send(
+            JMSListener.OutgoingType.TECHNICAL_ERROR,
+            dateFormat.format(currentDate)
+                    + ": Le nombre de tentative de connexion a été atteint sur le connecteur markitdealer\n"
+                    + " le connecteur a été arrété."
+    );
+}
+
+par celui-ci :
+
+Date currentDate = new Date();
+DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"); // ISO lisible
+String timestamp = dateFormat.format(currentDate);
+
+String environment = LBP_ENVIRONEMET; // récupéré depuis ApplicationProperties
+String rootCause = safeMsg(err);
+
+String xmlPayload = buildTechnicalErrorXml(environment, timestamp, rootCause);
+
+if (jmsListner != null) {
+    jmsListner.send(JMSListener.OutgoingType.TECHNICAL_ERROR, xmlPayload);
+}
+
+✅ Résultat envoyé sur JMS (exemple) :
+
+<root>
+  <ENVIRONMENT>PROD</ENVIRONMENT>
+  <TIMESTAMP>2026-02-14T13:37:12.345+01:00</TIMESTAMP>
+  <ROOT_CAUSE>Timeout ...</ROOT_CAUSE>
+</root>
+
+
+---
+
+Remarque importante (sans toucher au code maintenant)
+
+Si ton consumer JMS veut vraiment du XML, c’est souvent mieux de :
+
+mettre Content-Type / JMSType / propriétés JMS (message.setStringProperty(...))
+mais comme on ne voit pas JMSListener.send(...), je suis resté sur la modif minimale demandée.
+
+
+Si tu me colles la signature / implémentation de JMSListener#send, je te dis en 30 secondes si tu peux aussi poser un header/type JMS proprement (sans refactor).
