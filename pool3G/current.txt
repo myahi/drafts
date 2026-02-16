@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lines xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns121="http://www.lbp.fr/xml/report/destination" xmlns:ns0="http://www.labanquepostale.fr/xml/trade/sfdh" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.labanquepostale.fr/xml/trade/calypso" xmlns:ns4="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns8="www.tibco.com/plugin/Sleep" xmlns:ns7="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" xmlns:ns13="http://www.tibco.com/pe/EngineTypes" xmlns:ns12="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns9="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns11="http://www.calypso.com/xml" xmlns:ns10="http://www.labanquepostale.fr/xml/gateway/output" xmlns:bwCustomMethods="java://BWCustomMethods" xmlns:ns131="http://www.labanquepostale.fr/xml/output" xmlns:ns111="http://www.lbp.fr/xml/report/common" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <xsl:for-each select="$Parse-Calypso-Trades/Output/Rows/calypsoLine">
+        <sfdhLine>
+            <xsl:if test="ns1:CONTRACT_ID">
+                <ns0:CONTRACT_ID>
+                    <xsl:value-of select="ns1:CONTRACT_ID"/>
+                </ns0:CONTRACT_ID>
+            </xsl:if>
+            <xsl:if test="ns1:CODE_BOM">
+                <ns0:CODE_BOM>
+                    <xsl:value-of select="ns1:CODE_BOM"/>
+                </ns0:CODE_BOM>
+            </xsl:if>
+            <xsl:if test="ns1:DIRECTION">
+                <ns0:DIRECTION>
+                    <xsl:value-of select="ns1:DIRECTION"/>
+                </ns0:DIRECTION>
+            </xsl:if>
+            <xsl:if test="ns1:CURRENCY">
+                <ns0:CURRENCY>
+                    <xsl:value-of select="ns1:CURRENCY"/>
+                </ns0:CURRENCY>
+            </xsl:if>
+            <ns0:NOMINAL>
+                <xsl:value-of select="lbp:replace(bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:NOMINAL),',','.')"/>
+            </ns0:NOMINAL>
+            <ns0:CLEAN_PRICE>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:CLEAN_PRICE)"/>
+            </ns0:CLEAN_PRICE>
+            <ns0:ACCRUAL>
+                <xsl:value-of select="if(string-length(ns1:ACCRUAL)>0)&#xA;then&#xA;bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:ACCRUAL)&#xA;else &#xA;'0,0'"/>
+            </ns0:ACCRUAL>
+            <ns0:PV_CURRENCY>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:PV_CURRENCY)"/>
+            </ns0:PV_CURRENCY>
+            <ns0:PV_EUR>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:PV_EUR)"/>
+            </ns0:PV_EUR>
+            <ns0:PV_HC_CURRENCY>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:PV_HC_CURRENCY)"/>
+            </ns0:PV_HC_CURRENCY>
+            <ns0:PV_HC_EUR>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:PV_HC_EUR)"/>
+            </ns0:PV_HC_EUR>
+            <ns0:HAIRCUT>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:HAIRCUT)"/>
+            </ns0:HAIRCUT>
+            <xsl:if test="ns1:DATE_TRT">
+                <ns0:DATE_TRT>
+                    <xsl:value-of select="ns1:DATE_TRT"/>
+                </ns0:DATE_TRT>
+            </xsl:if>
+            <ns0:BANKRUPTCY_REMOTE>
+                <xsl:value-of select="bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:BANKRUPTCY_REMOTE)"/>
+            </ns0:BANKRUPTCY_REMOTE>
+            <ns0:NOMINAL_EURO>
+                <xsl:value-of select="lbp:replace(bwCustomMethods:removeAllNonAlphanumercicaracters(ns1:NOMINAL_EURO),',','.')"/>
+            </ns0:NOMINAL_EURO>
+        </sfdhLine>
+    </xsl:for-each>
+</lines>
