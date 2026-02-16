@@ -1,3 +1,6 @@
+comment je passerai ce parametre: 
+-Djasypt.encryptor.password=Eai_Dev_C@mel
+
 les fichier de conf se trouve ici:
 intellij_workspace\eai-camel-report-config\config\eai-camel-report-base
 
