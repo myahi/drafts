@@ -1,3 +1,105 @@
+import quickfix.FieldMap;
+import quickfix.FieldNotFound;
+import quickfix.Group;
+import quickfix.Message;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+
+public final class FixGroupUtils {
+
+    private FixGroupUtils() {}
+
+    /**
+     * Cherche (récursivement) dans un Message / FieldMap un repeating group identifié par groupCountTag,
+     * puis dans une occurrence de ce groupe où matchTag == matchValue, retourne returnTag.
+     *
+     * Exemple: groupCountTag=1116, matchTag=1119, matchValue="12", returnTag=1117
+     *
+     * IMPORTANT:
+     * - Cette méthode suppose que QuickFIX/J a déjà construit les repeating groups (via DataDictionary).
+     * - Si le groupe n'existe pas dans l'objet Message, elle retourne null.
+     */
+    public static String findInRepeatingGroupRecursive(
+            Message message,
+            int groupCountTag,
+            int matchTag,
+            String matchValue,
+            int returnTag
+    ) {
+        if (message == null) return null;
+        return findInRepeatingGroupRecursive((FieldMap) message, groupCountTag, matchTag, matchValue, returnTag);
+    }
+
+    private static String findInRepeatingGroupRecursive(
+            FieldMap container,
+            int groupCountTag,
+            int matchTag,
+            String matchValue,
+            int returnTag
+    ) {
+        if (container == null) return null;
+
+        // Itère sur tous les repeating-groups présents dans ce container
+        // (les "group keys" sont les tags de type NoXXX / count tag, ex: 1116). 1
+        for (Iterator<Integer> it = container.groupKeyIterator(); it.hasNext(); ) {
+            Integer key = it.next();
+            if (key == null) continue;
+
+            List<Group> groups = container.getGroups(key);
+            if (groups == null || groups.isEmpty()) continue;
+
+            // 1) Si ce group-key est celui qu'on cherche (ex: 1116), on filtre les occurrences
+            if (key == groupCountTag) {
+                for (Group g : groups) {
+                    String found = tryMatchAndReturn(g, matchTag, matchValue, returnTag);
+                    if (found != null) return found;
+                }
+            }
+
+            // 2) Dans tous les cas, on descend récursivement dans les sous-groupes de chaque occurrence
+            for (Group g : groups) {
+                String found = findInRepeatingGroupRecursive(g, groupCountTag, matchTag, matchValue, returnTag);
+                if (found != null) return found;
+            }
+        }
+
+        return null;
+    }
+
+    private static String tryMatchAndReturn(
+            FieldMap group,
+            int matchTag,
+            String matchValue,
+            int returnTag
+    ) {
+        try {
+            if (group.isSetField(matchTag)) {
+                String actual = group.getString(matchTag);
+                if (Objects.equals(matchValue, actual)) {
+                    return group.isSetField(returnTag) ? group.getString(returnTag) : null;
+                }
+            }
+        } catch (FieldNotFound ignored) {
+            // ignore
+        }
+        return null;
+    }
+
+    // ---------- Convenience method pour ton cas exact ----------
+
+    /**
+     * Récupère le tag 1117 dans le groupe 1116 pour l'occurrence où 1119 = 12.
+     */
+    public static String find1117Where1119Equals12In1116(Message message) {
+        return findInRepeatingGroupRecursive(message, 1116, 1119, "12", 1117);
+    }
+}
+
+
+###
+
 import quickfix.FieldNotFound;
 import quickfix.Group;
 import quickfix.Message;
