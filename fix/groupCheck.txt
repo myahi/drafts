@@ -1,2 +1,71 @@
+import quickfix.FieldNotFound;
+import quickfix.Group;
+import quickfix.Message;
+
+import java.util.List;
+
+public final class FixGroupRecursiveFinder {
+
+    private FixGroupRecursiveFinder() {}
+
+    public static String findInRepeatingGroupRecursive(
+            Message message,
+            int groupCountTag,
+            int matchTag,
+            String matchValue,
+            int returnTag
+    ) {
+        return findInGroupContainer(message, groupCountTag, matchTag, matchValue, returnTag);
+    }
+
+    private static String findInGroupContainer(
+            quickfix.FieldMap container,
+            int groupCountTag,
+            int matchTag,
+            String matchValue,
+            int returnTag
+    ) {
+        // 1) Cherche le groupe voulu au niveau courant
+        List<Group> groups = container.getGroups(groupCountTag);
+        if (groups != null && !groups.isEmpty()) {
+            for (Group g : groups) {
+                try {
+                    if (g.isSetField(matchTag) &&
+                        matchValue.equals(g.getString(matchTag)) &&
+                        g.isSetField(returnTag)) {
+                        return g.getString(returnTag);
+                    }
+                } catch (FieldNotFound ignored) {}
+            }
+        }
+
+        // 2) Descend dans tous les autres groupes imbriqués
+        for (int tag : container.getGroupTags()) {
+            List<Group> subGroups = container.getGroups(tag);
+            if (subGroups == null) continue;
+
+            for (Group sub : subGroups) {
+                String found = findInGroupContainer(
+                        sub,
+                        groupCountTag,
+                        matchTag,
+                        matchValue,
+                        returnTag
+                );
+                if (found != null) return found;
+            }
+        }
+
+        return null;
+    }
+
+    // Ton cas exact
+    public static String find1117Where1119Equals12In1116(Message message) {
+        return findInRepeatingGroupRecursive(message, 1116, 1119, "12", 1117);
+    }
+}
+
+
+
 je veux un méthode java générique qui permet de récuéprer par exemple le tag 1117 qui correpond au tag 1119 = 12 dans le groupe 1116
 8=FIXT.1.1|9=1695|35=AE|34=1846|49=TRADEWEB|52=20260210-15:38:06.616|56=LBP_EURP_PT_LDN_TEST|347=UTF-8|15=EUR|17=20260210.LBP.EURP.3.1823|22=4|31=0.0050|32=5000000.0|48=DE0001102473|55=[N/A]|60=20260210-15:38:06.586|64=20260210|75=20260210|107=DBR 08/15/2029 O/1WK|167=REPO|228=1.0|381=4846281.410|423=9|460=13|487=0|541=20260217|570=N|571=20260210.LBP.EURP.TRDCONF.1823.1|828=101|856=101|916=20260210|917=20260217|1003=20260210.LBP.EURP.3|5730=96.4410|5745=1|5756=96.4080|5757=96.4410|5758=96.42450|6731=20260210.LBP.EURP.3|6847=0|6849=1|20086=1|20214=P|23006=0.0|23007=N|23016=N|23029=Y|23033=newlist_2026.02.10.15:36:56|23034=1|23048=0|23049=1|23050=DU|23060=A|23066=4|23068=TWEM|23069=724500D4BFEWKWVC1G62|23070=Y|23076=0|23096=20260210LBPEURP3|23533=N|454=1|455=EURP.SPECIAL|456=100|552=1|54=1|453=4|448=UNKNOWN|447=C|452=4|448=lbpdlr1|447=P|452=12|2376=24|448=LBPXXXXXXX|447=D|452=1003|5098=ORGCD|448=LBP|447=D|452=1008|575=N|159=4.710|118=4846286.120|232=2|233=HAIRCUT|234=-0.50|233=HAIRCUTTYPE|234=CASH|1072=4846281.410|11=NONREF|66=LDN1585856.1|711=1|311=[N/A]|309=DE0001102473|305=4|307=DBR 08/15/2029|318=EUR|879=5000000.0|882=96.4410|810=96.4410|884=4846281.410|885=4822050.0|886=4846286.120|23055=96.925628140|768=2|769=20260210-15:38:06.586|770=1|771=TW|769=20260210-15:38:06|770=2|771=TW|1116=5|1117=repobb|1118=C|1119=11|1120=3|1121=Repo GP|1122=2|1121=LDN|1122=25|1121=UK|1122=4000|1117=lbpdlr1|1118=C|1119=12|1120=1|1121=LDN|1122=25|1117=LBP|1118=B|1119=1|1120=1|1121=LDN|1122=25|1117=Becca Bank|1118=C|1119=3|1120=3|1121=W22LROWP2IHZNBB6K528|1122=4006|1121=ALLOC|1122=4003|1121=lbp dlr1|1122=4005|1117=W22LROWP2IHZNBB6K528|1118=N|1119=3|1907=1|1903=20260210LBPEURP3|1906=5|2668=1|2669=0|2670=5|10=032|
