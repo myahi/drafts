@@ -1,3 +1,87 @@
+j'ai un bout de process Tibco  bw5 qui parse le csv avec les colonnes ci-dessous
+
+	<xs:complexType name="MarginCallPretEmpruntOperation">
+		<xs:annotation>
+			<xs:documentation>Représentation d'une opération sur un instrument de la famille des Achat vente titres</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="CONTRACT_ID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Contrat ID</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CODE_BOM" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Code BOM SFDH</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DIRECTION" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Direction</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NOMINAL" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Nominal</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CLEAN_PRICE" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Clean price</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ACCRUAL" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Accrual</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_EUR" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV EUR</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_HC_CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV HC Currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_HC_EUR" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV EUR</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="HAIRCUT" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Haircut</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DATE_TRT" type="xs:string" minOccurs="0"/>
+			<xs:element name="BANKRUPTCY_REMOTE" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>BANKRUPTCY_REMOTE</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NOMINAL_EURO" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Nominal en Eur</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+
+il map chaque ligne avec le mapper ci-dessous 
+
 <?xml version="1.0" encoding="UTF-8"?>
 <lines xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns121="http://www.lbp.fr/xml/report/destination" xmlns:ns0="http://www.labanquepostale.fr/xml/trade/sfdh" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.labanquepostale.fr/xml/trade/calypso" xmlns:ns4="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns8="www.tibco.com/plugin/Sleep" xmlns:ns7="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" xmlns:ns13="http://www.tibco.com/pe/EngineTypes" xmlns:ns12="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns9="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns11="http://www.calypso.com/xml" xmlns:ns10="http://www.labanquepostale.fr/xml/gateway/output" xmlns:bwCustomMethods="java://BWCustomMethods" xmlns:ns131="http://www.labanquepostale.fr/xml/output" xmlns:ns111="http://www.lbp.fr/xml/report/common" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
     <xsl:for-each select="$Parse-Calypso-Trades/Output/Rows/calypsoLine">
@@ -60,3 +144,149 @@
         </sfdhLine>
     </xsl:for-each>
 </lines>
+
+puis il aggrege les lignes mappé avec les regles suivantes:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<lines xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns121="http://www.lbp.fr/xml/report/destination" xmlns:ns0="http://www.labanquepostale.fr/xml/trade/sfdh" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.labanquepostale.fr/xml/trade/calypso" xmlns:ns4="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns8="www.tibco.com/plugin/Sleep" xmlns:ns7="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" xmlns:ns13="http://www.tibco.com/pe/EngineTypes" xmlns:ns12="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns9="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns11="http://www.calypso.com/xml" xmlns:ns10="http://www.labanquepostale.fr/xml/gateway/output" xmlns:bwCustomMethods="java://BWCustomMethods" xmlns:ns131="http://www.labanquepostale.fr/xml/output" xmlns:ns111="http://www.lbp.fr/xml/report/common" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <xsl:for-each-group select="$Map-Data/lines/sfdhLine" group-by="ns0:CODE_BOM">
+        <sfdhLine>
+            <ns0:CONTRACT_ID>
+                <xsl:value-of select="current-group()[1]/ns0:CONTRACT_ID"/>
+            </ns0:CONTRACT_ID>
+            <ns0:CODE_BOM>
+                <xsl:value-of select="current-group()[1]/ns0:CODE_BOM"/>
+            </ns0:CODE_BOM>
+            <ns0:DIRECTION>
+                <xsl:value-of select="current-group()[1]/ns0:DIRECTION"/>
+            </ns0:DIRECTION>
+            <ns0:CURRENCY>
+                <xsl:value-of select="current-group()[1]/ns0:CURRENCY"/>
+            </ns0:CURRENCY>
+            <ns0:NOMINAL>
+                <xsl:value-of select="bwCustomMethods:formatNumber(sum(current-group()/ns0:NOMINAL),&quot;,&quot;,false())"/>
+            </ns0:NOMINAL>
+            <ns0:CLEAN_PRICE>
+                <xsl:value-of select="current-group()[1]/ns0:CLEAN_PRICE"/>
+            </ns0:CLEAN_PRICE>
+            <ns0:ACCRUAL>
+                <xsl:value-of select="current-group()[1]/ns0:ACCRUAL"/>
+            </ns0:ACCRUAL>
+            <ns0:PV_CURRENCY>
+                <xsl:value-of select="current-group()[1]/ns0:PV_CURRENCY"/>
+            </ns0:PV_CURRENCY>
+            <ns0:PV_EUR>
+                <xsl:value-of select="current-group()[1]/ns0:PV_EUR"/>
+            </ns0:PV_EUR>
+            <ns0:PV_HC_CURRENCY>
+                <xsl:value-of select="current-group()[1]/ns0:PV_HC_CURRENCY"/>
+            </ns0:PV_HC_CURRENCY>
+            <ns0:PV_HC_EUR>
+                <xsl:value-of select="current-group()[1]/ns0:PV_HC_EUR"/>
+            </ns0:PV_HC_EUR>
+            <ns0:HAIRCUT>
+                <xsl:value-of select="current-group()[1]/ns0:HAIRCUT"/>
+            </ns0:HAIRCUT>
+            <xsl:if test="current-group()[1]/ns0:DATE_TRT">
+                <ns0:DATE_TRT>
+                    <xsl:value-of select="current-group()[1]/ns0:DATE_TRT"/>
+                </ns0:DATE_TRT>
+            </xsl:if>
+            <ns0:BANKRUPTCY_REMOTE>
+                <xsl:value-of select="current-group()[1]/ns0:BANKRUPTCY_REMOTE"/>
+            </ns0:BANKRUPTCY_REMOTE>
+            <ns0:NOMINAL_EURO>
+                <xsl:value-of select="bwCustomMethods:formatNumber(sum(current-group()/ns0:NOMINAL_EURO),&quot;,&quot;,false())"/>
+            </ns0:NOMINAL_EURO>
+        </sfdhLine>
+    </xsl:for-each-group>
+</lines>
+
+il colle après le résult dans un csv dont les colonnes sont définie comme ceci:
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns:st="http://www.labanquepostale.fr/xml/trade/sfdh"
+	 targetNamespace="http://www.labanquepostale.fr/xml/trade/sfdh"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:complexType name="MarginCallPretEmpruntOperation">
+		<xs:sequence>
+			<xs:element name="CONTRACT_ID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Contrat ID</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CODE_BOM" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Code BOM SFDH</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DIRECTION" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Direction</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NOMINAL" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Nominal</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CLEAN_PRICE" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Clean price</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ACCRUAL" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Accrual</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_EUR" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV EUR</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_HC_CURRENCY" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV HC Currency</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PV_HC_EUR" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>PV EUR</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="HAIRCUT" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Haircut</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DATE_TRT" type="xs:string" minOccurs="0"/>
+			<xs:element name="BANKRUPTCY_REMOTE" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>BANKRUPTCY_REMOTE</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NOMINAL_EURO" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Nominal en Eur</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
+
+avec le séparateur "|" entre les colonnes 
+
+comment je peux faire cela dans apache camel ?
