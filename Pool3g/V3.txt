@@ -1,0 +1,259 @@
+OK, développons l’option 2 : zéro Exchange properties, et l’agrégateur additionne des BigDecimal déjà portés par l’objet.
+
+Idée
+
+Tu continues à “typer” dans le modèle d’entrée (MarginCallCsvLine.computeTyped()).
+
+Ton map() copie ces valeurs typées dans le modèle de sortie (dans des champs transient non-CSV).
+
+L’AggregationStrategy additionne directement row.nominalValue et row.nominalEuroValue.
+
+finalizeGroup() écrit les strings finales NOMINAL / NOMINAL_EURO (avec virgule) puis éventuellement remet les typed à zéro (optionnel).
+
+
+✅ Résultat : route plus simple, pas de propriétés, pas de parsing dans l’aggregate.
+
+
+---
+
+1) Entrée : MarginCallCsvLine (inchangé, typage interne)
+
+import org.apache.camel.dataformat.bindy.annotation.CsvRecord;
+import org.apache.camel.dataformat.bindy.annotation.DataField;
+
+import java.math.BigDecimal;
+
+@CsvRecord(separator = "\\|", skipFirstLine = true)
+public class MarginCallCsvLine {
+
+    @DataField(pos = 1, required = false)  public String CONTRACT_ID;
+    @DataField(pos = 2, required = false)  public String CODE_BOM;
+    @DataField(pos = 3, required = false)  public String DIRECTION;
+    @DataField(pos = 4, required = false)  public String CURRENCY;
+
+    @DataField(pos = 5, required = false)  public String NOMINAL;
+    @DataField(pos = 6, required = false)  public String CLEAN_PRICE;
+    @DataField(pos = 7, required = false)  public String ACCRUAL;
+
+    @DataField(pos = 8, required = false)  public String PV_CURRENCY;
+    @DataField(pos = 9, required = false)  public String PV_EUR;
+
+    @DataField(pos = 10, required = false) public String PV_HC_CURRENCY;
+    @DataField(pos = 11, required = false) public String PV_HC_EUR;
+
+    @DataField(pos = 12, required = false) public String HAIRCUT;
+    @DataField(pos = 13, required = false) public String DATE_TRT;
+    @DataField(pos = 14, required = false) public String BANKRUPTCY_REMOTE;
+
+    @DataField(pos = 15, required = false) public String NOMINAL_EURO;
+
+    // champs typés internes
+    public transient BigDecimal nominalValue = BigDecimal.ZERO;
+    public transient BigDecimal nominalEuroValue = BigDecimal.ZERO;
+
+    public MarginCallCsvLine computeTyped() {
+        this.nominalValue = parseFrDecimal(this.NOMINAL);
+        this.nominalEuroValue = parseFrDecimal(this.NOMINAL_EURO);
+        return this;
+    }
+
+    private static BigDecimal parseFrDecimal(String s) {
+        if (s == null || s.isBlank()) return BigDecimal.ZERO;
+        String cleaned = s.replaceAll("[^0-9,\\.\\-]", "").trim();
+        if (cleaned.isEmpty() || ".".equals(cleaned) || "-".equals(cleaned)) return BigDecimal.ZERO;
+        cleaned = cleaned.replace(',', '.');
+        return new BigDecimal(cleaned);
+    }
+}
+
+
+---
+
+2) Sortie : MarginCallSfdhLine (CSV String + 2 champs transient BigDecimal)
+
+👉 C’est ça le cœur de l’option 2 : tu ajoutes deux champs typés internes dans le modèle de sortie aussi.
+
+import org.apache.camel.dataformat.bindy.annotation.CsvRecord;
+import org.apache.camel.dataformat.bindy.annotation.DataField;
+
+import java.math.BigDecimal;
+
+@CsvRecord(separator = "\\|", skipFirstLine = false, generateHeaderColumns = false)
+public class MarginCallSfdhLine {
+
+    @DataField(pos = 1)  public String CONTRACT_ID;
+    @DataField(pos = 2)  public String CODE_BOM;
+    @DataField(pos = 3)  public String DIRECTION;
+    @DataField(pos = 4)  public String CURRENCY;
+
+    @DataField(pos = 5)  public String NOMINAL;       // rendu CSV
+    @DataField(pos = 6)  public String CLEAN_PRICE;
+    @DataField(pos = 7)  public String ACCRUAL;
+
+    @DataField(pos = 8)  public String PV_CURRENCY;
+    @DataField(pos = 9)  public String PV_EUR;
+
+    @DataField(pos = 10) public String PV_HC_CURRENCY;
+    @DataField(pos = 11) public String PV_HC_EUR;
+
+    @DataField(pos = 12) public String HAIRCUT;
+    @DataField(pos = 13) public String DATE_TRT;
+    @DataField(pos = 14) public String BANKRUPTCY_REMOTE;
+
+    @DataField(pos = 15) public String NOMINAL_EURO;  // rendu CSV
+
+    // ✅ champs internes typés (Bindy ignore car pas de @DataField)
+    public transient BigDecimal nominalValue = BigDecimal.ZERO;
+    public transient BigDecimal nominalEuroValue = BigDecimal.ZERO;
+}
+
+
+---
+
+3) Bean unique : MarginCallProcessor (map + aggregate + finalize) sans Exchange properties
+
+import org.apache.camel.AggregationStrategy;
+import org.apache.camel.Exchange;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+
+@Component
+public class MarginCallProcessor implements AggregationStrategy {
+
+    // ---- map CSV -> SFDH + copie des typed values ----
+    public MarginCallSfdhLine map(MarginCallCsvLine in) {
+        MarginCallSfdhLine o = new MarginCallSfdhLine();
+
+        o.CONTRACT_ID = in.CONTRACT_ID;
+        o.CODE_BOM    = in.CODE_BOM;
+        o.DIRECTION   = in.DIRECTION;
+        o.CURRENCY    = in.CURRENCY;
+
+        // strings nettoyées (comme BW)
+        o.NOMINAL     = commaToDot(remove(in.NOMINAL));
+        o.CLEAN_PRICE = remove(in.CLEAN_PRICE);
+
+        String acc = remove(in.ACCRUAL);
+        o.ACCRUAL = (acc != null && !acc.isBlank()) ? acc : "0,0";
+
+        o.PV_CURRENCY    = remove(in.PV_CURRENCY);
+        o.PV_EUR         = remove(in.PV_EUR);
+        o.PV_HC_CURRENCY = remove(in.PV_HC_CURRENCY);
+        o.PV_HC_EUR      = remove(in.PV_HC_EUR);
+        o.HAIRCUT        = remove(in.HAIRCUT);
+
+        o.DATE_TRT = in.DATE_TRT;
+        o.BANKRUPTCY_REMOTE = remove(in.BANKRUPTCY_REMOTE);
+
+        o.NOMINAL_EURO = commaToDot(remove(in.NOMINAL_EURO));
+
+        // ✅ copie des valeurs typées calculées à l'entrée (1 seul parsing)
+        o.nominalValue = (in.nominalValue != null) ? in.nominalValue : BigDecimal.ZERO;
+        o.nominalEuroValue = (in.nominalEuroValue != null) ? in.nominalEuroValue : BigDecimal.ZERO;
+
+        return o;
+    }
+
+    // ---- aggregate : somme directement sur BigDecimal internes ----
+    @Override
+    public Exchange aggregate(Exchange oldEx, Exchange newEx) {
+        MarginCallSfdhLine row = newEx.getIn().getBody(MarginCallSfdhLine.class);
+
+        BigDecimal n = row.nominalValue != null ? row.nominalValue : BigDecimal.ZERO;
+        BigDecimal e = row.nominalEuroValue != null ? row.nominalEuroValue : BigDecimal.ZERO;
+
+        if (oldEx == null) {
+            // 1ère ligne du groupe = conservée (comme current-group()[1])
+            // on la garde et elle porte déjà ses valeurs typées
+            return newEx;
+        }
+
+        MarginCallSfdhLine kept = oldEx.getIn().getBody(MarginCallSfdhLine.class);
+        kept.nominalValue = safe(kept.nominalValue).add(n);
+        kept.nominalEuroValue = safe(kept.nominalEuroValue).add(e);
+
+        // on ne touche pas aux autres champs => ceux de la 1ère ligne restent
+        return oldEx;
+    }
+
+    // ---- finalize : écrit les sommes formatées (virgule) dans les champs CSV ----
+    public void finalizeGroup(Exchange exchange) {
+        MarginCallSfdhLine kept = exchange.getIn().getBody(MarginCallSfdhLine.class);
+        kept.NOMINAL = formatWithComma(kept.nominalValue);
+        kept.NOMINAL_EURO = formatWithComma(kept.nominalEuroValue);
+    }
+
+    // ---- helpers ----
+    private BigDecimal safe(BigDecimal v) { return v != null ? v : BigDecimal.ZERO; }
+
+    private String remove(String s) {
+        if (s == null) return null;
+        return s.replaceAll("[^0-9A-Za-z,\\.\\-]", "");
+    }
+
+    private String commaToDot(String s) {
+        return s == null ? null : s.replace(',', '.');
+    }
+
+    private String formatWithComma(BigDecimal v) {
+        if (v == null) v = BigDecimal.ZERO;
+        return v.stripTrailingZeros().toPlainString().replace('.', ',');
+    }
+}
+
+
+---
+
+4) Route Camel (très lisible, sans properties)
+
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.dataformat.bindy.csv.BindyCsvDataFormat;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MarginCallRoute extends RouteBuilder {
+
+    private final MarginCallProcessor proc;
+
+    public MarginCallRoute(MarginCallProcessor proc) {
+        this.proc = proc;
+    }
+
+    @Override
+    public void configure() {
+
+        BindyCsvDataFormat inCsv  = new BindyCsvDataFormat(MarginCallCsvLine.class);
+        BindyCsvDataFormat outCsv = new BindyCsvDataFormat(MarginCallSfdhLine.class);
+
+        from("file:{{in.dir}}?include=.*\\.csv&noop=true")
+            .routeId("margincall-pret-emprunt")
+            .unmarshal(inCsv)                 // List<MarginCallCsvLine>
+            .split(body())
+                .bean(MarginCallCsvLine.class, "computeTyped") // parse 1 fois
+                .bean(proc, "map")                             // -> MarginCallSfdhLine (porte BigDecimal internes)
+                .aggregate(simple("${body.CODE_BOM}"), proc)
+                    .completionFromBatchConsumer()
+                    .bean(proc, "finalizeGroup")
+                .end()
+            .end()
+            .marshal(outCsv)
+            .to("file:{{out.dir}}?fileName=${file:name.noext}_AGG.csv");
+    }
+}
+
+
+---
+
+Pourquoi cette option 2 est top
+
+✅ Route ultra lisible
+✅ Pas de Exchange.setProperty / getProperty
+✅ Zéro parsing dans aggregate()
+✅ 1 parsing par ligne (dans computeTyped)
+✅ Output reste conforme à ton XSD (strings)
+
+
+---
+
+Si tu veux, je peux aussi te donner une variante qui valide que les champs “non sommés” sont identiques dans un même CODE_BOM (sinon log warn / throw), mais BW ne le faisait pas donc c’est optionnel.
