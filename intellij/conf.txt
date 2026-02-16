@@ -1,0 +1,5 @@
+les fichier de conf se trouve ici:
+intellij_workspace\eai-camel-report-config\config\eai-camel-report-base
+
+la main classe se trouve la 
+intellij_workspace\eai-camel-report\eai-camel-report-base\src\main\java\fr\labanquepostale\report\base
