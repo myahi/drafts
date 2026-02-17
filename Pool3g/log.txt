@@ -1,2 +1,60 @@
-17:12:32.547  [Camel (camel-1) thread #4 - file://c:/serveur_apps/EAIReports/input/VALO_POOL3G/] ValoPool3JDaily - d2fe7070-6271-44ef-9d72-452710e0fd30 - After BINDY type=class java.util.ArrayList body=[fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@605b32e6, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@6a17868f, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@2822e82b, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@583e2237, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@614bf7d4, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@37be268c, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@862e3e0, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@21645741, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@1faff1ee, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@59633ed1, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@4601abfe, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@45dc2220, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@259c8bf4, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@6549ac20, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@2e5ca52c, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@a354fe5, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@4b37b67c, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@63373b96, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@28898719, fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall@8e3bf8a]
-17:12:32.566  [Camel (camel-1) thread #4 - file://c:/serveur_apps/EAIReports/input/VALO_POOL3G/] ValoPool3JDaily - d2fe7070-6271-44ef-9d72-452710e0fd30 - After SPLIT type=class fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall
+pour quoi 
+.bean(CalypsoMarginCall.class, "computeTyped")
+
+ecrase les données 
+de la classe
+
+package fr.labanquepostale.report.base.model.pool3G;
+
+import lombok.Data;
+import org.apache.camel.dataformat.bindy.annotation.CsvRecord;
+import org.apache.camel.dataformat.bindy.annotation.DataField;
+
+import java.math.BigDecimal;
+
+
+@CsvRecord(separator = ";", skipFirstLine = true)
+@Data
+public class CalypsoMarginCall {
+
+    @DataField(pos = 1, required = false)  public String CONTRACT_ID;
+    @DataField(pos = 2, required = false)  public String CODE_BOM;
+    @DataField(pos = 3, required = false)  public String DIRECTION;
+    @DataField(pos = 4, required = false)  public String CURRENCY;
+
+    @DataField(pos = 5, required = false)  public String NOMINAL;
+    @DataField(pos = 6, required = false)  public String CLEAN_PRICE;
+    @DataField(pos = 7, required = false)  public String ACCRUAL;
+
+    @DataField(pos = 8, required = false)  public String PV_CURRENCY;
+    @DataField(pos = 9, required = false)  public String PV_EUR;
+
+    @DataField(pos = 10, required = false) public String PV_HC_CURRENCY;
+    @DataField(pos = 11, required = false) public String PV_HC_EUR;
+
+    @DataField(pos = 12, required = false) public String HAIRCUT;
+    @DataField(pos = 13, required = false) public String DATE_TRT;
+    @DataField(pos = 14, required = false) public String BANKRUPTCY_REMOTE;
+
+    @DataField(pos = 15, required = false) public String NOMINAL_EURO;
+
+    // champs typés internes
+    public transient BigDecimal nominalValue = BigDecimal.ZERO;
+    public transient BigDecimal nominalEuroValue = BigDecimal.ZERO;
+
+    public CalypsoMarginCall computeTyped() {
+        this.nominalValue = parseFrDecimal(this.NOMINAL);
+        this.nominalEuroValue = parseFrDecimal(this.NOMINAL_EURO);
+        return this;
+    }
+
+    private static BigDecimal parseFrDecimal(String s) {
+        if (s == null || s.isBlank()) return BigDecimal.ZERO;
+        String cleaned = s.replaceAll("[^0-9,\\.\\-]", "").trim();
+        if (cleaned.isEmpty() || ".".equals(cleaned) || "-".equals(cleaned)) return BigDecimal.ZERO;
+        cleaned = cleaned.replace(',', '.');
+        return new BigDecimal(cleaned);
+    }
+}
+
+et quelle est la meileure solutoin pour y remidier
