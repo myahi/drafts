@@ -8,7 +8,7 @@ import fr.labanquepostale.marches.eai.core.model.audit.Codifier;
 import fr.labanquepostale.marches.eai.core.model.audit.Metadata;
 import fr.labanquepostale.marches.eai.core.model.audit.Reference;
 import fr.labanquepostale.marches.eai.core.model.audit.Status;
-import fr.labanquepostale.report.base.beans.pool3G.MarginCallProcessor;
+import fr.labanquepostale.report.base.beans.pool3G.ValoPool3GProcessor;
 import fr.labanquepostale.report.base.model.pool3G.CalypsoMarginCall;
 import fr.labanquepostale.report.base.model.pool3G.SfdhMarginCallLine;
 import org.apache.camel.Exchange;
@@ -27,9 +27,9 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
     @Autowired
     private ErrorHelper errorHelper;
 
-    private final MarginCallProcessor proc;
+    private final ValoPool3GProcessor proc;
 
-    public ValoPool3JDailyRoute(MarginCallProcessor proc) {
+    public ValoPool3JDailyRoute(ValoPool3GProcessor proc) {
         this.proc = proc;
     }
 
@@ -75,15 +75,15 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
                 //Process
                 .unmarshal(inCsv)
                 .split(body())
-                .process(exchange-> exchange.getIn().getBody(CalypsoMarginCall.class).computeTyped())
+                .process(e -> e.getIn().getBody(CalypsoMarginCall.class).computeTyped())
                 .bean(proc, "map")
                 .aggregate(simple("${body.codeBom}"), proc)
                 .completionFromBatchConsumer()
                 .bean(proc, "finalizeGroup")
-                .end()
-                .end()
                 .marshal(outCsv)
                 .to("file:{{eai.report.valo.pool3g.daily.output.dir}}?fileName=${exchangeProperty.inputFileName}")
+                .end()
+                .end()
                 /// DollarU OK
                 .process(exchange -> {
                     List<Metadata> metadatas = new ArrayList<Metadata>();
