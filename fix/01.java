@@ -1,3 +1,29 @@
+private void sendAllocationInstructionAck(Message message,
+                                          SessionID sessionID)
+        throws FieldNotFound, SessionNotFound {
+
+    AllocationInstructionAck ack =
+            new AllocationInstructionAck();
+
+    // 70 = AllocID
+    ack.set(new AllocID(
+            message.getString(AllocID.FIELD)));
+
+    // 87 = AllocStatus
+    ack.set(new AllocStatus(
+            message.getInt(AllocStatus.FIELD)));
+
+    // 60 = recommandé
+    ack.set(new TransactTime(
+            LocalDateTime.now()));
+
+    Session.sendToTarget(ack, sessionID);
+
+    LOGGER.info("AllocationInstructionAck sent for AllocID: {}",
+            message.getString(AllocID.FIELD));
+}
+
+
 ack.set(new AllocAckStatus(AllocAckStatus.ACCEPTED));
 
 private void sendAllocationInstructionAck(Message message,
