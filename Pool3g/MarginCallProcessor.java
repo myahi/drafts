@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 @Slf4j
 @Component
-public class MarginCallProcessor implements AggregationStrategy {
+public class ValoPool3GProcessor implements AggregationStrategy {
 
     // ---- map CSV -> SFDH + copie des typed values ----
     public SfdhMarginCallLine map(CalypsoMarginCall input) {
