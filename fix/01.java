@@ -1,3 +1,5 @@
+ack.set(new AllocAckStatus(AllocAckStatus.ACCEPTED));
+
 private void sendAllocationInstructionAck(Message message,
                                           SessionID sessionID)
         throws FieldNotFound, SessionNotFound {
