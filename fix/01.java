@@ -1,3 +1,6 @@
+quickfix.FieldNotFound: Field was not found in message, field=70
+
+	
 private void sendAllocationInstructionAck(Message message,
                                           SessionID sessionID)
         throws FieldNotFound, SessionNotFound {
