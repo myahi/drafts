@@ -36,6 +36,11 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
     @Override
     public void configure() {
 
+        // Catch-all
+        onException(Exception.class)
+                .handled(true)
+                .process(this::handleException);
+
         BindyCsvDataFormat inCsv = new BindyCsvDataFormat(CalypsoMarginCall.class);
         BindyCsvDataFormat outCsv = new BindyCsvDataFormat(SfdhMarginCallLine.class);
 
@@ -62,17 +67,17 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
                             .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
                             .desc("Fichier quotidien Valo Pool3G de Calypso - Début de traitement")
                             .status(Status.Info.getStatus())
-                            .data(simple("${body}"))
+                            .data("")
                             .meta(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName())
                             .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
                             .send();
                 })
                 //Process
-                .unmarshal(inCsv)                 // List<MarginCallCsvLine>
+                .unmarshal(inCsv)
                 .split(body())
-                .bean(CalypsoMarginCall.class, "computeTyped") // parse 1 fois
-                .bean(proc, "map")                             // -> MarginCallSfdhLine (porte BigDecimal internes)
-                .aggregate(simple("${body.CODE_BOM}"), proc)
+                .process(exchange-> exchange.getIn().getBody(CalypsoMarginCall.class).computeTyped())
+                .bean(proc, "map")
+                .aggregate(simple("${body.codeBom}"), proc)
                 .completionFromBatchConsumer()
                 .bean(proc, "finalizeGroup")
                 .end()
@@ -90,7 +95,7 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
                 }).to("direct:dollarUCommand")
                 // Arch
                 .process(exchange -> {
-                    FileMoveUtil.move(exchange, exchange.getProperty("archivesSubdir", String.class), "inputFiles");
+                    FileMoveUtil.move(exchange, exchange.getProperty("archivesSubdir", String.class), "inputFilePath");
                 })
                 //Audit fin de traitement
                 .process(exchange -> {
@@ -98,7 +103,7 @@ public class ValoPool3JDailyRoute extends RouteBuilder {
                             .ref(Codifier.DATE.getCodifier(), exchange.getProperty("auditRef", String.class))
                             .desc("Fichier quotidien Valo Pool3G de Calypso transformé et envoyé à SFDH")
                             .status(Status.Success.getStatus())
-                            .data(simple("${body}"))
+                            .data("")
                             .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
                             .meta("PROCESS_NAME", this.getClass().getName())
                             .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
