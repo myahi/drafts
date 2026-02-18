@@ -1,3 +1,38 @@
+@Override
+public Exchange aggregate(Exchange oldEx, Exchange newEx) {
+    SfdhMarginCallLine newLine = newEx.getIn().getBody(SfdhMarginCallLine.class);
+    
+    if (oldEx == null) {
+        // Initialisation : On crée une liste pour stocker nos lignes uniques par codeBom
+        List<SfdhMarginCallLine> groupedList = new ArrayList<>();
+        groupedList.add(newLine);
+        newEx.getIn().setBody(groupedList);
+        return newEx;
+    }
+
+    List<SfdhMarginCallLine> currentList = oldEx.getIn().getBody(List.class);
+
+    // On cherche si une ligne avec le même codeBom existe déjà dans notre accumulation
+    Optional<SfdhMarginCallLine> existingLine = currentList.stream()
+            .filter(l -> l.getCODE_BOM().equals(newLine.getCODE_BOM()))
+            .findFirst();
+
+    if (existingLine.isPresent()) {
+        // MATCH : On additionne les montants BigDecimal
+        SfdhMarginCallLine match = existingLine.get();
+        match.nominalValue = match.nominalValue.add(newLine.nominalValue);
+        match.nominalEuroValue = match.nominalEuroValue.add(newLine.nominalEuroValue);
+    } else {
+        // PAS DE MATCH : On ajoute cette nouvelle ligne de codeBom à la liste
+        currentList.add(newLine);
+    }
+
+    return oldEx;
+}
+
+
+
+
 public Exchange aggregate(Exchange oldEx, Exchange newEx) {
     if (oldEx == null) {
         return newEx;
