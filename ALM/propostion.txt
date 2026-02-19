@@ -1,0 +1,424 @@
+Voici ma proposition intégrale (solution “BW-like”, File → File, sans split Camel, sans index fragiles, sans aggregate()), en restant dans l’esprit de ta PositionTitresRoute.
+
+
+---
+
+1) Le principe
+
+1. Tu listes tous les fichiers ALM_BEI_*_<date>.csv (comme tu fais déjà).
+
+
+2. Tu identifies dans cette liste le fichier spécifique :
+
+ALM_BEI_Client_Funding_<date>.csv (ou prefix ALM_BEI_Client_Funding_)
+
+
+
+3. Tu le transformes en générant un nouveau CSV avec :
+
+header cible fixe
+
+les 4 colonnes calculées *_BEI comme dans BW
+
+
+
+4. Tu construis le mail avec 3 PJ :
+
+Client_Funding transformé
+
+les 2 autres fichiers inchangés
+
+
+
+5. DollarU OK, archive, audit, delete notification.
+
+
+
+
+---
+
+2) Dépendance Maven (CSV robuste)
+
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-csv</artifactId>
+  <version>1.10.0</version>
+</dependency>
+
+
+---
+
+3) Le transformer “robuste” (par header, pas par index)
+
+package fr.labanquepostale.report.base.transform;
+
+import org.apache.commons.csv.*;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.file.*;
+import java.util.*;
+
+public class AlmBeiClientFundingTransformer {
+
+    // Header cible EXACT (ordre et libellés)
+    public static final String[] OUT_HEADERS = {
+            "Id","DossierId","Type","FacilityType","Book","Lignemétier","SIREN","Nomduclient",
+            "TradeDate","SettleDate","Maturity","Nominalinitial","Nominalactuel","HorsBilan","CRD",
+            "Devise","TauxFixe","RateIndex","Tenor","RateIndexSpread","AmortizationType","Nomdel'enveloppe",
+            "QPBEI","NominalinitialBEI","NominalactuelBEI","HorsBilanBEI","CRDBEI"
+    };
+
+    /**
+     * Transforme le fichier ALM_BEI_Client_Funding source en fichier cible enrichi.
+     * - lecture CSV en ';' via header (pas d'index)
+     * - ajout des 4 colonnes *_BEI calculées
+     * - écriture CSV avec header cible fixe
+     */
+    public void transform(Path in, Path out, Charset charset) throws IOException {
+        try (Reader r = Files.newBufferedReader(in, charset);
+             Writer w = Files.newBufferedWriter(out, charset, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+
+            CSVFormat inFormat = CSVFormat.DEFAULT.builder()
+                    .setDelimiter(';')
+                    .setHeader()                 // lit la première ligne comme header
+                    .setSkipHeaderRecord(true)   // n’inclut pas l’entête dans les records
+                    .build();
+
+            CSVPrinter printer = new CSVPrinter(w, CSVFormat.DEFAULT.builder().setDelimiter(';').build());
+            printer.printRecord((Object[]) OUT_HEADERS);
+
+            Iterable<CSVRecord> records = inFormat.parse(r);
+            for (CSVRecord rec : records) {
+                // Lecture par NOM de colonne (robuste si l’ordre change)
+                String id               = get(rec, "Id");
+                String dossierId        = get(rec, "DossierId");
+                String type             = get(rec, "Type");
+                String facilityType     = get(rec, "FacilityType");
+                String book             = get(rec, "Book");
+                String ligneMetier      = getAny(rec, List.of("LigneMetier","LigneMétier","Lignemétier","Ligne métier"));
+                String siren            = get(rec, "SIREN");
+                String nomClient        = getAny(rec, List.of("NomClient","Nom du client","Nomduclient"));
+                String tradeDate        = get(rec, "TradeDate");
+                String settleDate       = get(rec, "SettleDate");
+                String maturity         = get(rec, "Maturity");
+
+                String nominalInitial   = getAny(rec, List.of("NominalInitial","Nominal initial","Nominalinitial"));
+                String nominalActuel    = getAny(rec, List.of("NominalActuel","Nominal actuel","Nominalactuel"));
+                String horsBilan        = getAny(rec, List.of("HorsBilan","Hors Bilan"));
+                String crd              = get(rec, "CRD");
+
+                String devise           = get(rec, "Devise");
+                String tauxFixe         = getAny(rec, List.of("TauxFixe","Taux Fixe"));
+                String rateIndex        = getAny(rec, List.of("RateIndex","Rate Index"));
+                String tenor            = get(rec, "Tenor");
+                String rateIndexSpread  = getAny(rec, List.of("RateIndexSpread","Rate Index Spread"));
+                String amortType        = getAny(rec, List.of("AmortizationType","Amortization Type"));
+                String nomEnveloppe     = getAny(rec, List.of("NomEnveloppe","Nom de l'enveloppe","Nomdel'enveloppe"));
+                String qpBei            = getAny(rec, List.of("QP_BEI","QP BEI","QPBEI"));
+
+                // Calculs BEI (réplique BW)
+                String nominalInitialBei = computeBei(nominalInitial, qpBei);
+                String nominalActuelBei  = computeBei(nominalActuel, qpBei);
+                String horsBilanBei      = computeBei(horsBilan, qpBei);
+                String crdBei            = computeBei(crd, qpBei);
+
+                // Écriture en ordre cible
+                printer.printRecord(
+                        id, dossierId, type, facilityType, book, ligneMetier, siren, nomClient,
+                        tradeDate, settleDate, maturity,
+                        nominalInitial, nominalActuel, horsBilan, crd,
+                        devise, tauxFixe, rateIndex, tenor, rateIndexSpread, amortType, nomEnveloppe,
+                        qpBei,
+                        nominalInitialBei, nominalActuelBei, horsBilanBei, crdBei
+                );
+            }
+
+            printer.flush();
+        }
+    }
+
+    private static String get(CSVRecord rec, String header) {
+        if (header == null) return "";
+        if (!rec.isMapped(header)) return "";
+        String v = rec.get(header);
+        return v == null ? "" : v.trim();
+    }
+
+    private static String getAny(CSVRecord rec, List<String> possibleHeaders) {
+        for (String h : possibleHeaders) {
+            String v = get(rec, h);
+            if (v != null && !v.isBlank()) return v;
+        }
+        // si la colonne existe mais vide, on renvoie vide. Sinon vide aussi.
+        return "";
+    }
+
+    private static String computeBei(String amountFr, String qpFr) {
+        if (amountFr == null || amountFr.trim().isEmpty()) return "0";
+        if (qpFr == null || qpFr.trim().isEmpty()) return "0";
+
+        try {
+            BigDecimal amount = new BigDecimal(amountFr.trim().replace(",", "."));
+            BigDecimal qp = new BigDecimal(qpFr.trim().replace(",", "."));
+
+            BigDecimal result = amount.multiply(qp).divide(new BigDecimal("100"));
+            // Format BW : virgule
+            return result.toPlainString().replace(".", ",");
+        } catch (Exception e) {
+            // Choix “safe” : comme BW quand vide -> 0 (ici si parsing KO -> 0)
+            return "0";
+        }
+    }
+}
+
+
+---
+
+4) Intégration dans une Route Camel (style similaire à ta route)
+
+Je te donne un squelette complet (à adapter aux propriétés {{...}} ALM_BEI).
+L’idée : on garde la même structure que PositionTitresRoute.
+
+package fr.labanquepostale.report.base.routes;
+
+import fr.labanquepostale.marches.eai.core.dollaru.DollarUUtil;
+import fr.labanquepostale.marches.eai.core.helper.AuditHelper;
+import fr.labanquepostale.marches.eai.core.helper.ErrorHelper;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil;
+import fr.labanquepostale.marches.eai.core.io.FileMoveUtil;
+import fr.labanquepostale.marches.eai.core.model.audit.Codifier;
+import fr.labanquepostale.marches.eai.core.model.audit.Metadata;
+import fr.labanquepostale.marches.eai.core.model.audit.Reference;
+import fr.labanquepostale.marches.eai.core.model.audit.Status;
+import fr.labanquepostale.report.base.transform.AlmBeiClientFundingTransformer;
+import jakarta.annotation.Nonnull;
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.*;
+
+import static fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortCriterion;
+import static fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortDirection;
+
+@Component
+@SuppressWarnings("unchecked")
+public class AlmBeiRoute extends RouteBuilder {
+
+    @Autowired private ErrorHelper errorHelper;
+    @Autowired private AuditHelper auditHelper;
+
+    private final AlmBeiClientFundingTransformer transformer = new AlmBeiClientFundingTransformer();
+
+    @Override
+    public void configure() {
+
+        onException(Exception.class)
+                .handled(true)
+                .process(this::handleException);
+
+        fromF("file:{{eai.report.almbei.input.dir}}"
+                + "?include={{eai.report.almbei.input.notification.name}}"
+                + "&delay={{eai.report.almbei.input.delay.ms}}"
+                + "&noop=true"
+                + "&idempotent=false"
+                + "&readLock=changed")
+                .routeId("AlmBeiRoute")
+
+                // notif path
+                .setProperty("notifPath", header("CamelFilePath"))
+                .setProperty("notificationContent", simple("${body}"))
+                .setProperty("notifcationFileName", simple("{{eai.report.almbei.input.notification.name}}"))
+                .setProperty("dollarURessourceName", simple("{{eai.report.almbei.input.notification.name}}"))
+                .setProperty("inputDir", simple("{{eai.report.almbei.input.dir}}"))
+                .setProperty("filePattern", simple("{{eai.report.almbei.input.file.pattern}}")) // ex: "ALM_BEI_*"
+                .setProperty("fileExtension", simple("{{eai.report.almbei.input.file.extension}}")) // ex: ".csv"
+                .setProperty("archivesSubdir", simple("{{eai.report.almbei.input.dir.archives.subdir}}"))
+                .setProperty("errorsSubdir", simple("{{eai.report.almbei.input.dir.errors.subdir}}"))
+                .setProperty("listName", simple("{{eai.report.almbei.mailing.list}}"))
+
+                // 1) list files based on notification date
+                .process(exchange -> {
+                    String date = StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=").trim();
+                    // ex: "ALM_BEI_*_<date>.csv" (adapte au naming réel)
+                    String filePatten = exchange.getProperty("filePattern", String.class) + "_" + date + exchange.getProperty("fileExtension", String.class);
+
+                    FileListingUtil.listFiles(
+                            exchange,
+                            Path.of(exchange.getProperty("inputDir", String.class)),
+                            false,
+                            SortCriterion.NAME,
+                            SortDirection.ASC,
+                            filePatten
+                    );
+                })
+
+                .choice()
+                .when(exchangeProperty("inputFiles").isNull())
+                    // aucun fichier
+                    .process(exchange -> auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("Notification ALM_BEI reçue mais aucun fichier n'a été détecté")
+                            .status(Status.Info.getStatus())
+                            .data(exchange.getProperty("notificationContent"))
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .send()
+                    )
+                    .process(this::deleteNotification)
+                    .stop()
+                .otherwise()
+                    // audit list
+                    .process(exchange -> auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("Fichiers ALM_BEI reçus")
+                            .status(Status.Info.getStatus())
+                            .data(exchange.getProperty("inputFileNames", String.class))
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .send()
+                    )
+
+                    // 2) transformer uniquement le Client_Funding
+                    .process(exchange -> {
+                        List<Path> files = (List<Path>) exchange.getProperty("inputFiles");
+                        if (files == null || files.isEmpty()) return;
+
+                        Path clientFunding = files.stream()
+                                .filter(p -> p.getFileName().toString().startsWith("ALM_BEI_Client_Funding_"))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (clientFunding == null) {
+                            // pas de fichier spécifique : on laisse tel quel (ou throw si obligatoire)
+                            exchange.setProperty("mailAttachments", files);
+                            return;
+                        }
+
+                        // on produit un fichier transformé au même endroit (ou dans un tmp)
+                        Path transformed = clientFunding.resolveSibling(clientFunding.getFileName().toString().replace(".csv", "_OUT.csv"));
+
+                        // BW est en ISO8859_1 ; adapte si besoin
+                        Charset charset = Charset.forName("ISO-8859-1");
+                        transformer.transform(clientFunding, transformed, charset);
+
+                        // pièces jointes : remplacer l’original par le transformé
+                        List<Path> att = new ArrayList<>();
+                        for (Path f : files) {
+                            if (f.equals(clientFunding)) att.add(transformed);
+                            else att.add(f);
+                        }
+                        exchange.setProperty("mailAttachments", att);
+                    })
+
+                    // 3) Send mail with attachments
+                    .process(exchange -> {
+                        exchange.getMessage().setHeader("listName", exchange.getProperty("listName", String.class));
+                        exchange.getMessage().setHeader("subject", "Financements BEI et lignes de crédit");
+
+                        // body template si tu veux (sinon texte)
+                        String htmlBody = "Bonjour,<br/><br/>Veuillez trouver ci-joint les fichiers ALM_BEI.<br/><br/>Cordialement";
+                        exchange.getMessage().setBody(htmlBody);
+                        exchange.getMessage().setHeader("Content-Type", "text/html; charset=UTF-8");
+
+                        var am = exchange.getMessage(org.apache.camel.attachment.AttachmentMessage.class);
+
+                        List<Path> attachments = (List<Path>) exchange.getProperty("mailAttachments");
+                        if (attachments != null) {
+                            for (Path p : attachments) {
+                                var file = p.toFile();
+                                var ds = new jakarta.activation.FileDataSource(file);
+                                am.addAttachment(p.getFileName().toString(), new jakarta.activation.DataHandler(ds));
+                            }
+                        }
+                    })
+                    .to("direct:MailRoute")
+
+                    // 4) DollarU OK
+                    .process(exchange -> {
+                        List<Metadata> metadatas = new ArrayList<>();
+                        metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName()));
+
+                        List<Reference> references = new ArrayList<>();
+                        references.add(new Reference(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class)));
+
+                        exchange.getMessage().setBody(
+                                DollarUUtil.buildOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class), references, metadatas)
+                        );
+                    })
+                    .to("direct:dollarUCommand")
+
+                    // 5) archive input files (les originaux listés)
+                    .process(exchange -> FileMoveUtil.move(exchange, exchange.getProperty("archivesSubdir", String.class), "inputFiles"))
+
+                    // 6) audit OK
+                    .process(exchange -> auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("ALM_BEI traités et envoyés par mail")
+                            .status(Status.Success.getStatus())
+                            .data("")
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .send()
+                    )
+
+                    // 7) delete notification
+                    .process(this::deleteNotification);
+    }
+
+    private void deleteNotification(Exchange e) throws Exception {
+        String notifPathStr = e.getProperty("notifPath", String.class);
+        if (notifPathStr == null) return;
+        Files.deleteIfExists(Paths.get(notifPathStr));
+    }
+
+    private void handleException(@Nonnull Exchange exchange) throws Exception {
+        Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+
+        errorHelper.error(exchange, exception)
+                .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                .meta(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName())
+                .send();
+
+        List<Metadata> metadatas = new ArrayList<>();
+        metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName()));
+
+        List<Reference> references = new ArrayList<>();
+        references.add(new Reference(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class)));
+
+        exchange.getMessage().setBody(
+                DollarUUtil.buildNOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class), references, metadatas)
+        );
+        exchange.getContext().createProducerTemplate().send("direct:dollarUCommand", exchange);
+
+        FileMoveUtil.move(exchange, exchange.getProperty("errorsSubdir", String.class), "inputFiles");
+        deleteNotification(exchange);
+
+        log.error("DollarU NOK: reason={}", (exception != null ? exception.getMessage() : "unknown"), exception);
+    }
+}
+
+
+---
+
+5) Pourquoi c’est “solide” (et mieux que split+index)
+
+✅ parsing CSV réel (gère quotes, champs vides, etc.)
+
+✅ mapping par nom de colonne (pas d’index)
+
+✅ header de sortie exact et stable
+
+✅ logique métier BEI centralisée dans 1 classe
+
+✅ dans la route : aucun split, juste du File→File et PJ
+
+
+
+---
+
+Si tu me dis le header exact du fichier source Client_Funding (la première ligne de ton CSV réel), je te cale les getAny(...) au millimètre (et je te dis si “Lignemétier” vs “LigneMetier” doit être normalisé).
