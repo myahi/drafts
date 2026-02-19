@@ -1,3 +1,10 @@
+Erreur à la ligne de commande: 1 Colonne: 13
+Rapport d'erreur -
+Erreur SQL : ORA-00913: trop de valeurs
+00913. 00000 -  "too many values"
+*Cause:    
+*Action:
+  
 INSERT INTO EAI_AUDIT
   (CODE, CODIFIER, DETAILS, PROJECT, "DATA", "TIMESTAMP", INSERT_TIMESTAMP, STATUT, AUDIT_ID)
 VALUES
