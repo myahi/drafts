@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd"
+	 targetNamespace="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="outputLigneBEI">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Id" type="xs:string" minOccurs="0"/>
+				<xs:element name="DossierId" type="xs:string" minOccurs="0"/>
+				<xs:element name="Type" type="xs:string" minOccurs="0"/>
+				<xs:element name="FacilityType" type="xs:string" minOccurs="0"/>
+				<xs:element name="Book" type="xs:string" minOccurs="0"/>
+				<xs:element name="LigneMetier" type="xs:string" minOccurs="0"/>
+				<xs:element name="SIREN" type="xs:string" minOccurs="0"/>
+				<xs:element name="NomClient" type="xs:string" minOccurs="0"/>
+				<xs:element name="TradeDate" type="xs:string" minOccurs="0"/>
+				<xs:element name="SettleDate" type="xs:string" minOccurs="0"/>
+				<xs:element name="Maturity" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalInitial" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalActuel" type="xs:string" minOccurs="0"/>
+				<xs:element name="HorsBilan" type="xs:string" minOccurs="0"/>
+				<xs:element name="CRD" type="xs:string" minOccurs="0"/>
+				<xs:element name="Devise" type="xs:string" minOccurs="0"/>
+				<xs:element name="TauxFixe" type="xs:string" minOccurs="0"/>
+				<xs:element name="RateIndex" type="xs:string" minOccurs="0"/>
+				<xs:element name="Tenor" type="xs:string" minOccurs="0"/>
+				<xs:element name="RateIndexSpread" type="xs:string" minOccurs="0"/>
+				<xs:element name="AmortizationType" type="xs:string" minOccurs="0"/>
+				<xs:element name="NomEnveloppe" type="xs:string" minOccurs="0"/>
+				<xs:element name="QP_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalInitial_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalActuelBEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="HorsBilan_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="CRD_BEI" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
