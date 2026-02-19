@@ -1,3 +1,10 @@
+Erreur à la ligne de commande: 3 Colonne: 1
+Rapport d'erreur -
+Erreur SQL : ORA-00947: nombre de valeurs insuffisant
+00947. 00000 -  "not enough values"
+*Cause:    
+*Action:
+  
 INSERT INTO EAI_AUDIT
 (CODE, CODIFIER, DETAILS, PROJECT, DATA, "TIMESTAMP", INSERT_TIMESTAMP, STATUT, AUDIT_ID)
 VALUES
