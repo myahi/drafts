@@ -1,0 +1,1547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:ProcessDefinition xmlns:pfx6="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd" xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns="http://www.tibco.com/pe/EngineTypes" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" xmlns:pfx5="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/TRESO_SUIVI/TRESO_SUIVI Input Format.sharedparse" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.calypso.com/xml" xmlns:ns4="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:ns3="http://www.tibco.com/pe/DeployedVarsType" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns5="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:ns8="www.tibco.com/plugin/Sleep" xmlns:ns7="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" xmlns:ns13="http://www.labanquepostale.fr/xml/output" xmlns:ns9="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:ns12="http://www.lbp.fr/xml/report/destination" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns11="http://www.lbp.fr/xml/report/common" xmlns:ns10="http://www.labanquepostale.fr/xml/gateway/output" xmlns:ns15="http://www.tibco.com/namespaces/tnt/plugins/mail" xmlns:ns14="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:pfx1="http://www.tibco.com/ns/no_namespace_schema_location/resources/dataFormat/BloombergMARS/Calypso-In-XVA-Sensi.sharedparse" xmlns:pfx21="http://www.tibco.com/ns/no_namespace_schema_location/framework/resources/XSD/maillingLists.xsd" xmlns:pfx41="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/CDC_SEUIL_PARTICIPATION/Schema.xsd" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:ns23="http://xmlns.tibco.com/encodings/mime" xmlns:ns22="http://xmlns.tibco.com/body" xmlns:lbp="java://LbpCustomClass">
+    <xsd:import namespace="http://www.lbp.fr/xml" schemaLocation="/Resources/Xsd/lbp-bofi-message.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" schemaLocation="/framework/resources/XSD/mailInfo.xsd"/>
+    <xsd:import namespace="http://www.lbp.fr/xml/report/message" schemaLocation="/Resources/Xsd/Internal/lbp-report-message.xsd"/>
+    <xsd:import namespace="http://www.lbp.fr/xml/report/destination" schemaLocation="/Resources/Xsd/Internal/lbp-report-destination.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" schemaLocation="/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/TRESO_SUIVI/TRESO_SUIVI Input Format.sharedparse" schemaLocation="/Resources/Data/TRESO_SUIVI/TRESO_SUIVI Input Format.sharedparse"/>
+    <xsd:import namespace="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd" schemaLocation="/Resources/Xsd/ALM_BEI/ALM_BEI_outputSchema.xsd"/>
+    <pd:name>Process/Starters/ALM_BEI/get Source for ALM_BEI Files.process</pd:name>
+    <pd:startName>File Poller</pd:startName>
+    <pd:startX>0</pd:startX>
+    <pd:startY>0</pd:startY>
+    <pd:returnBindings/>
+    <pd:starter name="File Poller">
+        <pd:type>com.tibco.plugin.file.FileEventSource</pd:type>
+        <pd:resourceType>ae.activities.FileEventSourceResource</pd:resourceType>
+        <pd:x>33</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <pollInterval>%%EAIparams/REPORTS/ALM_BEI/PollingIntervalInSecond%%</pollInterval>
+            <createEvent>true</createEvent>
+            <modifyEvent>false</modifyEvent>
+            <deleteEvent>false</deleteEvent>
+            <mode>only-files</mode>
+            <encoding>text</encoding>
+            <sortby>Date Modified</sortby>
+            <sortorder>ascending</sortorder>
+            <includeCurrent>true</includeCurrent>
+            <excludeContent>false</excludeContent>
+            <fileName>%%EAIparams/REPORTS/ALM_BEI/PollingDirectory%%/%%EAIparams/REPORTS/ALM_BEI/EAINotificationName%%</fileName>
+            <encodingUsed>ISO8859_1</encodingUsed>
+        </config>
+        <pd:inputBindings/>
+    </pd:starter>
+    <pd:endName>End</pd:endName>
+    <pd:endX>2605</pd:endX>
+    <pd:endY>121</pd:endY>
+    <pd:errorSchemas>
+        <NoXco>
+            <xsd:element name="root">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="message" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="messageCode" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="references">
+                            <xsd:complexType>
+                                <xsd:sequence>
+                                    <xsd:element name="type" type="xsd:string" minOccurs="0"/>
+                                    <xsd:element name="identifier" minOccurs="0" maxOccurs="unbounded">
+                                        <xsd:complexType>
+                                            <xsd:sequence/>
+                                            <xsd:attribute name="code" type="xsd:string"/>
+                                            <xsd:attribute name="codifier" type="xsd:string"/>
+                                        </xsd:complexType>
+                                    </xsd:element>
+                                </xsd:sequence>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </NoXco>
+        <noMail>
+            <xsd:element name="noMail" type="xsd:string"/>
+        </noMail>
+        <Schema1>
+            <xsd:element name="mailingList" type="xsd:string"/>
+        </Schema1>
+    </pd:errorSchemas>
+    <pd:processVariables>
+        <AuditRef>
+            <xsd:element name="root">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="DateID" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </AuditRef>
+    </pd:processVariables>
+    <pd:targetNamespace>http://xmlns.example.com/1269005975955</pd:targetNamespace>
+    <pd:group name="For Each File">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>1084</pd:x>
+        <pd:y>2</pd:y>
+        <pd:width>621</pd:width>
+        <pd:height>229</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>inputLoop</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:over>$List-ALM-BEI-Files/ns5:ListFilesActivityOutput/files/fileInfo</pd:over>
+            <pd:iterationElementSlot>currentFile</pd:iterationElementSlot>
+            <pd:indexSlot>i</pd:indexSlot>
+            <pd:outSlot>AccumulatedAttachedFileData</pd:outSlot>
+            <pd:activityOutputName>Prepare Attached Files</pd:activityOutputName>
+            <pd:accumulateOutput>true</pd:accumulateOutput>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Read File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>otherwise</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Parse CSO Input</pd:to>
+            <pd:xpathDescription>ALM_BEI_Client_Funding_Pattern</pd:xpathDescription>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>xpath</pd:conditionType>
+            <pd:xpath>starts-with($currentFile/fileInfo/fileName,$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/ALM_BEI_Client_Funding_Pattern)</pd:xpath>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Prepare Attached Files</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Parse CSO Input</pd:from>
+            <pd:to>Map Output</pd:to>
+            <pd:xpathDescription/>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Map Output</pd:from>
+            <pd:to>Render Output</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Read File</pd:from>
+            <pd:to>Prepare Attached Files</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Render Output</pd:from>
+            <pd:to>Prepare Attached Files</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="Map Output">
+            <pd:type>com.tibco.plugin.mapper.MapperActivity</pd:type>
+            <pd:resourceType>ae.activities.MapperActivity</pd:resourceType>
+            <pd:x>1378</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <element>
+                    <xsd:element name="root">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element ref="pfx6:outputLigneBEI" minOccurs="0" maxOccurs="unbounded"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </element>
+            </config>
+            <pd:inputBindings>
+                <root>
+                    <xsl:for-each select="$Parse-CSO-Input/Output/Rows/LigneBEI">
+                        <pfx6:outputLigneBEI>
+                            <pfx6:Id>
+                                <xsl:value-of select="Id"/>
+                            </pfx6:Id>
+                            <xsl:if test="DossierId">
+                                <pfx6:DossierId>
+                                    <xsl:value-of select="DossierId"/>
+                                </pfx6:DossierId>
+                            </xsl:if>
+                            <xsl:if test="Type">
+                                <pfx6:Type>
+                                    <xsl:value-of select="Type"/>
+                                </pfx6:Type>
+                            </xsl:if>
+                            <xsl:if test="FacilityType">
+                                <pfx6:FacilityType>
+                                    <xsl:value-of select="FacilityType"/>
+                                </pfx6:FacilityType>
+                            </xsl:if>
+                            <xsl:if test="Book">
+                                <pfx6:Book>
+                                    <xsl:value-of select="Book"/>
+                                </pfx6:Book>
+                            </xsl:if>
+                            <xsl:if test="LigneMetier">
+                                <pfx6:LigneMetier>
+                                    <xsl:value-of select="LigneMetier"/>
+                                </pfx6:LigneMetier>
+                            </xsl:if>
+                            <xsl:if test="SIREN">
+                                <pfx6:SIREN>
+                                    <xsl:value-of select="SIREN"/>
+                                </pfx6:SIREN>
+                            </xsl:if>
+                            <xsl:if test="NomClient">
+                                <pfx6:NomClient>
+                                    <xsl:value-of select="NomClient"/>
+                                </pfx6:NomClient>
+                            </xsl:if>
+                            <xsl:if test="TradeDate">
+                                <pfx6:TradeDate>
+                                    <xsl:value-of select="TradeDate"/>
+                                </pfx6:TradeDate>
+                            </xsl:if>
+                            <xsl:if test="SettleDate">
+                                <pfx6:SettleDate>
+                                    <xsl:value-of select="SettleDate"/>
+                                </pfx6:SettleDate>
+                            </xsl:if>
+                            <xsl:if test="Maturity">
+                                <pfx6:Maturity>
+                                    <xsl:value-of select="Maturity"/>
+                                </pfx6:Maturity>
+                            </xsl:if>
+                            <xsl:if test="NominalInitial">
+                                <pfx6:NominalInitial>
+                                    <xsl:value-of select="NominalInitial"/>
+                                </pfx6:NominalInitial>
+                            </xsl:if>
+                            <xsl:if test="NominalActuel">
+                                <pfx6:NominalActuel>
+                                    <xsl:value-of select="NominalActuel"/>
+                                </pfx6:NominalActuel>
+                            </xsl:if>
+                            <xsl:if test="HorsBilan">
+                                <pfx6:HorsBilan>
+                                    <xsl:value-of select="HorsBilan"/>
+                                </pfx6:HorsBilan>
+                            </xsl:if>
+                            <xsl:if test="CRD">
+                                <pfx6:CRD>
+                                    <xsl:value-of select="CRD"/>
+                                </pfx6:CRD>
+                            </xsl:if>
+                            <xsl:if test="Devise">
+                                <pfx6:Devise>
+                                    <xsl:value-of select="Devise"/>
+                                </pfx6:Devise>
+                            </xsl:if>
+                            <xsl:if test="TauxFixe">
+                                <pfx6:TauxFixe>
+                                    <xsl:value-of select="TauxFixe"/>
+                                </pfx6:TauxFixe>
+                            </xsl:if>
+                            <xsl:if test="RateIndex">
+                                <pfx6:RateIndex>
+                                    <xsl:value-of select="RateIndex"/>
+                                </pfx6:RateIndex>
+                            </xsl:if>
+                            <xsl:if test="Tenor">
+                                <pfx6:Tenor>
+                                    <xsl:value-of select="Tenor"/>
+                                </pfx6:Tenor>
+                            </xsl:if>
+                            <xsl:if test="RateIndexSpread">
+                                <pfx6:RateIndexSpread>
+                                    <xsl:value-of select="RateIndexSpread"/>
+                                </pfx6:RateIndexSpread>
+                            </xsl:if>
+                            <xsl:if test="AmortizationType">
+                                <pfx6:AmortizationType>
+                                    <xsl:value-of select="AmortizationType"/>
+                                </pfx6:AmortizationType>
+                            </xsl:if>
+                            <xsl:if test="NomEnveloppe">
+                                <pfx6:NomEnveloppe>
+                                    <xsl:value-of select="NomEnveloppe"/>
+                                </pfx6:NomEnveloppe>
+                            </xsl:if>
+                            <xsl:if test="QP_BEI">
+                                <pfx6:QP_BEI>
+                                    <xsl:value-of select="QP_BEI"/>
+                                </pfx6:QP_BEI>
+                            </xsl:if>
+                            <xsl:choose>
+                                <xsl:when test="string-length(NominalInitial)=0">
+                                    <pfx6:NominalInitial_BEI>
+                                        <xsl:value-of select="0"/>
+                                    </pfx6:NominalInitial_BEI>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <pfx6:NominalInitial_BEI>
+                                        <xsl:value-of select="lbp:replace((lbp:replace(NominalInitial, &quot;,&quot;, &quot;.&quot;) * QP_BEI) div 100, &quot;.&quot;, &quot;,&quot;)"/>
+                                    </pfx6:NominalInitial_BEI>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:choose>
+                                <xsl:when test="string-length(NominalActuel)=0">
+                                    <pfx6:NominalActuelBEI>
+                                        <xsl:value-of select="0"/>
+                                    </pfx6:NominalActuelBEI>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <pfx6:NominalActuelBEI>
+                                        <xsl:value-of select="lbp:replace((lbp:replace(NominalActuel, &quot;,&quot;, &quot;.&quot;) * QP_BEI) div 100, &quot;.&quot;, &quot;,&quot;)"/>
+                                    </pfx6:NominalActuelBEI>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:choose>
+                                <xsl:when test="string-length(HorsBilan)=0">
+                                    <pfx6:HorsBilan_BEI>
+                                        <xsl:value-of select="0"/>
+                                    </pfx6:HorsBilan_BEI>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <pfx6:HorsBilan_BEI>
+                                        <xsl:value-of select="lbp:replace((lbp:replace(HorsBilan, &quot;,&quot;, &quot;.&quot;) * QP_BEI) div 100, &quot;.&quot;, &quot;,&quot;)"/>
+                                    </pfx6:HorsBilan_BEI>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:choose>
+                                <xsl:when test="string-length(CRD)=0">
+                                    <pfx6:CRD_BEI>
+                                        <xsl:value-of select="0"/>
+                                    </pfx6:CRD_BEI>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <pfx6:CRD_BEI>
+                                        <xsl:value-of select="lbp:replace((lbp:replace(CRD, &quot;,&quot;, &quot;.&quot;) * QP_BEI) div 100, &quot;.&quot;, &quot;,&quot;)"/>
+                                    </pfx6:CRD_BEI>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </pfx6:outputLigneBEI>
+                    </xsl:for-each>
+                </root>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Parse CSO Input">
+            <pd:type>com.tibco.plugin.parse.ParseActivity</pd:type>
+            <pd:resourceType>ae.activities.ParseActivity</pd:resourceType>
+            <pd:x>1284</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <InputType>File</InputType>
+                <Encoding>ISO8859_1</Encoding>
+                <SpecifyStartRecord>true</SpecifyStartRecord>
+                <SkipBlankLines>true</SkipBlankLines>
+                <ParseSharedConfig>/Resources/Data/ALM_BEI/Calypso_ALM_BEI_InputFormat.sharedparse</ParseSharedConfig>
+            </config>
+            <pd:inputBindings>
+                <Input>
+                    <fileName>
+                        <xsl:value-of select="$currentFile/fileInfo/fullName"/>
+                    </fileName>
+                    <startRecord>
+                        <xsl:value-of select="2"/>
+                    </startRecord>
+                    <noOfRecords>
+                        <xsl:value-of select="-1"/>
+                    </noOfRecords>
+                </Input>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Render Output">
+            <pd:type>com.tibco.plugin.parse.RenderActivity</pd:type>
+            <pd:resourceType>ae.activities.RenderActivity</pd:resourceType>
+            <pd:x>1475</pd:x>
+            <pd:y>61</pd:y>
+            <config>
+                <ParseSharedConfig>/Resources/Data/ALM_BEI/Calypso_ALM_BEI_OutputFormat.sharedparse</ParseSharedConfig>
+            </config>
+            <pd:inputBindings>
+                <Rows>
+                    <pfx6:outputLigneBEI>
+                        <pfx6:Id>
+                            <xsl:value-of select="&quot;Id&quot;"/>
+                        </pfx6:Id>
+                        <pfx6:DossierId>
+                            <xsl:value-of select="&quot;Dossier Id&quot;"/>
+                        </pfx6:DossierId>
+                        <pfx6:Type>
+                            <xsl:value-of select="&quot;Type&quot;"/>
+                        </pfx6:Type>
+                        <pfx6:FacilityType>
+                            <xsl:value-of select="&quot;Facility Type&quot;"/>
+                        </pfx6:FacilityType>
+                        <pfx6:Book>
+                            <xsl:value-of select="&quot;Book&quot;"/>
+                        </pfx6:Book>
+                        <pfx6:LigneMetier>
+                            <xsl:value-of select="&quot;Ligne métier&quot;"/>
+                        </pfx6:LigneMetier>
+                        <pfx6:SIREN>
+                            <xsl:value-of select="&quot;SIREN&quot;"/>
+                        </pfx6:SIREN>
+                        <pfx6:NomClient>
+                            <xsl:value-of select="&quot;Nom du client&quot;"/>
+                        </pfx6:NomClient>
+                        <pfx6:TradeDate>
+                            <xsl:value-of select="&quot;Trade Date&quot;"/>
+                        </pfx6:TradeDate>
+                        <pfx6:SettleDate>
+                            <xsl:value-of select="&quot;Settle Date&quot;"/>
+                        </pfx6:SettleDate>
+                        <pfx6:Maturity>
+                            <xsl:value-of select="&quot;Maturity&quot;"/>
+                        </pfx6:Maturity>
+                        <pfx6:NominalInitial>
+                            <xsl:value-of select="&quot;Nominal initial&quot;"/>
+                        </pfx6:NominalInitial>
+                        <pfx6:NominalActuel>
+                            <xsl:value-of select="&quot;Nominal actuel&quot;"/>
+                        </pfx6:NominalActuel>
+                        <pfx6:HorsBilan>
+                            <xsl:value-of select="&quot;Hors Bilan&quot;"/>
+                        </pfx6:HorsBilan>
+                        <pfx6:CRD>
+                            <xsl:value-of select="&quot;CRD&quot;"/>
+                        </pfx6:CRD>
+                        <pfx6:Devise>
+                            <xsl:value-of select="&quot;Devise&quot;"/>
+                        </pfx6:Devise>
+                        <pfx6:TauxFixe>
+                            <xsl:value-of select="&quot;Taux Fixe&quot;"/>
+                        </pfx6:TauxFixe>
+                        <pfx6:RateIndex>
+                            <xsl:value-of select="&quot;Rate Index&quot;"/>
+                        </pfx6:RateIndex>
+                        <pfx6:Tenor>
+                            <xsl:value-of select="&quot;Tenor&quot;"/>
+                        </pfx6:Tenor>
+                        <pfx6:RateIndexSpread>
+                            <xsl:value-of select="&quot;Rate Index Spread&quot;"/>
+                        </pfx6:RateIndexSpread>
+                        <pfx6:AmortizationType>
+                            <xsl:value-of select="&quot;Amortization Type&quot;"/>
+                        </pfx6:AmortizationType>
+                        <pfx6:NomEnveloppe>
+                            <xsl:value-of select="&quot;Nom de l'enveloppe&quot;"/>
+                        </pfx6:NomEnveloppe>
+                        <pfx6:QP_BEI>
+                            <xsl:value-of select="&quot;QP BEI&quot;"/>
+                        </pfx6:QP_BEI>
+                        <pfx6:NominalInitial_BEI>
+                            <xsl:value-of select="&quot;Nominal initial BEI&quot;"/>
+                        </pfx6:NominalInitial_BEI>
+                        <pfx6:NominalActuelBEI>
+                            <xsl:value-of select="&quot;Nominal actuel BEI&quot;"/>
+                        </pfx6:NominalActuelBEI>
+                        <pfx6:HorsBilan_BEI>
+                            <xsl:value-of select="&quot;Hors Bilan BEI&quot;"/>
+                        </pfx6:HorsBilan_BEI>
+                        <pfx6:CRD_BEI>
+                            <xsl:value-of select="&quot;CRD BEI&quot;"/>
+                        </pfx6:CRD_BEI>
+                    </pfx6:outputLigneBEI>
+                    <xsl:copy-of select="$Map-Output/root/pfx6:outputLigneBEI"/>
+                </Rows>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Read File">
+            <pd:type>com.tibco.plugin.file.FileReadActivity</pd:type>
+            <pd:resourceType>ae.activities.FileReadActivity</pd:resourceType>
+            <pd:x>1381</pd:x>
+            <pd:y>165</pd:y>
+            <config>
+                <encoding>binary</encoding>
+            </config>
+            <pd:inputBindings>
+                <ns5:ReadActivityInputClass>
+                    <fileName>
+                        <xsl:value-of select="$currentFile/fileInfo/fullName"/>
+                    </fileName>
+                </ns5:ReadActivityInputClass>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Prepare Attached Files">
+            <pd:type>com.tibco.plugin.mapper.MapperActivity</pd:type>
+            <pd:resourceType>ae.activities.MapperActivity</pd:resourceType>
+            <pd:x>1607</pd:x>
+            <pd:y>130</pd:y>
+            <config>
+                <element>
+                    <xsd:element name="fileData">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="fileName" type="xsd:string"/>
+                                <xsd:element name="fileContent" type="xsd:base64Binary"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </element>
+            </config>
+            <pd:inputBindings>
+                <xsl:choose>
+                    <xsl:when test="string-length($Render-Output/Text) >0">
+                        <fileData>
+                            <fileName>
+                                <xsl:value-of select="$currentFile/fileInfo/fileName"/>
+                            </fileName>
+                            <fileContent>
+                                <xsl:value-of select="tib:string-to-base64($Render-Output/Text,$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/srcFileEncoding)"/>
+                            </fileContent>
+                        </fileData>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <fileData>
+                            <fileName>
+                                <xsl:value-of select="$Read-File/ns5:ReadActivityOutputBinaryClass/fileInfo/fileName"/>
+                            </fileName>
+                            <fileContent>
+                                <xsl:value-of select="$Read-File/ns5:ReadActivityOutputBinaryClass/fileContent/binaryContent"/>
+                            </fileContent>
+                        </fileData>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:group name="For Each Input File">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>1837</pd:x>
+        <pd:y>37</pd:y>
+        <pd:width>157</pd:width>
+        <pd:height>155</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>inputLoop</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:over>$List-ALM-BEI-Files/ns5:ListFilesActivityOutput/files/fileInfo</pd:over>
+            <pd:iterationElementSlot>currentFileToArchive</pd:iterationElementSlot>
+            <pd:indexSlot>j</pd:indexSlot>
+            <pd:activityOutputName/>
+            <pd:accumulateOutput>false</pd:accumulateOutput>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Archiving Input File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Archiving Input File</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="Archiving Input File">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1915</pd:x>
+            <pd:y>106</pd:y>
+            <config>
+                <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+            </config>
+            <pd:inputBindings>
+                <parameters>
+                    <sourceName>
+                        <xsl:value-of select="$currentFileToArchive/fileInfo/fullName"/>
+                    </sourceName>
+                    <targetName>
+                        <xsl:value-of select="concat($currentFileToArchive/fileInfo/location,&quot;/archive/&quot;,$currentFileToArchive/fileInfo/fileName,'_',tib:format-dateTime('yyyyMMddHHmmss', current-dateTime()))"/>
+                    </targetName>
+                </parameters>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:group name="For Each Input File - on Error">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>2065</pd:x>
+        <pd:y>208</pd:y>
+        <pd:width>157</pd:width>
+        <pd:height>155</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>inputLoop</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:over>$List-ALM-BEI-Files-on-Error/ns5:ListFilesActivityOutput/files/fileInfo</pd:over>
+            <pd:iterationElementSlot>currentErrorFileToArchive</pd:iterationElementSlot>
+            <pd:indexSlot>k</pd:indexSlot>
+            <pd:activityOutputName/>
+            <pd:accumulateOutput>false</pd:accumulateOutput>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Archiving Input File (error)</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Archiving Input File (error)</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="Archiving Input File (error)">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>2138</pd:x>
+            <pd:y>277</pd:y>
+            <config>
+                <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+            </config>
+            <pd:inputBindings>
+                <parameters>
+                    <sourceName>
+                        <xsl:value-of select="$currentErrorFileToArchive/fileInfo/fullName"/>
+                    </sourceName>
+                    <targetName>
+                        <xsl:value-of select="concat($currentErrorFileToArchive/fileInfo/location,&quot;/error/&quot;,$currentErrorFileToArchive/fileInfo/fileName,'_',tib:format-dateTime('yyyyMMddHHmmss', current-dateTime()))"/>
+                    </targetName>
+                </parameters>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:activity name="AssignAuditRef">
+        <pd:type>com.tibco.pe.core.AssignActivity</pd:type>
+        <pd:resourceType>ae.activities.assignActivity</pd:resourceType>
+        <pd:x>122</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <variableName>AuditRef</variableName>
+        </config>
+        <pd:inputBindings>
+            <root>
+                <DateID>
+                    <xsl:value-of select="tib:format-dateTime(&quot;yyyyMMddHHmmss&quot;,current-dateTime())"/>
+                </DateID>
+            </root>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Catch">
+        <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+        <pd:resourceType>ae.activities.catch</pd:resourceType>
+        <pd:x>1783</pd:x>
+        <pd:y>265</pd:y>
+        <pd:handler>true</pd:handler>
+        <config>
+            <catchAll>true</catchAll>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="EnsureFileIntegrity">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>683</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/EnsureFileIntegrity.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <fileName>
+                    <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </fileName>
+                <directoryPath>
+                    <xsl:value-of select="concat($File-Poller/ns5:EventSourceOuputTextClass/fileInfo/location,$_globalVariables/ns3:GlobalVariables/Framework/File/Separator)"/>
+                </directoryPath>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Extract Date From Notification">
+        <pd:type>com.tibco.plugin.mapper.MapperActivity</pd:type>
+        <pd:resourceType>ae.activities.MapperActivity</pd:resourceType>
+        <pd:x>893</pd:x>
+        <pd:y>129</pd:y>
+        <config>
+            <element>
+                <xsd:element name="root">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element name="date" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+            </element>
+        </config>
+        <pd:inputBindings>
+            <root>
+                <date>
+                    <xsl:value-of select="tib:trim(substring-after($File-Poller/ns5:EventSourceOuputTextClass/fileContent/textContent, &quot;=&quot;))"/>
+                </date>
+            </root>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Force a GC on Error">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>2601</pd:x>
+        <pd:y>273</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ALM_BEI.getSourceforALM_BEIFiles;
+import java.util.*;
+import java.io.*;
+public class getSourceforALM_BEIFilesForceaGConError{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public getSourceforALM_BEIFilesForceaGConError() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>getSourceforALM_BEIFilesForceaGConError</fileName>
+            <packageName>Process.Starters.ALM_BEI.getSourceforALM_BEIFiles</packageName>
+            <byteCode>
+                <class>
+                    <name>getSourceforALM_BEIFilesForceaGConError</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBACxnZXRTb3VyY2Vmb3JBTE1fQkVJRmlsZXNGb3JjZWFHQ29uRXJyb3IuamF2YQwABQAGBwAUDAAVAAYBAFlQcm9jZXNzL1N0YXJ0ZXJzL0FMTV9CRUkvZ2V0U291cmNlZm9yQUxNX0JFSUZpbGVzL2dldFNvdXJjZWZvckFMTV9CRUlGaWxlc0ZvcmNlYUdDb25FcnJvcgEAEGphdmEvbGFuZy9PYmplY3QBABNqYXZhL2xhbmcvRXhjZXB0aW9uAQAQamF2YS9sYW5nL1N5c3RlbQEAAmdjACEAAwAEAAAAAAACAAEABQAGAAEABwAAACEAAQABAAAABSq3AAGxAAAAAQAIAAAACgACAAAABwAEAAgAAQAJAAYAAgAHAAAAIAAAAAEAAAAEuAACsQAAAAEACAAAAAoAAgAAAAwAAwAOAAoAAAAEAAEACwABAAwAAAACAA0=</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Generate Error no available file">
+        <pd:type>com.tibco.pe.core.GenerateErrorActivity</pd:type>
+        <pd:resourceType>ae.activities.throw</pd:resourceType>
+        <pd:x>683</pd:x>
+        <pd:y>231</pd:y>
+        <config>
+            <faultName/>
+        </config>
+        <pd:inputBindings>
+            <ns4:ActivityInput>
+                <message>
+                    <xsl:value-of select="concat('Le fichier ',$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fileName, ' reçu était vide')"/>
+                </message>
+            </ns4:ActivityInput>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Get $U Notification">
+        <pd:type>com.tibco.pe.core.GetSharedVariableActivity</pd:type>
+        <pd:resourceType>ae.activities.getSharedVariable</pd:resourceType>
+        <pd:x>2400</pd:x>
+        <pd:y>273</pd:y>
+        <config>
+            <variableConfig>/Resources/SharedVariable/DollarUNotification.jobsharedvariable</variableConfig>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Handle Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1882</pd:x>
+        <pd:y>265</pd:y>
+        <config>
+            <processName>/framework/process/errorHandling/Handle Error.process</processName>
+        </config>
+        <pd:inputBindings>
+            <error>
+                <processContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <CustomId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                    </CustomId>
+                </processContext>
+                <errorReport>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/ancestor-or-self::*/namespace::node()"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/@*"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/node()"/>
+                </errorReport>
+                <data>
+                    <xsl:copy-of select="$Catch/exceptiondata"/>
+                </data>
+                <reference>
+                    <code>
+                        <xsl:value-of select="$AuditRef/root/DateID"/>
+                    </code>
+                    <codifier>
+                        <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/DATE"/>
+                    </codifier>
+                </reference>
+                <ns2:metadatas>
+                    <ns2:metadata>
+                        <ns2:key>
+                            <xsl:value-of select="'PROCESS_NAME'"/>
+                        </ns2:key>
+                        <ns2:value>
+                            <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                        </ns2:value>
+                    </ns2:metadata>
+                </ns2:metadatas>
+            </error>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="List ALM BEI Files">
+        <pd:type>com.tibco.plugin.file.ListFilesActivity</pd:type>
+        <pd:resourceType>ae.activities.ListFilesActivity</pd:resourceType>
+        <pd:x>1007</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <mode>only-files</mode>
+        </config>
+        <pd:inputBindings>
+            <ns5:ListFilesActivityConfig>
+                <fileName>
+                    <xsl:value-of select="concat($_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/PollingDirectory,$_globalVariables/ns3:GlobalVariables/Framework/File/Separator,$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/srcFileNamePattern,$Extract-Date-From-Notification/root/date,&quot;.csv&quot;)"/>
+                </fileName>
+            </ns5:ListFilesActivityConfig>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="List ALM BEI Files on Error">
+        <pd:type>com.tibco.plugin.file.ListFilesActivity</pd:type>
+        <pd:resourceType>ae.activities.ListFilesActivity</pd:resourceType>
+        <pd:x>1999</pd:x>
+        <pd:y>273</pd:y>
+        <config>
+            <mode>only-files</mode>
+        </config>
+        <pd:inputBindings>
+            <ns5:ListFilesActivityConfig>
+                <fileName>
+                    <xsl:value-of select="concat($_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/PollingDirectory,$_globalVariables/ns3:GlobalVariables/Framework/File/Separator,$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/srcFileNamePattern,$Extract-Date-From-Notification/root/date,&quot;.csv&quot;)"/>
+                </fileName>
+            </ns5:ListFilesActivityConfig>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Remove Notification">
+        <pd:type>com.tibco.plugin.file.FileRemoveActivity</pd:type>
+        <pd:resourceType>ae.activities.FileRemoveActivity</pd:resourceType>
+        <pd:x>2417</pd:x>
+        <pd:y>129</pd:y>
+        <config/>
+        <pd:inputBindings>
+            <ns5:RemoveActivityInputClass>
+                <fileName>
+                    <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </fileName>
+            </ns5:RemoveActivityInputClass>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Remove Notification on Error">
+        <pd:type>com.tibco.plugin.file.FileRemoveActivity</pd:type>
+        <pd:resourceType>ae.activities.FileRemoveActivity</pd:resourceType>
+        <pd:x>2271</pd:x>
+        <pd:y>280</pd:y>
+        <config/>
+        <pd:inputBindings>
+            <ns5:RemoveActivityInputClass>
+                <fileName>
+                    <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </fileName>
+            </ns5:RemoveActivityInputClass>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Send Notification To DollarU">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>2082</pd:x>
+        <pd:y>129</pd:y>
+        <config>
+            <processName>/Process/Utils/Send Notification To DollarU.process</processName>
+        </config>
+        <pd:inputBindings>
+            <notifications>
+                <isError>
+                    <xsl:value-of select="false()"/>
+                </isError>
+            </notifications>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Send Notification To DollarU on Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>2500</pd:x>
+        <pd:y>280</pd:y>
+        <config>
+            <processName>/Process/Utils/Send Notification To DollarU.process</processName>
+        </config>
+        <pd:inputBindings>
+            <notifications>
+                <isError>
+                    <xsl:value-of select="true()"/>
+                </isError>
+            </notifications>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfo">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>217</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns2:auditInfo>
+                    <ns2:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns2:timestamp>
+                    <ns2:reference>
+                        <ns2:code>
+                            <xsl:value-of select="$AuditRef/root/DateID"/>
+                        </ns2:code>
+                        <ns2:codifier>
+                            <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/DATE"/>
+                        </ns2:codifier>
+                    </ns2:reference>
+                    <ns2:metadatas>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="'SUIVI-TRESO'"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="'CALYPSO TO CPN1'"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                    </ns2:metadatas>
+                    <ns2:description>
+                        <xsl:value-of select="'Fichiers ALM_BEI reçus'"/>
+                    </ns2:description>
+                    <ns2:data>
+                        <xsl:value-of select="tib:render-xml($File-Poller/ns5:EventSourceOuputTextClass/fileContent/textContent, false(), true())"/>
+                    </ns2:data>
+                    <ns2:statut>
+                        <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Status/Info"/>
+                    </ns2:statut>
+                </ns2:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfoEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>2226</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns2:auditInfo>
+                    <ns2:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns2:timestamp>
+                    <ns2:reference>
+                        <ns2:code>
+                            <xsl:value-of select="$AuditRef/root/DateID"/>
+                        </ns2:code>
+                        <ns2:codifier>
+                            <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/DATE"/>
+                        </ns2:codifier>
+                    </ns2:reference>
+                    <ns2:metadatas>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="'SUIVI-TRESO'"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="'CALYPSO TO CPN1'"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                        <ns2:metadata>
+                            <ns2:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns2:key>
+                            <ns2:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns2:value>
+                        </ns2:metadata>
+                    </ns2:metadatas>
+                    <ns2:description>
+                        <xsl:value-of select="'Fichiers ALM_BEI - Données envoyée par mail'"/>
+                    </ns2:description>
+                    <ns2:data>
+                        <xsl:value-of select="''"/>
+                    </ns2:data>
+                    <ns2:statut>
+                        <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Status/Success"/>
+                    </ns2:statut>
+                </ns2:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendMail">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1767</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/mailing/sendMail.process</processName>
+        </config>
+        <pd:inputBindings>
+            <root>
+                <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="valueDate" select="$Extract-Date-From-Notification/root/date"/>
+                <xsl:variable xmlns:xsl="http://www.w3.org/1999/XSL/Transform" name="valueDateAsDate" select="tib:format-date('dd/MM/yyyy', tib:parse-date('ddMMyyyy', $valueDate))"/>
+                <ns2:reference>
+                    <ns2:code>
+                        <xsl:value-of select="$AuditRef/root/DateID"/>
+                    </ns2:code>
+                    <ns2:codifier>
+                        <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/Framework/Audit/Codifiers/DATE"/>
+                    </ns2:codifier>
+                </ns2:reference>
+                <mailingList>
+                    <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/ALM_BEIMailingList"/>
+                </mailingList>
+                <subject>
+                    <xsl:value-of select="if($_globalVariables/ns3:GlobalVariables/Framework/environment=&quot;prd&quot;) &#xA;then&#xA;concat(&quot;Financements BEI et lignes de crédit - &quot;,$valueDateAsDate)&#xA;else &#xA;concat(&quot;UAT - Financements BEI et lignes de crédit - &quot;,$valueDateAsDate)"/>
+                </subject>
+                <msg>
+                    <xsl:value-of select="concat('&lt;p  style=&quot;font-family:calibri&quot;>Bonjour,',&#xA;&quot;&lt;br>&lt;br>Veuillez trouver ci-joint les fichiers avec les financements de la BEI, les lignes de crédit financées par ceux-ci et les cashflow futurs de ces contrats en date du &quot;, $valueDateAsDate,'.',&#xA;'&lt;p  style=&quot;font-family:calibri&quot;>Cordialement','&lt;/p>')"/>
+                </msg>
+                <attachments>
+                    <xsl:for-each select="$AccumulatedAttachedFileData/AccumulatedOutput/fileData">
+                        <ns7:attachment>
+                            <ns7:fileName>
+                                <xsl:value-of select="concat(&quot;*;filename=&quot;,current()/fileName)"/>
+                            </ns7:fileName>
+                            <ns7:contentType>
+                                <xsl:value-of select="'application/octet-stream'"/>
+                            </ns7:contentType>
+                            <ns7:content>
+                                <xsl:value-of select="fileContent"/>
+                            </ns7:content>
+                        </ns7:attachment>
+                    </xsl:for-each>
+                </attachments>
+            </root>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Set $U Notification">
+        <pd:type>com.tibco.pe.core.SetSharedVariableActivity</pd:type>
+        <pd:resourceType>ae.activities.setSharedVariable</pd:resourceType>
+        <pd:x>2400</pd:x>
+        <pd:y>410</pd:y>
+        <config>
+            <variableConfig>/Resources/SharedVariable/DollarUniverseFlowId.jobsharedvariable</variableConfig>
+        </config>
+        <pd:inputBindings>
+            <dollarUniverseChain>
+                <ns9:chainType>
+                    <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/DollarUChaineType"/>
+                </ns9:chainType>
+            </dollarUniverseChain>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Set DollarU Chain Type">
+        <pd:type>com.tibco.pe.core.SetSharedVariableActivity</pd:type>
+        <pd:resourceType>ae.activities.setSharedVariable</pd:resourceType>
+        <pd:x>427</pd:x>
+        <pd:y>129</pd:y>
+        <config>
+            <variableConfig>/Resources/SharedVariable/DollarUniverseFlowId.jobsharedvariable</variableConfig>
+        </config>
+        <pd:inputBindings>
+            <dollarUniverseChain>
+                <ns9:chainType>
+                    <xsl:value-of select="$_globalVariables/ns3:GlobalVariables/EAIparams/REPORTS/ALM_BEI/DollarUChaineType"/>
+                </ns9:chainType>
+            </dollarUniverseChain>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Set DollarU Notification">
+        <pd:type>com.tibco.pe.core.SetSharedVariableActivity</pd:type>
+        <pd:resourceType>ae.activities.setSharedVariable</pd:resourceType>
+        <pd:x>533</pd:x>
+        <pd:y>129</pd:y>
+        <config>
+            <variableConfig>/Resources/SharedVariable/DollarUNotification.jobsharedvariable</variableConfig>
+        </config>
+        <pd:inputBindings>
+            <notification>
+                <ns13:numberOfFiles>
+                    <xsl:value-of select="1"/>
+                </ns13:numberOfFiles>
+                <ns13:dollarUNotification>
+                    <xsl:value-of select="'true'"/>
+                </ns13:dollarUNotification>
+                <ns13:isError>
+                    <xsl:value-of select="'false'"/>
+                </ns13:isError>
+            </notification>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="System GC">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>2522</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ALM_BEI.getSourceforALM_BEIFiles;
+import java.util.*;
+import java.io.*;
+public class getSourceforALM_BEIFilesSystemGC{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public getSourceforALM_BEIFilesSystemGC() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>getSourceforALM_BEIFilesSystemGC</fileName>
+            <packageName>Process.Starters.ALM_BEI.getSourceforALM_BEIFiles</packageName>
+            <byteCode>
+                <class>
+                    <name>getSourceforALM_BEIFilesSystemGC</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBACVnZXRTb3VyY2Vmb3JBTE1fQkVJRmlsZXNTeXN0ZW1HQy5qYXZhDAAFAAYHABQMABUABgEAUlByb2Nlc3MvU3RhcnRlcnMvQUxNX0JFSS9nZXRTb3VyY2Vmb3JBTE1fQkVJRmlsZXMvZ2V0U291cmNlZm9yQUxNX0JFSUZpbGVzU3lzdGVtR0MBABBqYXZhL2xhbmcvT2JqZWN0AQATamF2YS9sYW5nL0V4Y2VwdGlvbgEAEGphdmEvbGFuZy9TeXN0ZW0BAAJnYwAhAAMABAAAAAAAAgABAAUABgABAAcAAAAhAAEAAQAAAAUqtwABsQAAAAEACAAAAAoAAgAAAAcABAAIAAEACQAGAAIABwAAACAAAAABAAAABLgAArEAAAABAAgAAAAKAAIAAAAMAAMADgAKAAAABAABAAsAAQAMAAAAAgAN</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="TraceEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>2329</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ALM_BEI-002'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </msg>
+                <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="TraceStart">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>316</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ALM_BEI-001'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller/ns5:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </msg>
+                <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:transition>
+        <pd:from>Catch</pd:from>
+        <pd:to>Handle Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>File Poller</pd:from>
+        <pd:to>AssignAuditRef</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Handle Error</pd:from>
+        <pd:to>List ALM BEI Files on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfo</pd:from>
+        <pd:to>TraceStart</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceStart</pd:from>
+        <pd:to>Set DollarU Chain Type</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfoEnd</pd:from>
+        <pd:to>TraceEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>AssignAuditRef</pd:from>
+        <pd:to>sendAuditInfo</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceEnd</pd:from>
+        <pd:to>Remove Notification</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>System GC</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Force a GC on Error</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>EnsureFileIntegrity</pd:from>
+        <pd:to>Generate Error no available file</pd:to>
+        <pd:xpathDescription>Empty File</pd:xpathDescription>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-65536</pd:lineColor>
+        <pd:conditionType>xpath</pd:conditionType>
+        <pd:xpath>string-length($EnsureFileIntegrity/output/fileContent)=0</pd:xpath>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>EnsureFileIntegrity</pd:from>
+        <pd:to>Extract Date From Notification</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Extract Date From Notification</pd:from>
+        <pd:to>List ALM BEI Files</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Remove Notification on Error</pd:from>
+        <pd:to>Get $U Notification</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Remove Notification</pd:from>
+        <pd:to>System GC</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>List ALM BEI Files</pd:from>
+        <pd:to>For Each File</pd:to>
+        <pd:xpathDescription/>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>For Each File</pd:from>
+        <pd:to>sendMail</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>For Each Input File</pd:from>
+        <pd:to>Send Notification To DollarU</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>List ALM BEI Files on Error</pd:from>
+        <pd:to>For Each Input File - on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>For Each Input File - on Error</pd:from>
+        <pd:to>Remove Notification on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Set DollarU Chain Type</pd:from>
+        <pd:to>Set DollarU Notification</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Set DollarU Notification</pd:from>
+        <pd:to>EnsureFileIntegrity</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Send Notification To DollarU</pd:from>
+        <pd:to>sendAuditInfoEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Get $U Notification</pd:from>
+        <pd:to>Send Notification To DollarU on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Get $U Notification</pd:from>
+        <pd:to>Set $U Notification</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-65536</pd:lineColor>
+        <pd:conditionType>error</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Send Notification To DollarU on Error</pd:from>
+        <pd:to>Force a GC on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Set $U Notification</pd:from>
+        <pd:to>Send Notification To DollarU on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendMail</pd:from>
+        <pd:to>For Each Input File</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:label>
+        <pd:name>Label</pd:name>
+        <pd:description>On reçoit 3 fichiers de la part de CSO : 
+* ALM_BEI_Client_Funding
+* ALM_BEI_Funding
+* ALM_BEI_Funding_Cashflows
+
+L'EAI modifie le fichier ALM_BEI_Client_Funding et envoie les 2 autres sans les modifier</pd:description>
+        <pd:x>1380</pd:x>
+        <pd:y>309</pd:y>
+        <pd:width>575</pd:width>
+        <pd:height>129</pd:height>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-13312</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+</pd:ProcessDefinition>
