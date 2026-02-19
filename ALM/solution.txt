@@ -1,0 +1,274 @@
+inspire toi de ce que j'ai déjà dans la route apache Camel ci-dessous pour implémenter la solution:
+
+package fr.labanquepostale.report.base.routes;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import fr.labanquepostale.marches.eai.core.helper.ErrorHelper;
+import jakarta.annotation.Nonnull;
+import org.apache.camel.Exchange;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import fr.labanquepostale.marches.eai.core.dollaru.DollarUUtil;
+import fr.labanquepostale.marches.eai.core.helper.AuditHelper;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortCriterion;
+import fr.labanquepostale.marches.eai.core.io.FileListingUtil.SortDirection;
+import fr.labanquepostale.marches.eai.core.io.FileMergeUtil;
+import fr.labanquepostale.marches.eai.core.io.FileMoveUtil;
+import fr.labanquepostale.marches.eai.core.model.audit.Codifier;
+import fr.labanquepostale.marches.eai.core.model.audit.Metadata;
+import fr.labanquepostale.marches.eai.core.model.audit.Reference;
+import fr.labanquepostale.marches.eai.core.model.audit.Status;
+
+//Tibco BW process
+//bw_eaireports/Process/Starters/POSITIONS_TITRES/GetExtractionDuResultatDuRapprochement.process
+@Component
+@SuppressWarnings("unchecked")
+public class PositionTitresRoute extends RouteBuilder {
+    @Autowired
+    private ErrorHelper errorHelper;
+    @Autowired
+    private AuditHelper auditHelper;
+
+    @Override
+    public void configure() {
+
+        // --- CATCH-ALL ---
+        onException(Exception.class)
+                .handled(true)
+                .process(this::handleException);
+
+        fromF("file:{{eai.report.position.titres.input.dir}}"
+                + "?include={{eai.report.position.titres.input.notification.name}}"
+                + "&delay={{eai.report.position.titres.input.delay.ms}}"
+                + "&noop=true"
+                + "&idempotent=false"
+                + "&readLock=changed")
+                .routeId("PositionTitresRoute")
+
+                // --- SAVE NOTIFICATION FILE PATH ---
+                .setProperty("notifPath", header("CamelFilePath"))
+
+                // --- CACHE PARAMETERS AS EXCHANGE PROPERTIES (EASY TO REUSE) ---
+                .setProperty("notificationContent", simple("${body}"))
+                .setProperty("notifcationFileName", simple("{{eai.report.position.titres.input.notification.name}}"))
+                .setProperty("dollarURessourceName", simple("{{eai.report.position.titres.input.notification.name}}"))
+                .setProperty("inputDir", simple("{{eai.report.position.titres.input.dir}}"))
+                .setProperty("filePattern", simple("{{eai.report.position.titres.input.file.pattern}}"))
+                .setProperty("fileExtension", simple("{{eai.report.position.titres.input.file.extension}}"))
+                .setProperty("outputDir", simple("{{eai.report.position.titres.output.dir}}"))
+                .setProperty("outputPrefix", simple("{{eai.report.position.titres.output.file.prefix}}"))
+                .setProperty("archivesSubdir", simple("{{eai.report.position.titres.input.dir.archives.subdir}}"))
+                .setProperty("errorsSubdir", simple("{{eai.report.position.titres.input.dir.errors.subdir}}"))
+                .setProperty("listName", simple("{{eai.report.position.titres.mailing.list}}"))
+
+
+                .process(exchange -> {
+                    String filePatten = exchange.getProperty("filePattern", String.class) + "_" + StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=") + exchange.getProperty("fileExtension", String.class);
+                    FileListingUtil.listFiles(exchange, Path.of(exchange.getProperty("inputDir", String.class)), false, SortCriterion.NAME, SortDirection.ASC, filePatten);
+                })
+                .choice()
+                .when(exchangeProperty("inputFiles").isNull())
+                // --- AUCUN FICHIER ---
+                .process(exchange -> {
+                    auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("Notification position titre reçue mais aucun fichier n'a été détecté")
+                            .status(Status.Info.getStatus())
+                            .data(exchange.getProperty("notificationContent"))
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .send();
+                })
+                // --- DELETE NOTIFICATION ---
+                .process(this::deleteNotification)
+                .log("Aucun fichier détecté avec le pattern ${exchangeProperty.filePattern} dans le repertoire mergedFile: ${exchangeProperty.inputDir}")
+                .stop()
+
+                .otherwise()
+                .process(exchange -> {
+                    auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("Fichiers Position titres MO Calypso reçu")
+                            .status(Status.Info.getStatus())
+                            .data(exchange.getProperty("inputFileNames", String.class))
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .send();
+                })
+
+                .process(exchange -> {
+                    String outputFilePath = exchange.getProperty("outputDir", String.class) + exchange.getProperty("outputPrefix", String.class) + "_" + StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=") + exchange.getProperty("fileExtension", String.class);
+                    String outputFileName = exchange.getProperty("outputPrefix", String.class) + "_" + StringUtils.substringAfterLast(exchange.getProperty("notificationContent", String.class), "=") + exchange.getProperty("fileExtension", String.class);
+                    exchange.setProperty("outputFilePath", outputFilePath);
+                    exchange.setProperty("outputFileName", outputFileName);
+                    FileMergeUtil.merge(Path.of(exchange.getProperty("outputFilePath", String.class)), (List<Path>) exchange.getProperty("inputFiles"), 65536, false);
+                })
+
+                // --- SEND MAIL ---
+                .process(exchange -> {
+                    exchange.getMessage().setHeader("listName", exchange.getProperty("listName", String.class));
+                    exchange.getMessage().setHeader("subject", "Rapport");
+
+                    // --- CONTENT-TYPE DU BODY ---
+                    String templatePath = exchange.getContext().resolvePropertyPlaceholders("{{eai.report.position.titres.mailing.template}}");
+                    String htmlBody = Files.readString(Path.of(templatePath), StandardCharsets.UTF_8);
+                    exchange.getMessage().setBody(htmlBody);
+                    exchange.getMessage().setHeader("Content-Type", "text/html; charset=UTF-8");
+                    //exchange.getMessage().setBody("Bonjour, rapport en pièce jointe.");
+
+                    // --- attached files
+                    var am = exchange.getMessage(org.apache.camel.attachment.AttachmentMessage.class);
+                    var file = new java.io.File(exchange.getProperty("outputFilePath", String.class));
+                    var ds = new jakarta.activation.FileDataSource(file);
+                    am.addAttachment(exchange.getProperty("outputFileName", String.class), new jakarta.activation.DataHandler(ds));
+                })
+                .to("direct:MailRoute")
+
+                // --- DollarU OK ---
+                .process(exchange -> {
+                    List<Metadata> metadatas = new ArrayList<Metadata>();
+                    metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName()));
+                    List<Reference> references = new ArrayList<Reference>();
+                    references.add(new Reference(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class)));
+                    exchange.getMessage().setBody(DollarUUtil.buildOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class), references, metadatas));
+                }).to("direct:dollarUCommand")
+                // --- ARCHIVE FILES ---
+                .process(exchange -> {
+                    //moveListedFiles(exchange, exchange.getProperty("archivesSubdir", String.class));
+                    FileMoveUtil.move(exchange, exchange.getProperty("archivesSubdir", String.class), "inputFiles");
+                })
+                // --- AUDIT OK ---
+                .process(exchange -> {
+                    auditHelper.audit(exchange)
+                            .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .desc("POSITIONS_TITRES rapports Calypso traités")
+                            .status(Status.Success.getStatus())
+                            .data("")
+                            .meta("PROCESS_NAME", this.getClass().getName())
+                            .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("notifcationFileName", String.class))
+                            .send();
+                })
+                // --- DELETE NOTIFICATION ---
+                .process(this::deleteNotification)
+                .log("Merge OK: mergedFile=${exchangeProperty.outputFilePath}");
+    }
+
+
+    private void deleteNotification(Exchange e) throws Exception {
+        String notifPathStr = e.getProperty("notifPath", String.class);
+        if (notifPathStr == null) {
+            return;
+        }
+        Files.deleteIfExists(Paths.get(notifPathStr));
+    }
+
+
+    private void handleException(@Nonnull Exchange exchange) throws Exception {
+        Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+        //Audit exception
+        errorHelper.error(exchange, exception)
+                .ref(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
+                .meta(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class))
+                .meta(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName())
+                .send();
+
+        List<Metadata> metadatas = new ArrayList<Metadata>();
+        metadatas.add(new Metadata(Codifier.PROCESS_NAME.getCodifier(), this.getClass().getName()));
+        List<Reference> references = new ArrayList<Reference>();
+        references.add(new Reference(Codifier.FILE_NAME.getCodifier(), exchange.getProperty("inputFileName", String.class)));
+        exchange.getMessage().setBody(DollarUUtil.buildNOKDollarURequest(exchange.getProperty("dollarURessourceName", String.class), references, metadatas));
+        exchange.getContext().createProducerTemplate().send("direct:dollarUCommand", exchange);
+        FileMoveUtil.move(exchange, exchange.getProperty("errorsSubdir", String.class), "inputFiles");
+        deleteNotification(exchange);
+        log.error("DollarU NOK: reason={}", (exception != null ? exception.getMessage() : "unknown"), exception);
+    }
+}
+
+Les fichiers listés: ALM_BEI_*, le traitement spécifique porte sur les fichiers csv dont commencent par "ALM_BEI_Client_Funding_" avec les colonne ci-dessous :
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:element xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="LigneBEI">
+    <xsd:complexType>
+        <xsd:sequence>
+            <xsd:element name="Id" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="DossierId" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Type" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="FacilityType" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Book" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="LigneMetier" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="SIREN" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NomClient" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="TradeDate" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="SettleDate" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Maturity" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NominalInitial" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NominalActuel" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="HorsBilan" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="CRD" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Devise" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="TauxFixe" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="RateIndex" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Tenor" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="RateIndexSpread" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="AmortizationType" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NomEnveloppe" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="QP_BEI" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:element>
+
+le format cible:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd"
+	 targetNamespace="http://www.tibco.com/schemas/bw_eaireports/Resources/Xsd/BEI/Schema.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="outputLigneBEI">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Id" type="xs:string" minOccurs="0"/>
+				<xs:element name="DossierId" type="xs:string" minOccurs="0"/>
+				<xs:element name="Type" type="xs:string" minOccurs="0"/>
+				<xs:element name="FacilityType" type="xs:string" minOccurs="0"/>
+				<xs:element name="Book" type="xs:string" minOccurs="0"/>
+				<xs:element name="LigneMetier" type="xs:string" minOccurs="0"/>
+				<xs:element name="SIREN" type="xs:string" minOccurs="0"/>
+				<xs:element name="NomClient" type="xs:string" minOccurs="0"/>
+				<xs:element name="TradeDate" type="xs:string" minOccurs="0"/>
+				<xs:element name="SettleDate" type="xs:string" minOccurs="0"/>
+				<xs:element name="Maturity" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalInitial" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalActuel" type="xs:string" minOccurs="0"/>
+				<xs:element name="HorsBilan" type="xs:string" minOccurs="0"/>
+				<xs:element name="CRD" type="xs:string" minOccurs="0"/>
+				<xs:element name="Devise" type="xs:string" minOccurs="0"/>
+				<xs:element name="TauxFixe" type="xs:string" minOccurs="0"/>
+				<xs:element name="RateIndex" type="xs:string" minOccurs="0"/>
+				<xs:element name="Tenor" type="xs:string" minOccurs="0"/>
+				<xs:element name="RateIndexSpread" type="xs:string" minOccurs="0"/>
+				<xs:element name="AmortizationType" type="xs:string" minOccurs="0"/>
+				<xs:element name="NomEnveloppe" type="xs:string" minOccurs="0"/>
+				<xs:element name="QP_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalInitial_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="NominalActuelBEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="HorsBilan_BEI" type="xs:string" minOccurs="0"/>
+				<xs:element name="CRD_BEI" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
+
+l'entete du fichier csv produit:
+Id;DossierId;Type;FacilityType;Book;Lignemétier;SIREN;Nomduclient;TradeDate;SettleDate;Maturity;Nominalinitial;Nominalactuel;HorsBilan;CRD;Devise;TauxFixe;RateIndex;Tenor;RateIndexSpread;AmortizationType;Nomdel'enveloppe;QPBEI;NominalinitialBEI;NominalactuelBEI;HorsBilanBEI;CRDBEI
+
