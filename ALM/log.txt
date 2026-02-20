@@ -5,5 +5,3 @@ String outputFileName = clientFunding.getFileName()
     .replace(".csv", "_OUT.csv");
 
 Path transformed = outputDirectory.resolve(outputFileName);
-
-Path transformed = clientFunding.resolveSibling(clientFunding.getFileName().toString().replace(".csv", "_OUT.csv"));
