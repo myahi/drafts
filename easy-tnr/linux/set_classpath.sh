@@ -1,34 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EASYTNR_HOME="/serveur_apps/easy-tnr"
+EASY_TNR_DIRECTORY="/serveur_apps/easy-tnr"
 
-# ENV_NAME doit être fourni par le script appelant (start_batch.sh)
-: "${ENV_NAME:?ENV_NAME is required (ex: DEVEAI)}"
+: "${ENV_NAME:?ENV_NAME manquant}"
 
-RUNTIME_DIR="${EASYTNR_HOME}/${ENV_NAME}"
+# Layout Windows: easy-tnr/libs/<ENV>/...
+LIB_ENV_DIR="${EASY_TNR_DIRECTORY}/libs/${ENV_NAME}"
 
-if [[ ! -d "${RUNTIME_DIR}" ]]; then
-  echo "[ERROR] Runtime introuvable: ${RUNTIME_DIR}"
-  exit 2
+# Fallback si vos jars sont ailleurs
+if [[ -d "${LIB_ENV_DIR}" ]]; then
+  BASE_DIR="${LIB_ENV_DIR}"
+else
+  # fallback possible: easy-tnr/DEVEAI (si tu as tout dedans)
+  ALT_DIR="${EASY_TNR_DIRECTORY}/${ENV_NAME}"
+  if [[ -d "${ALT_DIR}" ]]; then
+    BASE_DIR="${ALT_DIR}"
+  else
+    echo "[ERROR] Impossible de trouver le runtime de l'env ${ENV_NAME}."
+    echo "Cherché: ${LIB_ENV_DIR} ou ${ALT_DIR}"
+    exit 2
+  fi
 fi
 
 CP=""
 
-# Tous les jars directement dans le répertoire d'env (comme ta capture Windows)
-for j in "${RUNTIME_DIR}"/*.jar; do
+# Jars à la racine de BASE_DIR
+for j in "${BASE_DIR}"/*.jar; do
   [[ -e "$j" ]] || continue
   CP="${CP}:$j"
 done
 
-# Ajout config/resources de l'env (comme sous Windows)
-if [[ -d "${RUNTIME_DIR}/config" ]]; then
-  CP="${CP}:${RUNTIME_DIR}/config"
-fi
-if [[ -d "${RUNTIME_DIR}/resources" ]]; then
-  CP="${CP}:${RUNTIME_DIR}/resources"
-fi
+# Dossiers souvent nécessaires
+[[ -d "${BASE_DIR}/resources" ]] && CP="${CP}:${BASE_DIR}/resources"
+[[ -d "${BASE_DIR}/config" ]] && CP="${CP}:${BASE_DIR}/config"
 
-export EASYTNR_HOME
-export EASYTNR_RUNTIME_DIR="${RUNTIME_DIR}"
-export EASYTNR_CP="${CP#:}"
+# Et le config global (si vous l’utilisez)
+[[ -d "${EASY_TNR_DIRECTORY}/config" ]] && CP="${CP}:${EASY_TNR_DIRECTORY}/config"
+
+export EASY_TNR_DIRECTORY
+export EASYTNR_BASE_DIR="${BASE_DIR}"
+export EASYTNR_CLASSPATH="${CP#:}"
