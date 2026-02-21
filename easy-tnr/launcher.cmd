@@ -19,7 +19,7 @@ if "%DOMAIN%" == "dct.adt.local" (
 
 set "BASE_DIR=\\%SERVER%\CALYPSO_MOE\EasyTNR\libs\%ENV_NAME%"
 set /p DELIVERY_DATE=<%BASE_DIR%\config\delivery_date.txt
-set "BASE_LOCAL_DIR=%TMP%\EasyTNR\%ENV_NAME%"
+set "BASE_LOCAL_DIR=c:\serveur_apps\easy-tnr\%ENV_NAME%"
 
 if exist "%BASE_LOCAL_DIR%\config\delivery_date.txt" (
 	set /p LOCAL_DELIVERY_DATE=<%BASE_LOCAL_DIR%\config\delivery_date.txt
