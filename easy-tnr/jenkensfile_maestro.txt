@@ -1,0 +1,306 @@
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper                                
+@NonCPS
+String getLogFromRunWrapper(RunWrapper runWrapper, int logLines) {
+    runWrapper.getRawBuild().getLog(logLines).join('\n')
+}
+
+def buildHasFailed = "0"
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Test de Non Regression') {
+            parallel {
+                stage('Bloomberg Repo') {
+                    when {
+                        environment name: 'MAESTRO_BLOOMBERG_REPO', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_BLOOMBERG_REPO'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\BLOOMBERG_TO_CALYPSO\\REPO'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_BLOOMBERG_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('Bloomberg TOMS Bonds') {
+                    when {
+                        environment name: 'BLOOMBERG_BOND_TOMS', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'BLOOMBERG_BOND_TOMS'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\BLOOMBERG_TO_CALYPSO\\BOND_TOMS'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('Bloomberg Bonds') {
+                    when {
+                        environment name: 'MAESTRO_BLOOMBERG_BOND', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_BLOOMBERG_BOND'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\BLOOMBERG_TO_CALYPSO\\BOND'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('GLMX Repo') {
+                    when {
+                        environment name: 'MAESTRO_GLMX_REPO', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_GLMX_REPO'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\GLMX_TO_CALYPSO\\REPO'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_BLOOMBERG_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('CME-BTEC Repo') {
+                    when {
+                        environment name: 'MAESTRO_CME_REPO', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_CME_REPO'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\CME_TO_CALYPSO\\REPO'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('360T FX FWD') {
+                    when {
+                        environment name: 'MAESTRO_360T_FX_FWD', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_360T_FX_FWD'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\360T_TO_CALYPSO\\FX_FWD'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('360T FX SPOT') {
+                    when {
+                        environment name: 'MAESTRO_360T_FX_SPOT', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_360T_FX_SPOT'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\360T_TO_CALYPSO\\FX_SPOT'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+				stage('360T FX SWAP') {
+                    when {
+                        environment name: 'MAESTRO_360T_FX_SWAP', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_360T_FX_SWAP'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\360T_TO_CALYPSO\\FX_SWAP'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_CME-BTEC_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('SFIL Trades') {
+                    when {
+                        environment name: 'MAESTRO_SFIL', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_SFIL'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\SFIL_TO_CALYPSO'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_SFIL:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Eurex Repo') {
+                    when {
+                        environment name: 'MAESTRO_EUREX_REPO', value: "true"
+                    }
+                    steps {
+                        script {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                def RunWrapper buildInfo = build job: 'RUN_TNR_SCENARIOS_EAI', 
+                                    parameters: [
+                                        string(name: 'ENV', value: params.ENV), 
+                                        string(name: 'BATCH_NAME', value: 'MAESTRO_EUREX_REPO'), 
+                                        string(name: 'SCENARIOS', value: 'MAESTRO\\EUREX_TO_CALYPSO\\REPO'), 
+                                        string(name: 'VM_PARAMS', value: '-DMaestroDBURL=' + params.MaestroDBURL + ' -DMaestroDBPWD=' + params.MaestroDBPWD + ' -DMaestroDBUser=' + params.MaestroDBUser + ' -DEAIScenarioBasePath=' + params.EAIScenarioBasePath + ' -DTNRFolder=' + params.TNRFolder + ' -DmaestroProjectName=' + params.maestroProjectName + ' -DFTPHost=' + params.FTPHost + ' -DFTPUser=' + params.FTPUser + ' -DFTPPwd=' + params.FTPPwd + '')                            
+                                    ], 
+                                    propagate: false,
+                                    wait: true
+                                echo "Log of MAESTRO_EUREX_REPO:"
+                                echo getLogFromRunWrapper(buildInfo, 2000)
+                                echo buildInfo.currentResult
+                                if (buildInfo.currentResult != 'SUCCESS') {
+                                    buildHasFailed = "1"
+                                    error "Build failed, please read logs."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                if (buildHasFailed != "0") {
+                    currentBuild.result = "FAILED"
+                }
+                if (params.SEND_EMAIL) {
+                    emailext attachLog: true, 
+                        subject: '$DEFAULT_SUBJECT',
+                        to: 'ld-siege-dsi-dmf-eai@labanquepostale.fr',
+                        replyTo: 'ld-siege-dsi-dmf-eai@labanquepostale.fr',
+                        body: '$DEFAULT_CONTENT'
+                } else {
+                    echo 'Email sending disabled.'
+                }
+            }
+        }
+    }
+}
