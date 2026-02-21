@@ -1,0 +1,89 @@
+@echo off
+setlocal enableextensions enabledelayedexpansion
+
+REM ==========================================================
+REM  EasyTNR Launcher - FULL LOCAL (no network dependency)
+REM ==========================================================
+
+set "ENV_NAME=%~1"
+if "%ENV_NAME%"=="" (
+  echo ENV_NAME parameter is missing
+  pause
+  exit /b 1
+)
+
+set "SCRIPT_NAME=%~2"
+
+REM ----------------------------------------------------------
+REM Local base directory resolution:
+REM - If EASYTNR_HOME is defined, use it
+REM - Else fallback to C:\serveur_apps\easy-tnr
+REM ----------------------------------------------------------
+if defined EASYTNR_HOME (
+  set "EASYTNR_ROOT=%EASYTNR_HOME%"
+) else (
+  set "EASYTNR_ROOT=C:\serveur_apps\easy-tnr"
+)
+
+set "BASE_LOCAL_DIR=%EASYTNR_ROOT%\%ENV_NAME%"
+set "BASE_DIR=%BASE_LOCAL_DIR%"
+
+REM Optional sanity checks
+if not exist "%BASE_LOCAL_DIR%\" (
+  echo Local environment directory not found: "%BASE_LOCAL_DIR%"
+  echo Tip: set EASYTNR_HOME to your local root (e.g. C:\eai\easy-tnr)
+  pause
+  exit /b 1
+)
+
+REM Keep reading local delivery_date if present (no sync, just info)
+set "LOCAL_DELIVERY_DATE="
+if exist "%BASE_LOCAL_DIR%\config\delivery_date.txt" (
+  set /p LOCAL_DELIVERY_DATE=<"%BASE_LOCAL_DIR%\config\delivery_date.txt"
+)
+
+REM ----------------------------------------------------------
+REM Parse VM args pairs passed as:  ... key value key value ...
+REM Original behavior preserved: %5=%6 appended as " key=value "
+REM ----------------------------------------------------------
+set "VM_ARGS="
+:loop
+if NOT "%~5"=="" (
+  if NOT "%~6"=="" (
+    set "VM_ARGS=%VM_ARGS% %~5=%~6"
+  )
+)
+
+if "%~5"=="" goto next
+if "%~6"=="" goto next
+
+shift /5
+shift /5
+goto loop
+
+:next
+
+REM ----------------------------------------------------------
+REM Launch target script (local)
+REM ----------------------------------------------------------
+if not "%SCRIPT_NAME%"=="" (
+  if not exist "%BASE_LOCAL_DIR%\scripts\%SCRIPT_NAME%.cmd" (
+    echo Script to launch does not exist : "%BASE_LOCAL_DIR%\scripts\%SCRIPT_NAME%.cmd"
+    pause
+    exit /b 1
+  )
+
+  echo.
+  echo === EASYTNR FULL LOCAL ===
+  echo ROOT  : "%EASYTNR_ROOT%"
+  echo ENV   : "%ENV_NAME%"
+  echo SCRIPT: "%SCRIPT_NAME%"
+  if defined LOCAL_DELIVERY_DATE echo LOCAL_DELIVERY_DATE: %LOCAL_DELIVERY_DATE%
+  echo VM_ARGS: %VM_ARGS%
+  echo.
+
+  call "%BASE_LOCAL_DIR%\scripts\%SCRIPT_NAME%.cmd" %ENV_NAME% %~3 %~4 %VM_ARGS%
+)
+
+REM ping 1.1.1.1 -n 1 -w 5000 > nul
+endlocal
