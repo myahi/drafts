@@ -1,3 +1,5 @@
+-Doracle.jdbc.diagnostic.registerMBeans=false
+
 -Doracle.jdbc.DiagnosabilityMBean=false
 
 j'ai toujours ce warning meme en ajoutant l'option proposée:
