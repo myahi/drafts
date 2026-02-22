@@ -1,6 +1,1 @@
-Exception in thread "main" java.lang.NoClassDefFoundError: com/calypso/tk/core/Defaults
-        at calypso.lbp.qa.easy.tnr.step.jms.SendJMSMessageStep.doSteplet(SendJMSMessageStep.java:69)
-        at lbp.qa.easy.tnr.bean.Scenario.execute(Scenario.java:78)
-        at lbp.qa.easy.tnr.execution.ScenarioContext.executeScenarios(ScenarioContext.java:392)
-        at lbp.qa.easy.tnr.batch.EasyTnrLauncherBatch.processBatch(EasyTnrLauncherBatch.java:73)
-        at lbp.qa.easy.tnr.batch.EasyTnrLauncherBatch.main(EasyTnrLauncherBatch.java:35)
+/serveur_apps/easy-tnr/DEVEAI/
