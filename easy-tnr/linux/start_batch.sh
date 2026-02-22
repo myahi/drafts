@@ -3,9 +3,9 @@ set -euo pipefail
 
 EASY_TNR_HOME="/serveur_apps/easy-tnr"
 
-# Java 8 fournie (chemin donné)
-JAVA_HOME_8="/serveur_apps/easy-tnr/java-1.8.0-openjdk-1.8.0.201-2.b09.redhat.windows.x86_64"
-JAVA_EXE="${JAVA_HOME_8}/bin/java"
+# ✅ JDK 8 à utiliser
+JAVA_HOME="/serveur_apps/tools/jdk1.8.0"
+JAVA_EXE="${JAVA_HOME}/bin/java"
 
 if [[ $# -lt 3 ]]; then
   echo "Usage:"
@@ -27,7 +27,7 @@ CONFIG_FILE="${ENV_DIR}/config/${ENV_NAME}.tnrConfigFile.properties"
 LOGGC_DIR="${ENV_DIR}/logs"
 
 if [[ ! -x "${JAVA_EXE}" ]]; then
-  echo "[ERROR] java introuvable/non exécutable: ${JAVA_EXE}"
+  echo "[ERROR] Java introuvable ou non exécutable: ${JAVA_EXE}"
   exit 2
 fi
 
@@ -54,7 +54,7 @@ echo "===================================="
 
 cd "${ENV_DIR}"
 
-# Classpath identique au Windows: resources + tous les jars du dossier env
+# Classpath identique au Windows
 CLASSPATH="resources:*"
 
 "${JAVA_EXE}" \
