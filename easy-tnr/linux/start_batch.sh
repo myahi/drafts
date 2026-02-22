@@ -3,6 +3,9 @@ set -euo pipefail
 
 EASY_TNR_HOME="/serveur_apps/easy-tnr"
 
+# 👉 Mets ici le JAVA_HOME Java 8 de ta VM (chemin exact)
+JAVA_HOME_8="${JAVA_HOME_8:-/usr/lib/jvm/java-8-openjdk-amd64}"
+
 if [[ $# -lt 3 ]]; then
   echo "Usage:"
   echo "  $0 <ENV_NAME> <BATCH_NAME> <SCENARIOS> [VM_ARGS...]"
@@ -35,19 +38,28 @@ fi
 
 mkdir -p "${LOGGC_DIR}"
 
-echo "Starting Easy TNR (Linux)"
-echo "ENV_DIR=${ENV_DIR}"
-echo "CONFIG_FILE=${CONFIG_FILE}"
-echo "BATCH_NAME=${BATCH_NAME}"
-echo "SCENARIOS=${SCENARIOS}"
+JAVA_EXE="${JAVA_HOME_8}/bin/java"
+if [[ ! -x "${JAVA_EXE}" ]]; then
+  echo "[ERROR] Java 8 introuvable ou non exécutable: ${JAVA_EXE}"
+  echo "       -> Export JAVA_HOME_8=/chemin/vers/java8 (ou modifie le script)"
+  exit 2
+fi
+
+echo "===================================="
+echo " Starting Easy TNR (Linux - Java 8)"
+echo " JAVA_EXE     = ${JAVA_EXE}"
+echo " ENV_DIR      = ${ENV_DIR}"
+echo " CONFIG_FILE  = ${CONFIG_FILE}"
+echo " BATCH_NAME   = ${BATCH_NAME}"
+echo " SCENARIOS    = ${SCENARIOS}"
+echo "===================================="
 
 cd "${ENV_DIR}"
 
-# Classpath identique au Windows :
-# resources + tous les jars du dossier
+# Classpath identique au Windows
 CLASSPATH="resources:*"
 
-java \
+"${JAVA_EXE}" \
   -Duser.home="${ENV_DIR}" \
   "${VM_ARGS[@]}" \
   -Dtnr.configFile="${CONFIG_FILE}" \
