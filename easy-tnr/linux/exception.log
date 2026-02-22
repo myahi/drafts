@@ -1,4 +1,6 @@
-maintenant je veux metttre dans Git les 2 sous repertoires :
-easy-tnr\config\eai\scnearion: contenant les description des scneario de test
-C:\serveur_apps\easy-tnr\data\eai\Differential: contenant le resutlat attendu par lors de l'exuction des scénarion
-que me propose tu comme architecture git: je mets tout sur git ou uniqument les 2 reperoite listé plus haut ?
+comment je peux ignore tous le repertoire:
+
+C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\workspace
+C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\reports
+C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\Differential\**\CURRENT_RESULT
+C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\Differential\**\DIFF_RESULT
