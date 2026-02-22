@@ -1,3 +1,5 @@
+-Doracle.jdbc.registerMbeans=false
+
 AVERTISSEMENT: Error while registering Oracle JDBC Diagnosability MBean.
 java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
         at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
