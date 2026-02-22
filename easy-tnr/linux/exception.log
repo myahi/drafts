@@ -1,4 +1,1 @@
-[0.000s][warning][gc] -Xloggc is deprecated. Will use -Xlog:gc:/serveur_apps/easy-tnr/DEVEAI/logs/BLOOMBERG_BOND_TOMS_LOGGC.log instead.
-Unrecognized VM option 'PrintGCDateStamps'
-Error: Could not create the Java Virtual Machine.
-Error: A fatal exception has occurred. Program will exit.
+/serveur_apps/easy-tnr/java-1.8.0-openjdk-1.8.0.201-2.b09.redhat.windows.x86_64/
