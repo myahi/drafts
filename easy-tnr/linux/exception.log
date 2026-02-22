@@ -1,4 +1,30 @@
-cd /serveur_apps/easy-tnr/DEVEAI
-for j in *.jar; do
-  jar tf "$j" 2>/dev/null | grep -q "com/calypso/tk/core/Defaults.class" && echo "FOUND in: $j"
-done
+j'ai toujours ce warning meme en ajoutant l'option proposée:
+/serveur_apps/easy-tnr/scripts/start_batch.sh DEVEAI BLOOMBERG_BOND_TOMS "MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS" -DMaestroDBURL=jdbc:oracle:thin:@SDV4EAI01.marches.intra.laposte.fr:1521/dv1maes1 -DMaestroDBPWD=Tib3-czsx_784ldMa1264 -DMaestroDBUser=MAESTRO -DEAIScenarioBasePath=/serveur_apps/easy-tnr/data/eai/Differential -DTNRFolder=/sdv4eai02/serveur_apps_rw/TNR/ -DmaestroProjectName=MAESTRO-TNR -DFTPHost=sdv4eai02 -DFTPUser=usr_svc_eai_qlf -DFTPPwd=EA-DX0h3LMeULoZVm5UEb -Doracle.jdbc.registerMbeans=false
+
+2026-02-22 15:04:17,516 main ERROR Could not register mbeans java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
+        at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+        at java.lang.SecurityManager.checkPermission(SecurityManager.java:585)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.checkMBeanTrustPermission(DefaultMBeanServerInterceptor.java:1848)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.registerMBean(DefaultMBeanServerInterceptor.java:322)
+        at com.sun.jmx.mbeanserver.JmxMBeanServer.registerMBean(JmxMBeanServer.java:522)
+        at org.apache.logging.log4j.core.jmx.Server.register(Server.java:400)
+        at org.apache.logging.log4j.core.jmx.Server.reregisterMBeansAfterReconfigure(Server.java:168)
+        at org.apache.logging.log4j.core.jmx.Server.reregisterMBeansAfterReconfigure(Server.java:141)
+        at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:632)
+        at org.apache.logging.log4j.core.LoggerContext.reconfigure(LoggerContext.java:694)
+        at org.apache.logging.log4j.core.LoggerContext.reconfigure(LoggerContext.java:711)
+        at org.apache.logging.log4j.core.LoggerContext.start(LoggerContext.java:253)
+        at org.apache.logging.log4j.core.impl.Log4jContextFactory.getContext(Log4jContextFactory.java:245)
+        at org.apache.logging.log4j.core.impl.Log4jContextFactory.getContext(Log4jContextFactory.java:47)
+        at org.apache.logging.log4j.LogManager.getContext(LogManager.java:176)
+        at org.apache.logging.log4j.LogManager.getLogger(LogManager.java:666)
+        at com.calypso.tk.core.Log.initializeCalypsoLoggers(Log.java:80)
+        at com.calypso.tk.core.Log.<init>(Log.java:63)
+        at com.calypso.tk.core.LogBase.<clinit>(LogBase.java:228)
+        at com.calypso.tk.core.Defaults.<clinit>(Defaults.java:1408)
+        at calypso.lbp.qa.easy.tnr.plugin.CalypsoProxyApplication.initDefaults(CalypsoProxyApplication.java:131)
+        at calypso.lbp.qa.easy.tnr.step.jms.SendJMSMessageStep.doSteplet(SendJMSMessageStep.java:58)
+        at lbp.qa.easy.tnr.bean.Scenario.execute(Scenario.java:78)
+        at lbp.qa.easy.tnr.execution.ScenarioContext.executeScenarios(ScenarioContext.java:392)
+        at lbp.qa.easy.tnr.batch.EasyTnrLauncherBatch.processBatch(EasyTnrLauncherBatch.java:73)
+        at lbp.qa.easy.tnr.batch.EasyTnrLauncherBatch.main(EasyTnrLauncherBatch.java:35)
