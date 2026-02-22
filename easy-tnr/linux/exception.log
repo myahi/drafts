@@ -1,3 +1,5 @@
+-Doracle.jdbc.DiagnosabilityMBean=false
+
 j'ai toujours ce warning meme en ajoutant l'option proposée:
 
 AVERTISSEMENT: Error while registering Oracle JDBC Diagnosability MBean.
