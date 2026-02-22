@@ -52,10 +52,8 @@ echo " BATCH_NAME   = ${BATCH_NAME}"
 echo " SCENARIOS    = ${SCENARIOS}"
 echo "===================================="
 
-cd "${ENV_DIR}"
-
-# Classpath identique au Windows
-CLASSPATH="resources:*"
+# ✅ Classpath ABSOLU (robuste)
+CLASSPATH="${ENV_DIR}/resources:${ENV_DIR}/*"
 
 "${JAVA_EXE}" \
   -Duser.home="${ENV_DIR}" \
