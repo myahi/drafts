@@ -1,1 +1,4 @@
-/serveur_apps/easy-tnr/DEVEAI/
+cd /serveur_apps/easy-tnr/DEVEAI
+for j in *.jar; do
+  jar tf "$j" 2>/dev/null | grep -q "com/calypso/tk/core/Defaults.class" && echo "FOUND in: $j"
+done
