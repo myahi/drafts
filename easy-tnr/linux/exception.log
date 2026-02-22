@@ -1,3 +1,5 @@
+-Dlog4j2.disableJmx=true
+
 j'ai toujours ce warning meme en ajoutant l'option proposée:
 /serveur_apps/easy-tnr/scripts/start_batch.sh DEVEAI BLOOMBERG_BOND_TOMS "MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS" -DMaestroDBURL=jdbc:oracle:thin:@SDV4EAI01.marches.intra.laposte.fr:1521/dv1maes1 -DMaestroDBPWD=Tib3-czsx_784ldMa1264 -DMaestroDBUser=MAESTRO -DEAIScenarioBasePath=/serveur_apps/easy-tnr/data/eai/Differential -DTNRFolder=/sdv4eai02/serveur_apps_rw/TNR/ -DmaestroProjectName=MAESTRO-TNR -DFTPHost=sdv4eai02 -DFTPUser=usr_svc_eai_qlf -DFTPPwd=EA-DX0h3LMeULoZVm5UEb -Doracle.jdbc.registerMbeans=false
 
