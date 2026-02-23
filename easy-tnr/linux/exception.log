@@ -1,7 +1,7 @@
 étant donné que lancement local des tnr fonctionne en full local linux
 je veux désormais lancer une pipline jenkins depuis sgl4shn04 vers sdv4eai02 en ssh
 elle devrait faire les taches suivante:
-1. git checkout du repo https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data qui contient les scnearions et les Differenciel (input tnr, expected...) 
+1. git checkout du repo https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data qui contient les scnearions et les Differenciel (input tnr, expected...) avec GIT_CRED = 'usr_gitlab_eai' 
 2. il synchronise le contenu sur le contenu doit etre placé ici sdv4eai02: /serveur_apps/easy-tnr/data/eai/
 3. il lance en ssh la commande suivante (on commence par une seul périmetre jenkins on élagrira après)  /serveur_apps/easy-tnr/scripts/start_batch.sh 
 DEVEAI (Paramètre String jenkins gui)
