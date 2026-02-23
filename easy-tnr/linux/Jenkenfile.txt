@@ -1,0 +1,66 @@
+pipeline {
+  agent { label 'linux' }
+
+  environment {
+    APP_HOST = 'sdv4eai02'
+    APP_DATA_DIR = '/serveur_apps/easy-tnr/data/eai/'
+    APP_SCRIPT = '/serveur_apps/easy-tnr/scripts/start_batch.sh'
+    REPO_URL = 'https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data.git'
+
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+  }
+
+  stages {
+
+    stage('Checkout develop') {
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/develop']],
+          userRemoteConfigs: [[
+            url: env.REPO_URL,
+            credentialsId: 'gitlab-tnr-data'
+          ]]
+        ])
+      }
+    }
+
+    stage('Sync to sdv4eai02') {
+      steps {
+        sshagent(credentials: ['ssh-sdv4eai02']) {
+          sh """
+            rsync -az --delete \
+              -e "ssh ${SSH_OPTS}" \
+              ./ \
+              ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+          """
+        }
+      }
+    }
+
+    stage('Run BLOOMBERG_BOND_TOMS') {
+      when { expression { return params.BLOOMBERG_BOND_TOMS } }
+      steps {
+        sshagent(credentials: ['ssh-sdv4eai02']) {
+          sh """
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+              ${APP_SCRIPT} \
+              ${ENV_NAME} \
+              BLOOMBERG_BOND_TOMS \
+              MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS \
+              -DMaestroDBURL=${MaestroDBURL} \
+              -DMaestroDBUser=${MaestroDBUser} \
+              -DMaestroDBPWD=${MaestroDBPWD} \
+              -DEAIScenarioBasePath=${EAIScenarioBasePath} \
+              -DTNRFolder=${TNRFolder} \
+              -DmaestroProjectName=${maestroProjectName} \
+              -DFTPHost=${FTPHost} \
+              -DFTPUser=${FTPUser} \
+              -DFTPPwd=${FTPPwd}
+            "
+          """
+        }
+      }
+    }
+  }
+}
