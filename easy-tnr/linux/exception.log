@@ -1,6 +1,18 @@
-comment je peux ignore tous le repertoire:
-
-C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\workspace
-C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\reports
-C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\Differential\**\CURRENT_RESULT
-C:\serveur_apps\eai_workspace_new\easy-tnr\data\eai\Differential\**\DIFF_RESULT
+étant donné que lancement local des tnr fonctionne en full local linux
+je veux désormais lancer une pipline jenkins depuis sgl4shn04 vers sdv4eai02 en ssh
+elle devrait faire les taches suivante:
+1. git checkout du repo https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data qui contient les scnearions et les Differenciel (input tnr, expected...) 
+2. il synchronise le contenu sur le contenu doit etre placé ici sdv4eai02: /serveur_apps/easy-tnr/data/eai/
+3. il lance en ssh la commande suivante (on commence par une seul périmetre jenkins on élagrira après)  /serveur_apps/easy-tnr/scripts/start_batch.sh 
+DEVEAI (Paramètre String jenkins gui)
+BLOOMBERG_BOND_TOMS (Paramètre Boolean jenkins gui)
+"MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS" (si BLOOMBERG_BOND_TOMS = true alors on passe cette valeur)
+-DMaestroDBURL=jdbc:oracle:thin:@SDV4EAI01.marches.intra.laposte.fr:1521/dv1maes1 (Paramètre String jenkins gui)
+-DMaestroDBPWD=Tib3-czsx_784ldMa1264 (Paramètre "Mot de passe" jenkins gui)
+-DMaestroDBUser=MAESTRO (Paramètre String jenkins gui)
+-DEAIScenarioBasePath=/serveur_apps/easy-tnr/data/eai/Differential (Paramètre String jenkins gui)
+-DTNRFolder=/sdv4eai02/serveur_apps_rw/TNR/ (Paramètre String jenkins gui)
+-DmaestroProjectName=MAESTRO-TNR (Paramètre String jenkins gui)
+-DFTPHost=sdv4eai02 (Paramètre String jenkins gui)
+-DFTPUser=usr_svc_eai_qlf (Paramètre String jenkins gui)
+-DFTPPwd=EA-DX0h3LMeULoZVm5UEb (Paramètre "Mot de passe" jenkins gui)
