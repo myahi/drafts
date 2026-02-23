@@ -1,0 +1,1 @@
+java -Xlog:class+load=info -jar app.jar
