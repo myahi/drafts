@@ -3,10 +3,11 @@ pipeline {
 
   environment {
     APP_HOST = 'sdv4eai02'
-    APP_USER = 'user'   // à adapter
     APP_DATA_DIR = '/serveur_apps/easy-tnr/data/eai/'
     APP_SCRIPT = '/serveur_apps/easy-tnr/scripts/start_batch.sh'
     REPO_URL = 'https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data.git'
+
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
   }
 
   stages {
@@ -29,9 +30,9 @@ pipeline {
         sshagent(credentials: ['ssh-sdv4eai02']) {
           sh """
             rsync -az --delete \
-              -e "ssh -o StrictHostKeyChecking=no" \
+              -e "ssh ${SSH_OPTS}" \
               ./ \
-              ${APP_USER}@${APP_HOST}:${APP_DATA_DIR}
+              ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
           """
         }
       }
@@ -42,7 +43,7 @@ pipeline {
       steps {
         sshagent(credentials: ['ssh-sdv4eai02']) {
           sh """
-            ssh ${APP_USER}@${APP_HOST} "
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
               ${APP_SCRIPT} \
               ${ENV_NAME} \
               BLOOMBERG_BOND_TOMS \
