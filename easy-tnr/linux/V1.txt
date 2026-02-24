@@ -1,0 +1,81 @@
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    APP_HOST = 'sdv4eai02'
+    APP_DATA_DIR = '/serveur_apps/easy-tnr/data/'
+    APP_SCRIPT = '/serveur_apps/easy-tnr/scripts/start_batch.sh'
+    REPO_URL = 'https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data.git'
+    RSYNC_OPTS = '-q -c aes128-ctr -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+    GIT_CRED = 'usr_gitlab_eai'
+  }
+
+  stages {
+    stage('Checkout TNR data from repository') {
+      steps {
+        // Suppression du contenu du workspace pour forcer un état propre
+        deleteDir() 
+        script {
+          try {
+            def branch = 'develop'
+            checkout([
+              $class: 'GitSCM',
+              branches: [[name: branch]],
+              userRemoteConfigs: [[
+                url: "${env.REPO_URL}",
+                credentialsId: env.GIT_CRED
+              ]]
+            ])
+          } catch (e) {
+            echo "Erreur pendant le checkout : ${e.toString()}"
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Sync to sdv4eai02') {
+      steps {
+        script {
+          try {
+            // Ajout de l'exclusion .git/ pour ne synchroniser que les DATA
+            sh """
+              rsync -a --delete --exclude ".git/" \
+                -e "ssh ${RSYNC_OPTS}" \
+                ./ \
+                ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+            """
+          } catch (e) {
+            echo "Erreur pendant la sync : ${e.toString()}"
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Run BLOOMBERG_BOND_TOMS') {
+      when { expression { return params.BLOOMBERG_BOND_TOMS } }
+      steps {
+        sh """
+          ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+            ${APP_SCRIPT} \
+            DEVEAI \
+            BLOOMBERG_BOND_TOMS \
+            MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS \
+            -DMaestroDBURL=${params.MaestroDBURL} \
+            -DMaestroDBUser=${params.MaestroDBUser} \
+            -DMaestroDBPWD=${params.MaestroDBPWD} \
+            -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
+            -DTNRFolder=${params.TNRFolder} \
+            -DmaestroProjectName=${params.maestroProjectName} \
+            -DFTPHost=${params.FTPHost} \
+            -DFTPUser=${params.FTPUser} \
+            -DFTPPwd=${params.FTPPwd}
+          "
+        """
+      }
+    }
+  }
+}
