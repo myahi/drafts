@@ -1,3 +1,19 @@
+# Ignorer certains dossiers spécifiques
+eai/reports/
+eai/workspace/
+
+# Ignorer tous les fichiers DIFF_RESULT et CURRENT_RESULT
+**/DIFF_RESULT/
+**/CURRENT_RESULT/
+
+# Sauf le .gitkeep dans CURRENT_RESULT
+!**/CURRENT_RESULT/.gitkeep
+
+# Ignorer tous les fichiers .lock partout
+*.lock
+
+
+
 eai/reports
 eai/workspace
 **/DIFF_RESULT
