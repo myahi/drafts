@@ -1,0 +1,99 @@
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.nio.file.*;
+import java.util.*;
+import java.util.regex.*;
+import java.util.stream.Collectors;
+
+public class FileMatcher {
+
+    private static final int MAX_CHARS = 100;
+
+    public static void main(String[] args) {
+        if (args.length < 3) {
+            System.out.println("Usage: java FileMatcher <dir_xml> <dir_recherche> <dir_archives>");
+            return;
+        }
+
+        Path dirXml = Paths.get(args[0]);
+        Path dirSearch = Paths.get(args[1]);
+        Path dirArchives = Paths.get(args[2]);
+
+        try {
+            // Création du dossier d'archive s'il n'existe pas
+            if (!Files.exists(dirArchives)) {
+                Files.createDirectories(dirArchives);
+            }
+
+            // 1. Charger les messages sources
+            System.out.println("1. Extraction des messages...");
+            Set<String> messageContents = loadMessagesFromDir(dirXml);
+
+            // 2. Indexer les fichiers cibles (on garde le Path complet pour le déplacement)
+            System.out.println("2. Indexation des fichiers cibles (100 ers caractères)...");
+            Map<Path, String> fileMap = loadFilesHeadToMap(dirSearch);
+
+            // 3. Comparaison et Déplacement
+            System.out.println("3. Recherche et déplacement vers : " + dirArchives);
+            int countMoved = 0;
+
+            for (String message : messageContents) {
+                // Utilisation d'un Iterator pour pouvoir supprimer de la map après déplacement
+                Iterator<Map.Entry<Path, String>> it = fileMap.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<Path, String> entry = it.next();
+                    Path filePath = entry.getKey();
+                    String contentHead = entry.getValue();
+
+                    if (contentHead.contains(message)) {
+                        try {
+                            Path target = dirArchives.resolve(filePath.getFileName());
+                            // Déplacement avec option REPLACE_EXISTING au cas où
+                            Files.move(filePath, target, StandardCopyOption.REPLACE_EXISTING);
+                            
+                            System.out.println("[ARCHIVÉ] " + filePath.getFileName());
+                            it.remove(); // On l'enlève de la map pour ne pas le traiter deux fois
+                            countMoved++;
+                        } catch (IOException e) {
+                            System.err.println("[ERREUR] Impossible de déplacer " + filePath.getFileName() + " : " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            System.out.println("\nTerminé. Fichiers déplacés : " + countMoved);
+
+        } catch (IOException e) {
+            System.err.println("Erreur : " + e.getMessage());
+        }
+    }
+
+    private static Set<String> loadMessagesFromDir(Path dir) throws IOException {
+        Pattern pattern = Pattern.compile("<ns0:messageContent[^>]*>(.*?)</ns0:messageContent>", Pattern.DOTALL);
+        return Files.walk(dir)
+                .filter(Files::isRegularFile)
+                .map(path -> {
+                    try {
+                        String content = new String(Files.readAllBytes(path));
+                        Matcher matcher = pattern.matcher(content);
+                        if (matcher.find()) return matcher.group(1).trim();
+                    } catch (IOException e) { /* ignore */ }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private static Map<Path, String> loadFilesHeadToMap(Path dir) throws IOException {
+        Map<Path, String> map = new HashMap<>();
+        Files.walk(dir)
+                .filter(Files::isRegularFile)
+                .forEach(path -> {
+                    try (BufferedReader reader = Files.newBufferedReader(path)) {
+                        char[] buffer = new char[MAX_CHARS];
+                        int lus = reader.read(buffer, 0, MAX_CHARS);
+                        map.put(path, (lus == -1) ? "" : new String(buffer, 0, lus));
+                    } catch (IOException e) { /* ignore */ }
+                });
+        return map;
+    }
+}
