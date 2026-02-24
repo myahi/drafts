@@ -1,0 +1,6 @@
+eai/reports
+eai/workspace
+**/DIFF_RESULT
+**/CURRENT_RESULT
+!**/CURRENT_RESULT/.gitkeep
+*.lock
