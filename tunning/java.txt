@@ -8,3 +8,13 @@
 
 
 -XX:+UseG1GC -XX:MaxHeapFreeRatio=40 -XX:MinHeapFreeRatio=20 -XX:GCTimeRatio=19 
+
+
+Voici une explication concise de chaque paramètre pour votre configuration de 640 Mo :
+ * -Xms256m -Xmx640m : Définit la taille minimale (démarrage) et maximale de la mémoire vive (Heap) allouée. Java commencera avec 256 Mo et pourra monter jusqu'à 640 Mo si nécessaire.
+ * -XX:+UseG1GC : Active le Garbage Collector G1. C'est un ramasse-miettes moderne qui découpe la mémoire en petites régions pour éviter de bloquer l'application trop longtemps lors du nettoyage.
+ * -XX:MaxGCPauseMillis=200 : C'est l'objectif de temps de pause maximum. Vous demandez à Java de ne pas arrêter votre application plus de 200 millisecondes pour nettoyer la mémoire.
+ * -XX:ParallelGCThreads=2 : Définit le nombre de fils (threads) utilisés pour nettoyer la mémoire quand l'application est arrêtée. Avec 2, on évite de surcharger le processeur sur une petite machine.
+ * -XX:ConcGCThreads=1 : Définit le nombre de threads qui nettoient la mémoire en fond de tâche pendant que l'application continue de tourner.
+ * -XX:InitiatingHeapOccupancyPercent=45 : C'est le seuil de déclenchement. Le nettoyage de fond commence dès que le tas (Heap) est rempli à 45%. Cela permet d'anticiper pour ne jamais atteindre les 640 Mo fatidiques.
+Voulez-vous que je vous aide à valider si ces paramètres améliorent la fluidité de votre traitement STP ?
