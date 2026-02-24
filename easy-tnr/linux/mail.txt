@@ -1,0 +1,33 @@
+Objet : Récapitulatif des travaux réalisés sur Easy TNR – Full Local
+
+Bonjour [Nom du destinataire],
+
+Voici un récapitulatif des travaux réalisés sur Easy TNR, avec un focus sur le full local, le gain de temps et la sécurisation des versions :
+
+1. Passage en full local et rationalisation
+
+Nous n’utilisons plus l’exécution à distance sur le serveur sin1shr03, ce qui réduit considérablement le temps d’exécution des TNRs.
+
+L’exécution fonctionne désormais complètement en local, en mode GUI pour le contrôle visuel et en mode batch pour l’exécution automatique de tous les scénarios d’un répertoire.
+
+Les scripts Windows ont été adaptés pour Linux, permettant la suppression de l’agent Windows dédié au lancement des TNRs et un gain de temps significatif.
+
+
+2. Sécurisation des versions
+
+Les scénarios et résultats attendus sont synchronisés dans Git, garantissant la sécurisation des versions et la traçabilité des modifications.
+
+
+3. Automatisation via Jenkins
+
+Le job Jenkins orchestre automatiquement le lancement des scénarios, la synchronisation avec le serveur local et la collecte des résultats.
+
+Grâce aux adaptations Linux, le nœud Windows dédié a été supprimé, simplifiant l’infrastructure et centralisant l’exécution sur un environnement unique.
+
+
+
+---
+
+Si tu veux, je peux te faire une version finale ultra-concise en un seul paragraphe, qui résume tout et met bien en avant le full local, le gain de temps et la sécurisation Git.
+
+Veux‑tu que je fasse cette version ?
