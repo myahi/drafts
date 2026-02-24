@@ -1,1 +1,10 @@
+-Xms256m -Xmx640m \
+-XX:+UseG1GC \
+-XX:MaxGCPauseMillis=200 \
+-XX:ParallelGCThreads=2 \
+-XX:ConcGCThreads=1 \
+-XX:InitiatingHeapOccupancyPercent=45 \
+-XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/chemin/vers/gc.log
+
+
 -XX:+UseG1GC -XX:MaxHeapFreeRatio=40 -XX:MinHeapFreeRatio=20 -XX:GCTimeRatio=19 
