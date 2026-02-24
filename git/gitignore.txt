@@ -2,6 +2,28 @@
 eai/reports/
 eai/workspace/
 
+# 1. On autorise Git à examiner les dossiers CURRENT_RESULT
+!**/CURRENT_RESULT/
+
+# 2. On ignore tout ce qu'il y a à l'intérieur
+**/CURRENT_RESULT/*
+
+# 3. SAUF le fichier .gitkeep
+!**/CURRENT_RESULT/.gitkeep
+
+# Ignorer tous les dossiers DIFF_RESULT (ici l'exclusion totale marche car pas d'exception)
+**/DIFF_RESULT/
+
+# Ignorer tous les fichiers .lock partout
+*.lock
+
+
+
+
+# Ignorer certains dossiers spécifiques
+eai/reports/
+eai/workspace/
+
 # Ignorer tous les fichiers DIFF_RESULT et CURRENT_RESULT
 **/DIFF_RESULT/
 **/CURRENT_RESULT/
