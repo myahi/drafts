@@ -1,0 +1,1 @@
+rsync -az --delete -e 'ssh -q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5' ./ usr_svc_eai_qlf@sdv4eai02:/serveur_apps/easy-tnr/data/
