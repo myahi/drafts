@@ -1,2 +1,1 @@
-pour ssh je veux les parametres '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
-et avec le user env.EAI_SSH_USER
+09:26:13  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Difference found in test file: Expected text value 'Non_Callable_Term_non_Subst' but was 'Callable_Term' - comparing <value ...>Non_Callable_Term_non_Subst</value> at /calypsoDocument[1]/calypsoObject[1]/keyword[5]/value[1]/text()[1] to <value ...>Callable_Term</value> at /calypsoDocument[1]/calypsoObject[1]/keyword[5]/value[1]/text()[1]
