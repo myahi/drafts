@@ -2,6 +2,56 @@ stage('Send Recap Email') {
     when { expression { return params.SEND_EMAIL_REPORT } }
     steps {
         script {
+            // Récupération du statut final
+            def result = currentBuild.currentResult 
+            def color = (result == 'SUCCESS') ? "#28a745" : "#d73a49"
+            def consoleUrl = "${env.BUILD_URL}console" // Lien direct vers la console
+            
+            def subject = "Rapport TNR : ${env.JOB_NAME} - #${env.BUILD_NUMBER} [${result}]"
+            
+            def body = """
+                <html>
+                <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6;">
+                    <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                        <h2 style="color: ${color}; border-bottom: 2px solid ${color}; padding-bottom: 10px;">
+                            Statut de l'exécution : ${result}
+                        </h2>
+                        
+                        <p>Le job <strong>${env.JOB_NAME}</strong> (Build #${env.BUILD_NUMBER}) s'est terminé.</p>
+                        
+                        <div style="margin: 30px 0; text-align: center;">
+                            <a href="${consoleUrl}" 
+                               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                               VOIR LA CONSOLE JENKINS
+                            </a>
+                        </div>
+
+                        <hr style="border: 0; border-top: 1px solid #eee;" />
+                        <p style="font-size: 0.9em; color: #666;">
+                            <b>Détails supplémentaires :</b><br/>
+                            Hôte cible : ${env.APP_HOST}<br/>
+                            Date : ${new Date().format('dd/MM/yyyy HH:mm')}
+                        </p>
+                    </div>
+                </body>
+                </html>
+            """
+            
+            mail to: 'votre-equipe@laposte.fr',
+                 subject: subject,
+                 body: body,
+                 mimeType: 'text/html'
+        }
+    }
+}
+
+
+
+
+stage('Send Recap Email') {
+    when { expression { return params.SEND_EMAIL_REPORT } }
+    steps {
+        script {
             // Construction du corps du message
             def subject = "Rapport d'exécution Jenkins : ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}"
             def summary = """
