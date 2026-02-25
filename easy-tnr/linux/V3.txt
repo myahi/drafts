@@ -2,6 +2,34 @@ stage('Run MAESTRO_BLOOMBERG_REPO') {
     when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
     steps {
         script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+            }
+        }
+    }
+}
+
+stage('Run BLOOMBERG_BOND_TOMS') {
+    when { expression { return params.BLOOMBERG_BOND_TOMS } }
+    steps {
+        script {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+
+// ... répétez la même structure pour les autres stages ...
+
+
+
+
+stage('Run MAESTRO_BLOOMBERG_REPO') {
+    when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
+    steps {
+        script {
             try {
                 runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
             } catch (e) {
