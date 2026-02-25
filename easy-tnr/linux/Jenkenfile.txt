@@ -14,7 +14,7 @@ options { timestamps(); disableConcurrentBuilds() }
 
   stages {
 
-    stage('Checkout TNR data from repository') {
+  stage('Checkout TNR data from repository') {
   steps {
     script {
       try {
@@ -89,7 +89,7 @@ stage('Run MAESTRO_BLOOMBERG_BOND') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_BLOOMBERG_BOND', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_BLOOMBERG_BOND', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND')
             }
         }
     }
@@ -100,7 +100,7 @@ stage('Run MAESTRO_GLMX_REPO') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_GLMX_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_GLMX_REPO', 'MAESTRO/GLMX_TO_CALYPSO/REPO')
             }
         }
     }
@@ -111,7 +111,7 @@ stage('Run MAESTRO_CME_REPO') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_CME_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_CME_REPO', 'MAESTRO/CME_TO_CALYPSO/REPO')
             }
         }
     }
@@ -122,7 +122,7 @@ stage('Run MAESTRO_360T_FX_FWD') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_360T_FX_FWD', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_360T_FX_FWD', 'MAESTRO/360T_TO_CALYPSO/FX_FWD')
             }
         }
     }
@@ -133,7 +133,7 @@ stage('Run MAESTRO_360T_FX_SPOT') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_360T_FX_SPOT', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_360T_FX_SPOT', 'MAESTRO/360T_TO_CALYPSO/FX_SPOT')
             }
         }
     }
@@ -144,7 +144,7 @@ stage('Run MAESTRO_360T_FX_SWAP') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_360T_FX_SWAP', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_360T_FX_SWAP', 'MAESTRO/360T_TO_CALYPSO/FX_SWAP')
             }
         }
     }
@@ -155,7 +155,7 @@ stage('Run MAESTRO_SFIL') {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_SFIL', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                runTnrStage('MAESTRO_SFIL', 'MAESTRO/SFIL_TO_CALYPSO')
             }
         }
     }
@@ -170,7 +170,7 @@ def runTnrStage(stageName, scenarioPath) {
     
     try {
         sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LC_ALL=C.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US; export LC_ALL=C.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
                 -DMaestroDBURL=${params.MaestroDBURL} \
                 -DMaestroDBUser=${params.MaestroDBUser} \
                 -DMaestroDBPWD=${params.MaestroDBPWD} \
