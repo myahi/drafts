@@ -1,11 +1,8 @@
 def runTnrStage(stageName, scenarioPath) {
-    // Le nom du fichier log doit être unique si vous lancez des stages en parallèle
     def logFile = "output_${stageName}.log"
-    
     try {
         sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-                ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
                 -DMaestroDBURL=${params.MaestroDBURL} \
                 -DMaestroDBUser=${params.MaestroDBUser} \
                 -DMaestroDBPWD=${params.MaestroDBPWD} \
@@ -17,15 +14,12 @@ def runTnrStage(stageName, scenarioPath) {
                 -DFTPPwd=${params.FTPPwd}
             " | tee ${logFile}
 
-            # Si grep trouve un mot clé, il renvoie 0 (succès du grep), 
-            # on entre alors dans le bloc pour forcer l'erreur.
             if grep -Ei "failure|ERROR|Difference found" ${logFile}; then
                 echo "Anomalie détectée dans le fichier log."
                 exit 1
             fi
         """
     } catch (Exception e) {
-        // C'est ici qu'on lève l'exception spécifique pour le catch du stage
         error "échec détecté dans les logs pour ${stageName}"
     } finally {
         sh "rm -f ${logFile}"
