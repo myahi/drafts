@@ -2,16 +2,13 @@ stage('Run MAESTRO_BLOOMBERG_REPO') {
     when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
     steps {
         script {
-            runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO', params)
-        }
-    }
-}
-
-stage('Run BLOOMBERG_BOND_TOMS') {
-    when { expression { return params.BLOOMBERG_BOND_TOMS } }
-    steps {
-        script {
-            runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS', params)
+            try {
+                runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+            } catch (e) {
+                // Ici, 'e' contient le message "échec détecté dans les logs pour MAESTRO_BLOOMBERG_REPO"
+                echo "Interception dans le stage : ${e.getMessage()}"
+                throw e // On re-balance pour que le stage soit marqué rouge dans Jenkins
+            }
         }
     }
 }
