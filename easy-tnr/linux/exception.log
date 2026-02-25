@@ -1,3 +1,7 @@
+09:53:21  [main] INFO  lbp.qa.easy.tnr.execution.log.Log - resulat ordinal 1
+09:53:21  [main] INFO  lbp.qa.easy.tnr.execution.log.Log - failure
+09:53:21  [main] ERROR /serveur_apps/easy-tnr/logs/eai\scenarios\06_REPO_Deal_TauxVariable_20260225_095311014.log - '06_REPO_Deal_TauxVariable' execution ended due to exception on step : CompareXMLFilesStep
+
 voici ce que fait le noeud jenkisn aujourd'hui 
 
 
