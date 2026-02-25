@@ -1,1 +1,15 @@
-'09_REPO_Deal_Clear'$'\351''_Broker_Clearing_House.xml'
+stage('Sync to sdv4eai02') {
+  steps {
+    script {
+      withEnv(['LANG=C.UTF-8', 'LC_ALL=C.UTF-8']) {
+        sh """
+          rsync -a --delete \
+            --rsync-path="LANG=C.UTF-8 LC_ALL=C.UTF-8 rsync" \
+            -e "ssh ${RSYNC_OPTS}" \
+            ./ \
+            ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+        """
+      }
+    }
+  }
+}
