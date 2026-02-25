@@ -169,6 +169,10 @@ def runTnrStage(stageName, scenarioPath) {
     def logFile = "output_${stageName}.log"
     
     try {
+sh """
+    ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' ..."
+"""
+
         sh """
             ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} " export LC_ALL=C.UTF-8;
                 ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
