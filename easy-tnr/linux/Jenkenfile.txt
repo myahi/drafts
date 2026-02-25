@@ -15,47 +15,52 @@ options { timestamps(); disableConcurrentBuilds() }
   stages {
 
     stage('Checkout TNR data from repository') {
-      steps {
-	  script {
-          try {
-            def branch = 'develop'
-            def repoUrl = "${env.REPO_URL}"
-            echo "Checkout repo=${repoUrl} branch=${branch}"
-            checkout([
-              $class: 'GitSCM',
-              branches: [[name: branch]],
-              userRemoteConfigs: [[
-                url: repoUrl,
-                credentialsId: env.GIT_CRED
-              ]]
-            ])
-          } catch (e) {
-            echo "Erreur pendant le stage: Checkout TNR data from repository"
-            echo e.toString()
-            throw e
-          }
-        }
+  steps {
+    script {
+      try {
+        // Supprime tout le contenu du workspace actuel avant de commencer
+        deleteDir() 
+        
+        def branch = 'develop'
+        echo "Checkout repo=${env.REPO_URL} branch=${branch}"
+        
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: branch]],
+          userRemoteConfigs: [[
+            url: env.REPO_URL,
+            credentialsId: env.GIT_CRED
+          ]]
+        ])
+      } catch (e) {
+        echo "Erreur pendant le checkout : ${e.toString()}"
+        throw e
       }
     }
-	stage('Sync to sdv4eai02') {
-      steps {
-	  script {
-	  try {
-          sh """
-            rsync -a --delete \
-              -e "ssh ${RSYNC_OPTS}" \
-              ./ \
-              ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
-          """
-		}
-		catch (e) {
-            echo "Erreur pendant le stage: Sync to sdv4eai02"
-            echo e.toString()
-            throw e
-          }
+  }
+}
+stage('Sync to sdv4eai02') {
+  steps {
+    script {
+      try {
+        sh """
+          rsync -a --delete \
+            --exclude=".git/" \
+            --exclude=".gitignore" \
+            -e "ssh ${RSYNC_OPTS}" \
+            ./ \
+            ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+        """
+      } catch (e) {
+        echo "Erreur pendant le stage: Sync to sdv4eai02"
+        echo e.toString()
+        throw e
       }
-	  }
     }
+  }
+}
+
+	
 stage('Run MAESTRO_BLOOMBERG_REPO') {
     when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
     steps {
@@ -73,7 +78,8 @@ stage('Run BLOOMBERG_BOND_TOMS') {
     steps {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            catchError(buildResult: 'FAILURE
+', stageResult: 'FAILURE') {
                 runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
             }
         }
