@@ -1,16 +1,1 @@
-# Dans votre Jenkinsfile (commande rsync), forcez la locale côté distant :
-rsync -a --delete \
-  --rsync-path="LANG=C.UTF-8 LC_ALL=C.UTF-8 rsync" \
-  -e "ssh ${RSYNC_OPTS}" \
-  ./ \
-  ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
-
-# Et côté agent Jenkins (avant rsync), forcez aussi l'UTF-8 :
-export LANG=C.UTF-8 LC_ALL=C.UTF-8
-
-
-
-15:25:41  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Exception occured while loading file : 09_REPO_Deal_Clear�_Broker_Clearing_House.xml
-15:25:41  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Exception occured while loading file : 10_REPO_Deal_Clear�_CTP_Clearing_House.xml
-15:25:41  + echo 'Anomalie détectée dans le fichier log.'
-15:25:41  Anomalie détectée dans le fichier log.
+'09_REPO_Deal_Clear'$'\351''_Broker_Clearing_House.xml'
