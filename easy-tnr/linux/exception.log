@@ -1,1 +1,4 @@
-14:13:06  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Exception occured while loading file : 09_REPO_Deal_Clear�_Broker_Clearing_House.xml
+15:25:41  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Exception occured while loading file : 09_REPO_Deal_Clear�_Broker_Clearing_House.xml
+15:25:41  [main] ERROR lbp.qa.easy.tnr.execution.log.Log - Exception occured while loading file : 10_REPO_Deal_Clear�_CTP_Clearing_House.xml
+15:25:41  + echo 'Anomalie détectée dans le fichier log.'
+15:25:41  Anomalie détectée dans le fichier log.
