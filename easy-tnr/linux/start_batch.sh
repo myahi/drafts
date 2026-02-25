@@ -51,10 +51,12 @@ echo " BATCH_NAME   = ${BATCH_NAME}"
 echo " SCENARIOS    = ${SCENARIOS}"
 echo "===================================="
 
-# ✅ Classpath ABSOLU (robuste)
+
 CLASSPATH="${ENV_DIR}/resources:${ENV_DIR}/*"
 
 "${JAVA_EXE}" \
+  -Dfile.encoding=UTF-8 \
+  -Dsun.jnu.encoding=UTF-8 \
   -Duser.home="${ENV_DIR}" \
   "${VM_ARGS[@]}" \
   -Dtnr.configFile="${CONFIG_FILE}" \
