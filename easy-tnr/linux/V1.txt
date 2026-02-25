@@ -1,3 +1,53 @@
+stage('Send Recap Email') {
+    when { expression { return params.SEND_EMAIL_REPORT } }
+    steps {
+        script {
+            // Construction du corps du message
+            def subject = "Rapport d'exécution Jenkins : ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}"
+            def summary = """
+                <h3>Récapitulatif de l'exécution TNR</h3>
+                <p><strong>Job :</strong> ${env.JOB_NAME}</p>
+                <p><strong>Build :</strong> #${env.BUILD_NUMBER}</p>
+                <p><strong>Statut final :</strong> ${currentBuild.currentResult}</p>
+                <p><strong>Lien :</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                <br/>
+                <table border="1" style="border-collapse: collapse; width: 50%;">
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="padding: 8px;">Stage</th>
+                        <th style="padding: 8px;">Résultat</th>
+                    </tr>
+            """
+
+            // Liste des stages à monitorer (ceux définis dans votre Jenkinsfile)
+            def stagesToReport = [
+                'Sync to sdv4eai02', 'MAESTRO_BLOOMBERG_REPO', 'BLOOMBERG_BOND_TOMS', 
+                'MAESTRO_BLOOMBERG_BOND', 'MAESTRO_GLMX_REPO', 'MAESTRO_CME_REPO', 
+                'MAESTRO_360T_FX_FWD', 'MAESTRO_360T_FX_SPOT', 'MAESTRO_360T_FX_SWAP', 'MAESTRO_SFIL'
+            ]
+
+            // Extraction dynamique des résultats
+            // Note : Nécessite que les stages utilisent catchError pour ne pas stopper le pipeline
+            stagesToReport.each { sName ->
+                summary += """
+                    <tr>
+                        <td style="padding: 8px;">${sName}</td>
+                        <td style="padding: 8px;">${params[sName] ? "Exécuté" : "Skippé"}</td>
+                    </tr>
+                """
+            }
+
+            summary += "</table>"
+
+            // Envoi de l'email
+            mail to: 'votre-equipe@laposte.fr',
+                 subject: subject,
+                 body: summary,
+                 mimeType: 'text/html'
+        }
+    }
+}
+
+
 stage('Run MAESTRO_BLOOMBERG_REPO') {
   when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
   steps {
