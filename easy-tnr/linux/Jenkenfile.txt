@@ -56,50 +56,30 @@ options { timestamps(); disableConcurrentBuilds() }
       }
 	  }
     }
-	stage('Run MAESTRO_BLOOMBERG_REPO') {
-      when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_BLOOMBERG_REPO \
-			  MAESTRO/BLOOMBERG_TO_CALYPSO/REPO \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run BLOOMBERG_BOND_TOMS') {
-      when { expression { return params.BLOOMBERG_BOND_TOMS } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              BLOOMBERG_BOND_TOMS \
-              MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
+stage('Run MAESTRO_BLOOMBERG_REPO') {
+    when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+            }
+        }
+    }
+}
+
+stage('Run BLOOMBERG_BOND_TOMS') {
+    when { expression { return params.BLOOMBERG_BOND_TOMS } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+
   stage('Run MAESTRO_BLOOMBERG_BOND') {
       when { expression { return params.MAESTRO_BLOOMBERG_BOND } }
       steps {
@@ -255,4 +235,38 @@ options { timestamps(); disableConcurrentBuilds() }
       }
   }
   }
+}
+
+def runTnrStage(stageName, scenarioPath) {
+    // Le nom du fichier log doit être unique si vous lancez des stages en parallèle
+    def logFile = "output_${stageName}.log"
+    
+    try {
+        sh """
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+                ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+                -DMaestroDBURL=${params.MaestroDBURL} \
+                -DMaestroDBUser=${params.MaestroDBUser} \
+                -DMaestroDBPWD=${params.MaestroDBPWD} \
+                -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
+                -DTNRFolder=${params.TNRFolder} \
+                -DmaestroProjectName=${params.maestroProjectName} \
+                -DFTPHost=${params.FTPHost} \
+                -DFTPUser=${params.FTPUser} \
+                -DFTPPwd=${params.FTPPwd}
+            " | tee ${logFile}
+
+            # Si grep trouve un mot clé, il renvoie 0 (succès du grep), 
+            # on entre alors dans le bloc pour forcer l'erreur.
+            if grep -Ei "failure|ERROR|Difference found" ${logFile}; then
+                echo "Anomalie détectée dans le fichier log."
+                exit 1
+            fi
+        """
+    } catch (Exception e) {
+        // C'est ici qu'on lève l'exception spécifique pour le catch du stage
+        error "échec détecté dans les logs pour ${stageName}"
+    } finally {
+        sh "rm -f ${logFile}"
+    }
 }
