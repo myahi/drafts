@@ -1,0 +1,24 @@
+def runTnrStage(stageName, scenarioPath, params) {
+    echo "Running Stage: ${stageName}"
+    // On exécute et on capture la sortie dans un fichier local au workspace Jenkins
+    sh """
+        ssh ${env.SSH_OPTS} ${env.EAI_SSH_USER}@${env.APP_HOST} "
+            ${env.APP_SCRIPT} DEVEAI ${stageName} ${scenarioPath} \
+            -DMaestroDBURL=${params.MaestroDBURL} \
+            -DMaestroDBUser=${params.MaestroDBUser} \
+            -DMaestroDBPWD=${params.MaestroDBPWD} \
+            -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
+            -DTNRFolder=${params.TNRFolder} \
+            -DmaestroProjectName=${params.maestroProjectName} \
+            -DFTPHost=${params.FTPHost} \
+            -DFTPUser=${params.FTPUser} \
+            -DFTPPwd=${params.FTPPwd}
+        " | tee cmd_output.log
+
+        # Vérification des mots-clés d'échec dans le log capturé
+        if grep -Ei "ERROR|failure|Difference found" cmd_output.log; then
+            echo "--- ECHEC DETECTE DANS LES LOGS POUR ${stageName} ---"
+            exit 1
+        fi
+    """
+}
