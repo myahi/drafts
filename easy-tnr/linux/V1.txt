@@ -1,0 +1,28 @@
+stage('Run MAESTRO_BLOOMBERG_REPO') {
+  when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
+  steps {
+    script {
+      int rc = sh(
+        returnStatus: true,
+        script: """
+          ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+            /serveur_apps/easy-tnr/scripts/start_batch.sh \
+            DEVEAI \
+            MAESTRO_BLOOMBERG_REPO \
+            MAESTRO/BLOOMBERG_TO_CALYPSO/REPO \
+            -DMaestroDBURL=${params.MaestroDBURL} \
+            -DMaestroDBUser=${params.MaestroDBUser} \
+            -DMaestroDBPWD=${params.MaestroDBPWD} \
+            -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
+            -DTNRFolder=${params.TNRFolder} \
+            -DmaestroProjectName=${params.maestroProjectName} \
+            -DFTPHost=${params.FTPHost} \
+            -DFTPUser=${params.FTPUser} \
+            -DFTPPwd=${params.FTPPwd}
+          "
+        """
+      )
+      if (rc != 0) { error("Batch MAESTRO_BLOOMBERG_REPO en échec (rc=${rc})") }
+    }
+  }
+} 
