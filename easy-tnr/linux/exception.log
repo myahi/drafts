@@ -1,6 +1,35 @@
 stage('Sync to sdv4eai02') {
   steps {
     script {
+      withEnv(['LANG=C.UTF-8','LC_ALL=C.UTF-8']) {
+
+        // 1️⃣ Nettoyage total du répertoire distant
+        sh """
+          ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} '
+            set -e
+            rm -rf ${APP_DATA_DIR}/*
+            mkdir -p ${APP_DATA_DIR}
+          '
+        """
+
+        // 2️⃣ Synchronisation complète
+        sh """
+          rsync -a --delete --checksum \
+            --rsync-path="LANG=C.UTF-8 LC_ALL=C.UTF-8 rsync" \
+            -e "ssh ${RSYNC_OPTS}" \
+            ./ \
+            ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+        """
+      }
+    }
+  }
+}
+
+
+
+stage('Sync to sdv4eai02') {
+  steps {
+    script {
       sh """
         rsync -av --delete \
           --iconv=ISO-8859-1,UTF-8 \
