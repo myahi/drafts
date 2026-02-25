@@ -1,0 +1,17 @@
+stage('Run MAESTRO_BLOOMBERG_REPO') {
+    when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
+    steps {
+        script {
+            runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO', params)
+        }
+    }
+}
+
+stage('Run BLOOMBERG_BOND_TOMS') {
+    when { expression { return params.BLOOMBERG_BOND_TOMS } }
+    steps {
+        script {
+            runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS', params)
+        }
+    }
+}
