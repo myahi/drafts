@@ -3,7 +3,6 @@ set -euo pipefail
 
 EASY_TNR_HOME="/serveur_apps/easy-tnr"
 
-# ✅ JDK 8 à utiliser
 JAVA_HOME="/serveur_apps/tools/jdk1.8.0"
 JAVA_EXE="${JAVA_HOME}/bin/java"
 
