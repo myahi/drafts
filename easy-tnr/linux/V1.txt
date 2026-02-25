@@ -1,128 +1,54 @@
-stage('Send Recap Email') {
-    when { expression { return params.SEND_EMAIL_REPORT } }
-    steps {
-        script {
-            // Récupération du statut final
-            def result = currentBuild.currentResult 
-            def color = (result == 'SUCCESS') ? "#28a745" : "#d73a49"
-            def consoleUrl = "${env.BUILD_URL}console" // Lien direct vers la console
-            
-            def subject = "Rapport TNR : ${env.JOB_NAME} - #${env.BUILD_NUMBER} [${result}]"
-            
-            def body = """
-                <html>
-                <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6;">
-                    <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-                        <h2 style="color: ${color}; border-bottom: 2px solid ${color}; padding-bottom: 10px;">
-                            Statut de l'exécution : ${result}
-                        </h2>
-                        
-                        <p>Le job <strong>${env.JOB_NAME}</strong> (Build #${env.BUILD_NUMBER}) s'est terminé.</p>
-                        
-                        <div style="margin: 30px 0; text-align: center;">
-                            <a href="${consoleUrl}" 
-                               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                               VOIR LA CONSOLE JENKINS
-                            </a>
-                        </div>
-
-                        <hr style="border: 0; border-top: 1px solid #eee;" />
-                        <p style="font-size: 0.9em; color: #666;">
-                            <b>Détails supplémentaires :</b><br/>
-                            Hôte cible : ${env.APP_HOST}<br/>
-                            Date : ${new Date().format('dd/MM/yyyy HH:mm')}
-                        </p>
-                    </div>
-                </body>
-                </html>
-            """
-            
-            mail to: 'votre-equipe@laposte.fr',
-                 subject: subject,
-                 body: body,
-                 mimeType: 'text/html'
-        }
-    }
-}
-
-
-
+def stageResults = [:]
 
 stage('Send Recap Email') {
-    when { expression { return params.SEND_EMAIL_REPORT } }
-    steps {
+    if (params.SEND_EMAIL_REPORT) {
         script {
-            // Construction du corps du message
-            def subject = "Rapport d'exécution Jenkins : ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}"
-            def summary = """
-                <h3>Récapitulatif de l'exécution TNR</h3>
-                <p><strong>Job :</strong> ${env.JOB_NAME}</p>
-                <p><strong>Build :</strong> #${env.BUILD_NUMBER}</p>
-                <p><strong>Statut final :</strong> ${currentBuild.currentResult}</p>
-                <p><strong>Lien :</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                <br/>
-                <table border="1" style="border-collapse: collapse; width: 50%;">
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="padding: 8px;">Stage</th>
-                        <th style="padding: 8px;">Résultat</th>
-                    </tr>
-            """
-
-            // Liste des stages à monitorer (ceux définis dans votre Jenkinsfile)
-            def stagesToReport = [
-                'Sync to sdv4eai02', 'MAESTRO_BLOOMBERG_REPO', 'BLOOMBERG_BOND_TOMS', 
-                'MAESTRO_BLOOMBERG_BOND', 'MAESTRO_GLMX_REPO', 'MAESTRO_CME_REPO', 
-                'MAESTRO_360T_FX_FWD', 'MAESTRO_360T_FX_SPOT', 'MAESTRO_360T_FX_SWAP', 'MAESTRO_SFIL'
-            ]
-
-            // Extraction dynamique des résultats
-            // Note : Nécessite que les stages utilisent catchError pour ne pas stopper le pipeline
-            stagesToReport.each { sName ->
-                summary += """
-                    <tr>
-                        <td style="padding: 8px;">${sName}</td>
-                        <td style="padding: 8px;">${params[sName] ? "Exécuté" : "Skippé"}</td>
+            def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+            def colorHeader = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+            
+            // Génération dynamique des lignes du tableau
+            def tableRows = ""
+            stageResults.each { name, status ->
+                def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+                tableRows += """
+                    <tr style="background-color: ${rowColor};">
+                        <td style="padding: 10px; border: 1px solid #ddd;">${name}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${status}</td>
                     </tr>
                 """
             }
 
-            summary += "</table>"
+            def mailBody = """
+                <html>
+                <body style="font-family: Arial, sans-serif;">
+                    <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                        <h2 style="color: ${colorHeader}; text-align: center;">Rapport d'exécution : ${resultGlobal}</h2>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                            <thead>
+                                <tr style="background-color: #f2f2f2;">
+                                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Stage</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">Résultat</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
 
-            // Envoi de l'email
+                        <div style="text-align: center; margin-top: 30px;">
+                            <a href="${env.BUILD_URL}console" 
+                               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+                               VOIR LA CONSOLE JENKINS
+                            </a>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            """
+
             mail to: 'votre-equipe@laposte.fr',
-                 subject: subject,
-                 body: summary,
+                 subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER} - ${resultGlobal}",
+                 body: mailBody,
                  mimeType: 'text/html'
         }
     }
 }
-
-
-stage('Run MAESTRO_BLOOMBERG_REPO') {
-  when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
-  steps {
-    script {
-      int rc = sh(
-        returnStatus: true,
-        script: """
-          ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-            /serveur_apps/easy-tnr/scripts/start_batch.sh \
-            DEVEAI \
-            MAESTRO_BLOOMBERG_REPO \
-            MAESTRO/BLOOMBERG_TO_CALYPSO/REPO \
-            -DMaestroDBURL=${params.MaestroDBURL} \
-            -DMaestroDBUser=${params.MaestroDBUser} \
-            -DMaestroDBPWD=${params.MaestroDBPWD} \
-            -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-            -DTNRFolder=${params.TNRFolder} \
-            -DmaestroProjectName=${params.maestroProjectName} \
-            -DFTPHost=${params.FTPHost} \
-            -DFTPUser=${params.FTPUser} \
-            -DFTPPwd=${params.FTPPwd}
-          "
-        """
-      )
-      if (rc != 0) { error("Batch MAESTRO_BLOOMBERG_REPO en échec (rc=${rc})") }
-    }
-  }
-} 
