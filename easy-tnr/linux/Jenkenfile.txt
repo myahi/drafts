@@ -47,6 +47,7 @@ options { timestamps(); disableConcurrentBuilds() }
           rsync -a --delete \
             --exclude=".git/" \
             --exclude=".gitignore" \
+            --iconv=UTF-8,UTF-8 \
             -e "ssh ${RSYNC_OPTS}" \
             ./ \
             ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
@@ -170,7 +171,7 @@ def runTnrStage(stageName, scenarioPath) {
     
     try {
         sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US; export LC_ALL=C.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US; export LC_ALL=en_US.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
                 -DMaestroDBURL=${params.MaestroDBURL} \
                 -DMaestroDBUser=${params.MaestroDBUser} \
                 -DMaestroDBPWD=${params.MaestroDBPWD} \
