@@ -1,6 +1,22 @@
 stage('Sync to sdv4eai02') {
   steps {
     script {
+      sh """
+        rsync -av --delete \
+          --iconv=ISO-8859-1,UTF-8 \
+          -e "ssh ${RSYNC_OPTS}" \
+          ./ \
+          ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+      """
+    }
+  }
+}
+
+
+
+stage('Sync to sdv4eai02') {
+  steps {
+    script {
       withEnv(['LANG=C.UTF-8', 'LC_ALL=C.UTF-8']) {
         sh """
           rsync -a --delete \
