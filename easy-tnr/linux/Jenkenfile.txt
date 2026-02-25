@@ -39,7 +39,7 @@ options { timestamps(); disableConcurrentBuilds() }
     }
   }
 }
-stage('Sync to sdv4eai02') {
+	stage('Sync to sdv4eai02') {
   steps {
     script {
       try {
@@ -59,8 +59,6 @@ stage('Sync to sdv4eai02') {
     }
   }
 }
-
-	
 stage('Run MAESTRO_BLOOMBERG_REPO') {
     when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
     steps {
@@ -78,168 +76,91 @@ stage('Run BLOOMBERG_BOND_TOMS') {
     steps {
         script {
             // catchError intercepte l'exit 1 du shell et continue la suite
-            catchError(buildResult: 'FAILURE
-', stageResult: 'FAILURE') {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                 runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
             }
         }
     }
 }
 
-  stage('Run MAESTRO_BLOOMBERG_BOND') {
-      when { expression { return params.MAESTRO_BLOOMBERG_BOND } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_BLOOMBERG_BOND \
-              MAESTRO/BLOOMBERG_TO_CALYPSO/BOND \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-    stage('Run MAESTRO_GLMX_REPO') {
-      when { expression { return params.MAESTRO_GLMX_REPO } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_GLMX_REPO \
-              MAESTRO/GLMX_TO_CALYPSO/REPO \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run MAESTRO_CME_REPO') {
-      when { expression { return params.MAESTRO_CME_REPO } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_CME_REPO \
-              MAESTRO/CME_TO_CALYPSO/REPO \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run MAESTRO_360T_FX_FWD') {
-      when { expression { return params.MAESTRO_360T_FX_FWD } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_360T_FX_FWD \
-              MAESTRO/360T_TO_CALYPSO/FX_FWD \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run MAESTRO_360T_FX_SPOT') {
-      when { expression { return params.MAESTRO_360T_FX_SPOT } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_360T_FX_SPOT \
-              MAESTRO/360T_TO_CALYPSO/FX_SPOT \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run MAESTRO_360T_FX_SWAP') {
-      when { expression { return params.MAESTRO_360T_FX_SWAP } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_360T_FX_SWAP \
-              MAESTRO/360T_TO_CALYPSO/FX_SWAP \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
-  stage('Run MAESTRO_SFIL') {
-      when { expression { return params.MAESTRO_SFIL } }
-      steps {
-          sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
-              /serveur_apps/easy-tnr/scripts/start_batch.sh \
-              DEVEAI \
-              MAESTRO_SFIL \
-              MAESTRO/SFIL_TO_CALYPSO \
-              -DMaestroDBURL=${params.MaestroDBURL} \
-              -DMaestroDBUser=${params.MaestroDBUser} \
-              -DMaestroDBPWD=${params.MaestroDBPWD} \
-              -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
-              -DTNRFolder=${params.TNRFolder} \
-              -DmaestroProjectName=${params.maestroProjectName} \
-              -DFTPHost=${params.FTPHost} \
-              -DFTPUser=${params.FTPUser} \
-              -DFTPPwd=${params.FTPPwd}
-            "
-          """
-      }
-  }
+stage('Run MAESTRO_BLOOMBERG_BOND') {
+    when { expression { return params.MAESTRO_BLOOMBERG_BOND } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_BLOOMBERG_BOND', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_GLMX_REPO') {
+    when { expression { return params.MAESTRO_GLMX_REPO } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_GLMX_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_CME_REPO') {
+    when { expression { return params.MAESTRO_CME_REPO } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_CME_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_360T_FX_FWD') {
+    when { expression { return params.MAESTRO_360T_FX_FWD } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_360T_FX_FWD', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_360T_FX_SPOT') {
+    when { expression { return params.MAESTRO_360T_FX_SPOT } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_360T_FX_SPOT', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_360T_FX_SWAP') {
+    when { expression { return params.MAESTRO_360T_FX_SWAP } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_360T_FX_SWAP', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+stage('Run MAESTRO_SFIL') {
+    when { expression { return params.MAESTRO_SFIL } }
+    steps {
+        script {
+            // catchError intercepte l'exit 1 du shell et continue la suite
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                runTnrStage('MAESTRO_SFIL', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            }
+        }
+    }
+}
+
   }
 }
 
@@ -249,7 +170,7 @@ def runTnrStage(stageName, scenarioPath) {
     
     try {
         sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} " export LC_ALL=C.UTF-8;
                 ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
                 -DMaestroDBURL=${params.MaestroDBURL} \
                 -DMaestroDBUser=${params.MaestroDBUser} \
