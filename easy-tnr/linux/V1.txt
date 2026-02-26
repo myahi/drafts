@@ -1,73 +1,74 @@
-def stageResults = [:]
+stage('Email Recap Report') {
+  when { expression { return params.SEND_EMAIL_REPORT } }
+  steps {
+    script {
+      def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+      // Couleur du bandeau selon le résultat
+      def colorTheme = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+      def tableRows = ""
+      
+      stageResults.each { name, status ->
+        def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+        def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+        tableRows += """
+          <tr style="background-color: ${rowColor};">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #333;">${name}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor}; font-weight: bold;">${status}</td>
+          </tr>
+        """
+      }
 
-stage('MAESTRO_BLOOMBERG_REPO') {
-    if (params.MAESTRO_BLOOMBERG_REPO) {
-        // Le catchError permet au pipeline de continuer même si ce stage échoue
-        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-            runTnrStage('BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+      def mailBody = """
+        <html>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f9f9f9;">
+          <div style="max-width: 650px; margin: auto; background-color: #ffffff; border: 1px solid #dddddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
             
-            // Si runTnrStage réussit, on enregistre le succès
-            stageResults['BLOOMBERG_REPO'] = "SUCCESS ✅"
-        }
-        
-        // Si après le bloc catchError la clé n'existe pas, c'est que ça a planté
-        if (!stageResults.containsKey('BLOOMBERG_REPO')) {
-            stageResults['BLOOMBERG_REPO'] = "FAILURE ❌"
-        }
-    }
-}
+            <div style="background-color: ${colorTheme}; padding: 20px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 22px;">Rapport d'exécution ${env.JOB_NAME}</h2>
+              <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 18px;">Statut Final : ${resultGlobal}</p>
+            </div>
 
+            <div style="padding: 20px;">
+              <p style="color: #666;">Détails de l'exécution pour le build <strong>#${env.BUILD_NUMBER}</strong> :</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <thead>
+                  <tr style="background-color: #eeeeee; color: #333;">
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Flux Applicatif</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Résultat</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
 
-
-stage('Send Recap Email') {
-    if (params.SEND_EMAIL_REPORT) {
-        script {
-            def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
-            def colorHeader = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+              <div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="${env.BUILD_URL}console" 
+                   style="background-color: #007bff; 
+                          color: #ffffff; 
+                          padding: 15px 30px; 
+                          text-decoration: none; 
+                          font-weight: bold; 
+                          border-radius: 5px; 
+                          display: inline-block;
+                          letter-spacing: 1px;
+                          box-shadow: 0 2px 4px rgba(0,123,255,0.3);">
+                   CONSULTER LES LOGS DÉTAILLÉS
+                </a>
+              </div>
+            </div>
             
-            // Génération dynamique des lignes du tableau
-            def tableRows = ""
-            stageResults.each { name, status ->
-                def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
-                tableRows += """
-                    <tr style="background-color: ${rowColor};">
-                        <td style="padding: 10px; border: 1px solid #ddd;">${name}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${status}</td>
-                    </tr>
-                """
-            }
+            <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #999;">
+              Ceci est un message automatique envoyé par Jenkins.
+            </div>
+          </div>
+        </body>
+        </html>
+      """
 
-            def mailBody = """
-                <html>
-                <body style="font-family: Arial, sans-serif;">
-                    <div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-                        <h2 style="color: ${colorHeader}; text-align: center;">Rapport d'exécution : ${resultGlobal}</h2>
-                        
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                            <thead>
-                                <tr style="background-color: #f2f2f2;">
-                                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Stage</th>
-                                    <th style="padding: 10px; border: 1px solid #ddd;">Résultat</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows}</tbody>
-                        </table>
-
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="${env.BUILD_URL}console" 
-                               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-                               VOIR LA CONSOLE JENKINS
-                            </a>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            """
-
-            mail to: 'votre-equipe@laposte.fr',
-                 subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER} - ${resultGlobal}",
-                 body: mailBody,
-                 mimeType: 'text/html'
-        }
+      emailext to: 'votre-equipe@laposte.fr',
+               subject: "TNR Report [${env.JOB_NAME}] - #${env.BUILD_NUMBER} - ${resultGlobal}",
+               body: mailBody,
+               mimeType: 'text/html'
     }
+  }
 }
