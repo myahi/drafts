@@ -223,7 +223,7 @@ stage('Email Recap Report') {
       """
 
       emailext to: 'mohamed.yahi-prestataire@labanquepostale.fr',
-               subject: "[TNR] ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+               subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER}",
                body: mailBody,
                mimeType: 'text/html'
     }
