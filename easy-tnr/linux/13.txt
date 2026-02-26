@@ -1,0 +1,75 @@
+stage('Email Recap Report') {
+  when { expression { return params.SEND_EMAIL_REPORT } }
+  steps {
+    script {
+      def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+      def colorTheme = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+      def tableRows = ""
+      
+      stageResults.each { name, status ->
+        def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+        def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+        tableRows += """
+          <tr style="background-color: ${rowColor}; font-family: Calibri, sans-serif;">
+            <td style="padding: 10px; border: 1px solid #ddd; color: #333;">${name}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor};">${status}</td>
+          </tr>
+        """
+      }
+
+      def mailBody = """
+        <html>
+        <body style="font-family: Calibri, sans-serif; padding: 20px; color: #333;">
+          <div style="max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+            
+            <div style="background-color: ${colorTheme}; padding: 15px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-family: Calibri, sans-serif; font-weight: normal; font-size: 22px;">Rapport : ${env.JOB_NAME}</h2>
+              <p style="margin: 5px 0 0 0; font-size: 16px;">Statut Final : ${resultGlobal}</p>
+            </div>
+
+            <div style="padding: 20px; background-color: #ffffff;">
+              <p style="font-size: 15px; font-family: Calibri, sans-serif;">Récapitulatif pour le build <strong>#${env.BUILD_NUMBER}</strong> :</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-family: Calibri, sans-serif;">
+                <thead>
+                  <tr style="background-color: #f8f8f8; color: #666;">
+                    <th style="padding: 10px; border: 1px solid #eee; text-align: left; font-weight: normal;">Flux Applicatif</th>
+                    <th style="padding: 10px; border: 1px solid #eee; text-align: center; font-weight: normal;">Résultat</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${env.BUILD_URL}console" 
+                   style="background-color: #007bff; 
+                          border: 12px solid #007bff; 
+                          padding: 0px 20px; 
+                          color: #ffffff; 
+                          text-decoration: none; 
+                          font-size: 14px; 
+                          font-family: Calibri, sans-serif; 
+                          border-radius: 25px; 
+                          display: inline-block;
+                          mso-padding-alt: 0;
+                          text-underline-color: #007bff;">
+                   Consulter les logs détaillés
+                </a>
+              </div>
+
+              <p style="font-size: 11px; color: #aaa; text-align: center; margin: 0; font-family: Calibri, sans-serif;">
+                Message automatique Jenkins
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      """
+
+      emailext to: 'votre-equipe@laposte.fr',
+               subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER}",
+               body: mailBody,
+               mimeType: 'text/html'
+    }
+  }
+}
