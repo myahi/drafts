@@ -1,0 +1,207 @@
+// On déclare la map tout en haut pour qu'elle soit accessible partout
+def stageResults = [:]
+
+pipeline {
+  agent any
+  options { timestamps(); disableConcurrentBuilds() }
+
+  environment {
+    APP_HOST = 'sdv4eai02'
+    APP_DATA_DIR = '/serveur_apps/easy-tnr/data/'
+    APP_SCRIPT = '/serveur_apps/easy-tnr/scripts/start_batch.sh'
+    REPO_URL = 'https://gitlab.pop.sf.intra.laposte.fr/bfi-mar-tpma/eai-marches/sources-eai/tnr-data.git'
+    RSYNC_OPTS = '-q -c aes128-ctr -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+    SSH_OPTS = '-q -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5'
+    GIT_CRED = 'usr_gitlab_eai'
+  }
+
+  stages {
+
+    stage('Checkout TNR data') {
+      steps {
+        script {
+          try {
+            deleteDir() 
+            checkout([$class: 'GitSCM', branches: [[name: 'develop']], userRemoteConfigs: [[url: env.REPO_URL, credentialsId: env.GIT_CRED]]])
+          } catch (e) {
+            echo "Erreur checkout : ${e.toString()}"
+            throw e
+          }
+        }
+      }
+    }
+
+    stage('Sync to sdv4eai02') {
+      steps {
+        script {
+          try {
+            withEnv(['LANG=C.UTF-8','LC_ALL=C.UTF-8']) {
+              sh "ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} 'rm -rf ${APP_DATA_DIR}/* && mkdir -p ${APP_DATA_DIR}'"
+              // Correction iconv pour gérer les accents é -> \351 lors du transfert
+              sh """
+                rsync -a --delete --checksum --iconv=ISO-8859-1,UTF-8 \
+                  --rsync-path="LANG=C.UTF-8 LC_ALL=C.UTF-8 rsync" \
+                  -e "ssh ${RSYNC_OPTS}" ./ ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
+              """
+            }
+          } catch (e) {
+            echo "Erreur Sync : ${e.toString()}"
+            throw e
+          }
+        }
+      }
+    }
+
+    // --- STAGES TNR AVEC SAUVEGARDE DU STATUT ---
+
+    stage('Run MAESTRO_BLOOMBERG_REPO') {
+      when { expression { return params.MAESTRO_BLOOMBERG_REPO } }
+      steps {
+        script {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            runTnrStage('MAESTRO_BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+            stageResults['BLOOMBERG_REPO'] = "SUCCESS ✅"
+          }
+          if (!stageResults['BLOOMBERG_REPO']) { stageResults['BLOOMBERG_REPO'] = "FAILURE ❌" }
+        }
+      }
+    }
+
+    stage('Run BLOOMBERG_BOND_TOMS') {
+      when { expression { return params.BLOOMBERG_BOND_TOMS } }
+      steps {
+        script {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            runTnrStage('BLOOMBERG_BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+            stageResults['BOND_TOMS'] = "SUCCESS ✅"
+          }
+          if (!stageResults['BOND_TOMS']) { stageResults['BOND_TOMS'] = "FAILURE ❌" }
+        }
+      }
+    }
+
+    stage('Run MAESTRO_GLMX_REPO') {
+      when { expression { return params.MAESTRO_GLMX_REPO } }
+      steps {
+        script {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            runTnrStage('MAESTRO_GLMX_REPO', 'MAESTRO/GLMX_TO_CALYPSO/REPO')
+            stageResults['GLMX_REPO'] = "SUCCESS ✅"
+          }
+          if (!stageResults['GLMX_REPO']) { stageResults['GLMX_REPO'] = "FAILURE ❌" }
+        }
+      }
+    }
+
+    stage('Run MAESTRO_CME_REPO') {
+      when { expression { return params.MAESTRO_CME_REPO } }
+      steps {
+        script {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            runTnrStage('MAESTRO_CME_REPO', 'MAESTRO/CME_TO_CALYPSO/REPO')
+            stageResults['CME_REPO'] = "SUCCESS ✅"
+          }
+          if (!stageResults['CME_REPO']) { stageResults['CME_REPO'] = "FAILURE ❌" }
+        }
+      }
+    }
+
+    stage('Run MAESTRO_360T_FX_FWD') {
+      when { expression { return params.MAESTRO_360T_FX_FWD } }
+      steps {
+        script {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            runTnrStage('MAESTRO_360T_FX_FWD', 'MAESTRO/360T_TO_CALYPSO/FX_FWD')
+            stageResults['360T_FX_FWD'] = "SUCCESS ✅"
+          }
+          if (!stageResults['360T_FX_FWD']) { stageResults['360T_FX_FWD'] = "FAILURE ❌" }
+        }
+      }
+    }
+
+    // --- STAGE FINAL : EMAIL RÉCAPITULATIF ---
+
+    stage('Email Recap Report') {
+      when { expression { return params.SEND_EMAIL_REPORT } }
+      steps {
+        script {
+          def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+          def colorHeader = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+          def tableRows = ""
+          
+          stageResults.each { name, status ->
+            def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+            def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+            tableRows += """
+              <tr style="background-color: ${rowColor};">
+                <td style="padding: 10px; border: 1px solid #ddd;">${name}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor}; font-weight: bold;">${status}</td>
+              </tr>
+            """
+          }
+
+          def mailBody = """
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+              <div style="max-width: 650px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; border-top: 5px solid ${colorHeader};">
+                <h2 style="color: ${colorHeader}; text-align: center;">Rapport d'exécution TNR : ${resultGlobal}</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                  <thead>
+                    <tr style="background-color: #f2f2f2;">
+                      <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Stage</th>
+                      <th style="padding: 10px; border: 1px solid #ddd;">Résultat</th>
+                    </tr>
+                  </thead>
+                  <tbody>${tableRows}</tbody>
+                </table>
+                <div style="text-align: center; margin-top: 30px;">
+                  <a href="${env.BUILD_URL}console" 
+                     style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+                     VOIR LA CONSOLE (LOGS)
+                  </a>
+                </div>
+              </div>
+            </body>
+            </html>
+          """
+
+          mail to: 'votre-equipe@laposte.fr',
+               subject: "TNR Report [${env.JOB_NAME}] - #${env.BUILD_NUMBER} - ${resultGlobal}",
+               body: mailBody,
+               mimeType: 'text/html'
+        }
+      }
+    }
+  }
+}
+
+def runTnrStage(stageName, scenarioPath) {
+    def logFile = "output_${stageName}.log"
+    try {
+        sh """
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+                ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+                -Dfile.encoding=UTF-8 \
+                -Dsun.jnu.encoding=UTF-8 \
+                -DMaestroDBURL=${params.MaestroDBURL} \
+                -DMaestroDBUser=${params.MaestroDBUser} \
+                -DMaestroDBPWD=${params.MaestroDBPWD} \
+                -DEAIScenarioBasePath=${params.EAIScenarioBasePath} \
+                -DTNRFolder=${params.TNRFolder} \
+                -DmaestroProjectName=${params.maestroProjectName} \
+                -DFTPHost=${params.FTPHost} \
+                -DFTPUser=${params.FTPUser} \
+                -DFTPPwd=${params.FTPPwd}
+            " | tee ${logFile}
+
+            if grep -Ei "failure|ERROR|Difference found" ${logFile}; then
+                echo "Anomalie détectée dans le fichier log."
+                exit 1
+            fi
+        """
+    } catch (Exception e) {
+        error "échec détecté dans les logs pour ${stageName}"
+    } finally {
+        sh "rm -f ${logFile}"
+    }
+}
