@@ -1,0 +1,82 @@
+stage('Email Recap Report') {
+  when { expression { return params.SEND_EMAIL_REPORT } }
+  steps {
+    script {
+      def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+      def colorTheme = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+      def tableRows = ""
+      
+      stageResults.each { name, status ->
+        def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+        def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+        tableRows += """
+          <tr style="background-color: ${rowColor}; font-family: Calibri, sans-serif; font-weight: normal;">
+            <td style="padding: 10px; border: 1px solid #ddd; color: #333;">${name}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor};">${status}</td>
+          </tr>
+        """
+      }
+
+      def mailBody = """
+        <html>
+        <body style="font-family: Calibri, sans-serif; padding: 20px; color: #333; font-weight: normal;">
+          <div style="max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+            
+            <div style="background-color: ${colorTheme}; padding: 15px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-family: Calibri, sans-serif; font-weight: normal; font-size: 22px;">Rapport : ${env.JOB_NAME}</h2>
+              <p style="margin: 5px 0 0 0; font-size: 16px;">Statut Final : ${resultGlobal}</p>
+            </div>
+
+            <div style="padding: 20px; background-color: #ffffff;">
+              <p style="font-size: 15px; font-family: Calibri, sans-serif; font-weight: normal;">Récapitulatif pour le build #${env.BUILD_NUMBER} :</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-family: Calibri, sans-serif; font-weight: normal;">
+                <thead>
+                  <tr style="background-color: #f8f8f8; color: #666;">
+                    <th style="padding: 10px; border: 1px solid #eee; text-align: left; font-weight: normal;">Flux Applicatif</th>
+                    <th style="padding: 10px; border: 1px solid #eee; text-align: center; font-weight: normal;">Résultat</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+
+              <div style="text-align: center; margin: 25px 0;">
+                <center>
+                  <table align="center" cellspacing="0" cellpadding="0" border="0" style="border-collapse: separate;">
+                    <tr>
+                      <td align="center" width="240" height="40" bgcolor="#007bff" style="border-radius: 20px; color: #ffffff; border: 0;">
+                        <a href="${env.BUILD_URL}console" 
+                           style="font-size: 14px; 
+                                  font-family: Calibri, sans-serif; 
+                                  font-weight: normal; 
+                                  text-decoration: none; 
+                                  line-height: 40px; 
+                                  width: 240px; 
+                                  display: inline-block; 
+                                  color: #ffffff;
+                                  border: 0;
+                                  outline: none;">
+                          Consulter les logs détaillés
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </center>
+              </div>
+
+              <p style="font-size: 11px; color: #aaa; text-align: center; margin: 0; font-family: Calibri, sans-serif;">
+                Message automatique Jenkins
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      """
+
+      emailext to: 'votre-equipe@laposte.fr',
+               subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER}",
+               body: mailBody,
+               mimeType: 'text/html'
+    }
+  }
+}
