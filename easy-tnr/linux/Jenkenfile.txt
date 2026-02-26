@@ -39,25 +39,35 @@ options { timestamps(); disableConcurrentBuilds() }
     }
   }
 }
-	stage('Sync to sdv4eai02') {
+stage('Sync to sdv4eai02') {
   steps {
     script {
-      try {
+	try {
+       withEnv(['LANG=C.UTF-8','LC_ALL=C.UTF-8']) {
+
         sh """
-          rsync -a --delete \
-            --exclude=".git/" \
-            --exclude=".gitignore" \
-            --iconv=UTF-8,UTF-8 \
+          ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} '
+            set -e
+            rm -rf ${APP_DATA_DIR}/*
+            mkdir -p ${APP_DATA_DIR}
+          '
+        """
+
+        sh """
+          rsync -a --delete --checksum \
+            --rsync-path="LANG=C.UTF-8 LC_ALL=C.UTF-8 rsync" \
             -e "ssh ${RSYNC_OPTS}" \
             ./ \
             ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}
         """
-      } catch (e) {
+      }
+	}
+	catch (e) {
         echo "Erreur pendant le stage: Sync to sdv4eai02"
         echo e.toString()
         throw e
       }
-    }
+  }
   }
 }
 stage('Run MAESTRO_BLOOMBERG_REPO') {
@@ -150,20 +160,10 @@ stage('Run MAESTRO_360T_FX_SWAP') {
         }
     }
 }
-stage('Run MAESTRO_SFIL') {
-    when { expression { return params.MAESTRO_SFIL } }
-    steps {
-        script {
-            // catchError intercepte l'exit 1 du shell et continue la suite
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                runTnrStage('MAESTRO_SFIL', 'MAESTRO/SFIL_TO_CALYPSO')
-            }
-        }
-    }
-}
 
   }
 }
+
 
 def runTnrStage(stageName, scenarioPath) {
     // Le nom du fichier log doit être unique si vous lancez des stages en parallèle
@@ -171,7 +171,10 @@ def runTnrStage(stageName, scenarioPath) {
     
     try {
         sh """
-            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "export LANG=en_US; export LC_ALL=en_US.UTF-8; ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+            ssh ${SSH_OPTS} ${env.EAI_SSH_USER}@${APP_HOST} "
+                ${env.APP_SCRIPT} DEVEAI ${stageName} '${scenarioPath}' \
+				-Dfile.encoding=UTF-8 \
+				-Dsun.jnu.encoding=UTF-8 \
                 -DMaestroDBURL=${params.MaestroDBURL} \
                 -DMaestroDBUser=${params.MaestroDBUser} \
                 -DMaestroDBPWD=${params.MaestroDBPWD} \
