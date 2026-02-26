@@ -1,0 +1,137 @@
+def stageResults = [:]
+
+node {
+    try {
+        stage('Checkout & Sync') {
+            deleteDir()
+            checkout([$class: 'GitSCM', branches: [[name: 'develop']], userRemoteConfigs: [[url: env.REPO_URL, credentialsId: env.GIT_CRED]]])
+            // Correction iconv pour les noms de fichiers avec accents
+            sh "rsync -av --delete --iconv=ISO-8859-1,UTF-8 -e 'ssh ${RSYNC_OPTS}' ./ ${env.EAI_SSH_USER}@${APP_HOST}:${APP_DATA_DIR}"
+        }
+
+        // --- STAGES TNR ---
+
+        stage('MAESTRO_BLOOMBERG_REPO') {
+            if (params.MAESTRO_BLOOMBERG_REPO) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+                    stageResults['BLOOMBERG_REPO'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('BLOOMBERG_REPO')) { stageResults['BLOOMBERG_REPO'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('BLOOMBERG_BOND_TOMS') {
+            if (params.BLOOMBERG_BOND_TOMS) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('BOND_TOMS', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND_TOMS')
+                    stageResults['BOND_TOMS'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('BOND_TOMS')) { stageResults['BOND_TOMS'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_BLOOMBERG_BOND') {
+            if (params.MAESTRO_BLOOMBERG_BOND) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('BLOOMBERG_BOND', 'MAESTRO/BLOOMBERG_TO_CALYPSO/BOND')
+                    stageResults['BLOOMBERG_BOND'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('BLOOMBERG_BOND')) { stageResults['BLOOMBERG_BOND'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_GLMX_REPO') {
+            if (params.MAESTRO_GLMX_REPO) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('GLMX_REPO', 'MAESTRO/GLMX_TO_CALYPSO/REPO')
+                    stageResults['GLMX_REPO'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('GLMX_REPO')) { stageResults['GLMX_REPO'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_CME_REPO') {
+            if (params.MAESTRO_CME_REPO) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('CME_REPO', 'MAESTRO/CME_TO_CALYPSO/REPO')
+                    stageResults['CME_REPO'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('CME_REPO')) { stageResults['CME_REPO'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_360T_FX_FWD') {
+            if (params.MAESTRO_360T_FX_FWD) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('360T_FX_FWD', 'MAESTRO/360T_TO_CALYPSO/FX_FWD')
+                    stageResults['360T_FX_FWD'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('360T_FX_FWD')) { stageResults['360T_FX_FWD'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_360T_FX_SPOT') {
+            if (params.MAESTRO_360T_FX_SPOT) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('360T_FX_SPOT', 'MAESTRO/360T_TO_CALYPSO/FX_SPOT')
+                    stageResults['360T_FX_SPOT'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('360T_FX_SPOT')) { stageResults['360T_FX_SPOT'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_360T_FX_SWAP') {
+            if (params.MAESTRO_360T_FX_SWAP) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('360T_FX_SWAP', 'MAESTRO/360T_TO_CALYPSO/FX_SWAP')
+                    stageResults['360T_FX_SWAP'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('360T_FX_SWAP')) { stageResults['360T_FX_SWAP'] = "FAILURE ❌" }
+            }
+        }
+
+        stage('MAESTRO_SFIL') {
+            if (params.MAESTRO_SFIL) {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    runTnrStage('SFIL', 'MAESTRO/SFIL')
+                    stageResults['SFIL'] = "SUCCESS ✅"
+                }
+                if (!stageResults.containsKey('SFIL')) { stageResults['SFIL'] = "FAILURE ❌" }
+            }
+        }
+
+        // --- ENVOI MAIL ---
+
+        if (params.SEND_EMAIL_REPORT) {
+            stage('Send Recap Email') {
+                def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+                def colorHeader = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+                def tableRows = ""
+                stageResults.each { name, status ->
+                    def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+                    def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+                    tableRows += "<tr style='background-color: ${rowColor};'><td style='padding: 10px; border: 1px solid #ddd;'>${name}</td><td style='padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor}; font-weight: bold;'>${status}</td></tr>"
+                }
+
+                mail to: 'votre-equipe@laposte.fr',
+                     subject: "TNR [${env.JOB_NAME}] - Build #${env.BUILD_NUMBER} - ${resultGlobal}",
+                     body: """<html><body style="font-family: Arial, sans-serif;"><div style="max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                                <h2 style="color: ${colorHeader}; text-align: center;">Rapport : ${resultGlobal}</h2>
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                                    <thead><tr style="background-color: #f2f2f2;"><th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Flux</th><th style="padding: 10px; border: 1px solid #ddd;">Résultat</th></tr></thead>
+                                    <tbody>${tableRows}</tbody>
+                                </table>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <a href="${env.BUILD_URL}console" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">VOIR LA CONSOLE JENKINS</a>
+                                </div>
+                             </div></body></html>""",
+                     mimeType: 'text/html'
+            }
+        }
+
+    } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+        throw e
+    }
+}
