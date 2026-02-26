@@ -1,0 +1,66 @@
+stage('Email Recap Report') {
+  when { expression { return params.SEND_EMAIL_REPORT } }
+  steps {
+    script {
+      def resultGlobal = currentBuild.currentResult ?: 'SUCCESS'
+      def colorTheme = (resultGlobal == 'SUCCESS') ? "#28a745" : "#d73a49"
+      def tableRows = ""
+      
+      stageResults.each { name, status ->
+        def rowColor = status.contains("SUCCESS") ? "#f8fff9" : "#fff8f8"
+        def statusColor = status.contains("SUCCESS") ? "#28a745" : "#d73a49"
+        tableRows += """
+          <tr style="background-color: ${rowColor};">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${name}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: ${statusColor}; font-weight: bold;">${status}</td>
+          </tr>
+        """
+      }
+
+      def mailBody = """
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+          <div style="max-width: 650px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            
+            <div style="background-color: ${colorTheme}; padding: 15px; text-align: center; color: white;">
+              <h2 style="margin: 0;">Rapport : ${env.JOB_NAME}</h2>
+              <p style="margin: 5px 0 0 0; font-size: 16px;">Statut : <b>${resultGlobal}</b></p>
+            </div>
+
+            <div style="padding: 20px;">
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                <thead>
+                  <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Flux Applicatif</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Résultat</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${env.BUILD_URL}console" 
+                   style="background-color: #007bff; 
+                          border: 15px solid #007bff; 
+                          color: white; 
+                          text-decoration: none; 
+                          font-weight: bold; 
+                          display: inline-block; 
+                          border-radius: 5px;
+                          font-family: sans-serif;">
+                  &nbsp;&nbsp;&nbsp;CONSULTER LES LOGS DÉTAILLÉS&nbsp;&nbsp;&nbsp;
+                </a>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      """
+
+      emailext to: 'votre-equipe@laposte.fr',
+               subject: "TNR Report [${env.JOB_NAME}] - #${env.BUILD_NUMBER} - ${resultGlobal}",
+               body: mailBody,
+               mimeType: 'text/html'
+    }
+  }
+}
