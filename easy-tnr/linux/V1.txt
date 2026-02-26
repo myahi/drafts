@@ -1,5 +1,24 @@
 def stageResults = [:]
 
+stage('MAESTRO_BLOOMBERG_REPO') {
+    if (params.MAESTRO_BLOOMBERG_REPO) {
+        // Le catchError permet au pipeline de continuer même si ce stage échoue
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            runTnrStage('BLOOMBERG_REPO', 'MAESTRO/BLOOMBERG_TO_CALYPSO/REPO')
+            
+            // Si runTnrStage réussit, on enregistre le succès
+            stageResults['BLOOMBERG_REPO'] = "SUCCESS ✅"
+        }
+        
+        // Si après le bloc catchError la clé n'existe pas, c'est que ça a planté
+        if (!stageResults.containsKey('BLOOMBERG_REPO')) {
+            stageResults['BLOOMBERG_REPO'] = "FAILURE ❌"
+        }
+    }
+}
+
+
+
 stage('Send Recap Email') {
     if (params.SEND_EMAIL_REPORT) {
         script {
