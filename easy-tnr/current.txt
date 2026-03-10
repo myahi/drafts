@@ -1,0 +1,9 @@
+DATA;DETAILS_HASHCODE;METADATA_KEY;METADATA_VALUE;
+Valorisation de la Ressource Logique DollarU;0;BWEngine;EAI_REPORTS-UX-1-ReportsPNL;
+Valorisation de la Ressource Logique DollarU;0;FILE_NAME;CSO_ReportingPNL_Q_CTV_20241214_20241215.txt;
+Message envoyé à la plateforme REPORT_PNL avec le protocole FILE au format REPORT_PNL;0;BWEngine;EAI_REPORTS-UX-1-ReportsPNL;
+Message envoyé à la plateforme REPORT_PNL avec le protocole FILE au format REPORT_PNL;0;FILE_NAME;CSO_ReportingPNL_Q_CTV_20241214_20241215.txt;
+Message envoyé à la plateforme REPORT_PNL avec le protocole FILE au format REPORT_PNL;0;PROCESS_NAME;Process/Gateways/Send to Target.process;
+Message REPORT_PNL reçu;0;BWEngine;EAI_REPORTS-UX-1-ReportsPNL;
+Message REPORT_PNL reçu;0;FILE_NAME;CSO_ReportingPNL_Q_CTV_20241214_20241215.txt;
+Message REPORT_PNL reçu;0;PROCESS_NAME;Process/Routing/EAI to Destination.process;
