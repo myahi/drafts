@@ -1,0 +1,28 @@
+<FeedbackReport>
+    <Administration creationTime="2026-03-09T16:35:20.527+01:00">
+        <From>BDF</From>
+        <To declarerType="LEI">96950066U5XAAIRCPA78</To>
+        <Domain>TCN</Domain>
+        <Response>
+            <Language>FR</Language>
+        </Response>
+    </Administration>
+    <Notes>
+        <Note level="INFO">Remise totalement acceptée.</Note>
+        <Note level="NUMERO_ATTENDU">1009</Note>
+    </Notes>
+    <Report date="2026-03-09" code="DOMICILIATAIRE">
+        <Data form="REMISE_TCN">
+            <Item>
+                <Dim prop="NUMERO_DE_REMISE">1008</Dim>
+                <Dim prop="DATE_DECLARATION">09032026</Dim>
+                <Dim prop="REFERENCES_INTERNES">LBP</Dim>
+                <Dim prop="ID_PROGRAMME">1539</Dim>
+                <Dim prop="SCTID">ENTETE</Dim>
+                <Notes>
+                    <Note level="INFO">Les données du programme ont été intégrées sans avertissement.</Note>
+                </Notes>
+            </Item>
+        </Data>
+    </Report>
+</FeedbackReport>
