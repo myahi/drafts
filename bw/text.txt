@@ -1,2 +1,5 @@
-17:30:29.987 [34m[0;39m [main] c.u.j.r.DefaultLazyPropertyResolver -  - Property Resolver custom Bean not found with name 'encryptablePropertyResolver'. Initializing Default Property Resolver
-17:30:29.997 [34m[0;39m [main] c.u.j.d.DefaultLazyPropertyDetector -  - Property Detector custom Bean not found with name 'encryptablePropertyDetector'. Initializing Default Property Detector
+List<String> lignes = Files.lines(Paths.get("fichier.txt"), StandardCharsets.UTF_8)
+    .skip(1)
+    .map(String::trim)
+    .filter(s -> !s.isEmpty())
+    .collect(Collectors.toList());
