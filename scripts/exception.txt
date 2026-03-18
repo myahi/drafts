@@ -1,2 +1,6 @@
 The property java.library can not be empty !
 Failed to load shared library, library name :
+
+
+et pourtant sur les process encours je vois ça:
+/serveur_apps/tibco/bw/5.14/bin/bwengine --run --propFile /serveur_apps/tibco//tra/domain/LBPEAI_REC_5_14/application/MAESTRO-UX-INTEGRATION/MAESTRO-UX-INTEGRATION-SFILTradesToCalypso.tra --innerProcess
