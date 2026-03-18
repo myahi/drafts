@@ -21,8 +21,33 @@ do
     echo "=================================================="
     echo "Répertoire : $dir"
 
-    find "$dir" -maxdepth 1 -type f -name "*.sh" | while IFS= read -r sh
+    find "$dir" -maxdepth 1 -type f -name "*.sh" | sort | while IFS= read -r sh
     do
+      sh_name="$(basename "$sh")"
+      echo "Script trouvé : $sh_name"
+
+      pids="$(ps -ef | grep -F "$base_dir" | grep -F "$sh_name" | grep -v grep | awk '{print $2}')"
+
+      if [[ -n "$pids" ]]; then
+        echo "Arrêt des process (SIGTERM) : $pids"
+        for pid in $pids; do
+          kill -15 "$pid"
+        done
+
+        sleep 5
+
+        for pid in $pids; do
+          if ps -p "$pid" > /dev/null 2>&1; then
+            echo "Force kill (SIGKILL) : $pid"
+            kill -9 "$pid"
+          else
+            echo "Arrêt propre OK : $pid"
+          fi
+        done
+      else
+        echo "Aucun process trouvé pour $sh_name"
+      fi
+
       echo "Lancement : $sh"
       (
         cd "$dir" || exit 1
