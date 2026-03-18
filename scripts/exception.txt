@@ -1,0 +1,2 @@
+The property java.library can not be empty !
+Failed to load shared library, library name :
