@@ -2,7 +2,6 @@
 set -u
 
 APP_ROOT="/serveur_apps/tibco/tra/domain/LBPEAI_REC_5_14/application"
-BWENGINE="/serveur_apps/tibco/bw/5.14/bin/bwengine"
 
 matches_dir() {
   local d="$1"
@@ -20,44 +19,15 @@ do
 
   if matches_dir "$base_dir"; then
     echo "=================================================="
-    echo "Répertoire trouvé : $dir"
+    echo "Répertoire : $dir"
 
-    sh_files=()
-    tra_files=()
-
-    while IFS= read -r f; do
-      sh_files+=("$f")
-    done < <(find "$dir" -maxdepth 1 -type f -name "*.sh" | sort)
-
-    while IFS= read -r f; do
-      tra_files+=("$f")
-    done < <(find "$dir" -maxdepth 1 -type f -name "*.tra" | sort)
-
-    echo ".sh trouvés :"
-    for sh in "${sh_files[@]}"; do
-      echo "  - $(basename "$sh")"
-    done
-
-    echo ".tra trouvés :"
-    for tra in "${tra_files[@]}"; do
-      echo "  - $(basename "$tra")"
-    done
-
-    echo "Couples .sh / .tra :"
-    for sh in "${sh_files[@]}"; do
-      sh_base="$(basename "$sh" .sh)"
-      for tra in "${tra_files[@]}"; do
-        tra_base="$(basename "$tra" .tra)"
-        if [[ "$sh_base" == "$tra_base" ]]; then
-          echo "  - $(basename "$sh") <-> $(basename "$tra")"
-
-          echo "Lancement : $BWENGINE --pid --run --propFile $tra --innerProcess"
-          (
-            cd "$dir" || exit 1
-            "$BWENGINE" --pid --run --propFile "$tra" --innerProcess
-          )
-        fi
-      done
+    find "$dir" -maxdepth 1 -type f -name "*.sh" | while IFS= read -r sh
+    do
+      echo "Lancement : $sh"
+      (
+        cd "$dir" || exit 1
+        nohup "$sh" >/dev/null 2>&1 &
+      )
     done
   fi
 done
