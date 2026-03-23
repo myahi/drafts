@@ -1,0 +1,57 @@
+la création du EAIftpMessage se fait avec le mapping suivant:
+<?xml version="1.0" encoding="UTF-8"?>
+<request xmlns:pfx6="http://www.labanquepostale.fr/dmf/FtpRequest/result" xmlns:pfx7="http://regis_tr_xml_load" xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/EAIftpMessage.xsd" xmlns:ns="http://www.tibco.com/pe/DeployedVarsType" xmlns:pfx3="http://www.labanquepostale.fr/xml" xmlns:pfx4="http://www.labanquepostale.fr/xml/gateway/output" xmlns:pfx5="http://www.labanquepostale.fr/dmf/FtpRequest" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns0="www.tibco.com/plugin/Sleep" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns2="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:ns1="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns4="http://www.tibco.com/pe/EngineTypes" xmlns:ns3="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.calypso.com/xml" xmlns:ns5="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns8="http://www.labanquepostale.fr/xml/audit/v2" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns7="http://www.labanquepostale.fr/dmf/FtpRequest/request" xmlns:ns9="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns10="http://tibco.com/namespaces/tnt/plugins/soap" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <ns7:EAIftpMessage>
+        <ns7:Header>
+            <xsl:attribute name="Action">
+                <xsl:value-of select="'send'"/>
+            </xsl:attribute>
+            <xsl:attribute name="ConnectionName">
+                <xsl:value-of select="$Start/parameters/connectionName"/>
+            </xsl:attribute>
+            <xsl:if test="$Start/parameters/remoteLocation">
+                <xsl:attribute name="requestURI">
+                    <xsl:value-of select="$Start/parameters/remoteLocation"/>
+                </xsl:attribute>
+            </xsl:if>
+            <ns7:nbMaxRetry>
+                <xsl:value-of select="5"/>
+            </ns7:nbMaxRetry>
+            <ns7:waitForRetry>
+                <xsl:value-of select="30"/>
+            </ns7:waitForRetry>
+            <ns7:batchSchedulerInfo>
+                <xsl:value-of select="false()"/>
+            </ns7:batchSchedulerInfo>
+        </ns7:Header>
+        <ns7:File>
+            <xsl:attribute name="Location">
+                <xsl:value-of select="$Start/parameters/fileLocation"/>
+            </xsl:attribute>
+            <xsl:attribute name="Name">
+                <xsl:value-of select="$Start/parameters/fileName"/>
+            </xsl:attribute>
+            <xsl:if test="$Start/parameters/remoteLocation">
+                <xsl:attribute name="RemoteLocation">
+                    <xsl:value-of select="$Start/parameters/remoteLocation"/>
+                </xsl:attribute>
+            </xsl:if>
+            <ns7:Content>
+                <xsl:value-of select="$Read-File/ns2:ReadActivityOutputBinaryClass/fileContent/binaryContent"/>
+            </ns7:Content>
+        </ns7:File>
+    </ns7:EAIftpMessage>
+</request>
+
+et l'appel soap se fait comme ça:
+<?xml version="1.0" encoding="UTF-8"?>
+<inputMessage xmlns:pfx6="http://www.labanquepostale.fr/dmf/FtpRequest/result" xmlns:pfx7="http://regis_tr_xml_load" xmlns:pfx="http://www.lbp.fr/xml" xmlns:pfx2="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/EAIftpMessage.xsd" xmlns:ns="http://www.tibco.com/pe/DeployedVarsType" xmlns:pfx3="http://www.labanquepostale.fr/xml" xmlns:pfx4="http://www.labanquepostale.fr/xml/gateway/output" xmlns:pfx5="http://www.labanquepostale.fr/dmf/FtpRequest" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns0="www.tibco.com/plugin/Sleep" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns2="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:ns1="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:ns4="http://www.tibco.com/pe/EngineTypes" xmlns:ns3="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.calypso.com/xml" xmlns:ns5="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:ns8="http://www.labanquepostale.fr/xml/audit/v2" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns7="http://www.labanquepostale.fr/dmf/FtpRequest/request" xmlns:ns9="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns10="http://tibco.com/namespaces/tnt/plugins/soap" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <ftpRequest>
+        <xsl:copy-of select="$Map-Data/request/ns7:EAIftpMessage"/>
+    </ftpRequest>
+    <ns10:_configData>
+        <endpointURL>
+            <xsl:value-of select="$_globalVariables/ns:GlobalVariables/EAIparams/FTP/UrlWsEaiFtpExchange"/>
+        </endpointURL>
+    </ns10:_configData>
+</inputMessage>
