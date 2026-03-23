@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:element xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Line">
+    <xsd:complexType>
+        <xsd:sequence>
+            <xsd:element name="ValuationDate" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="PortfolioID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="TradeID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="EndDate" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="IMModel" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="PostRegulations" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="CollectRegulations" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="ProductClass" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Sensitivity_Id" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="RiskType" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Qualifier" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Bucket" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Label1" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Label2" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Amount" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="AmountCurrency" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="AmountUSD" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:element>
