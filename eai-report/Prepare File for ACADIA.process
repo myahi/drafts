@@ -1,0 +1,1373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:ProcessDefinition xmlns:pfx="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/input.xsd" xmlns:pfx2="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/InputFromICE.xsd" xmlns:ns="http://www.tibco.com/pe/EngineTypes" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/INITIAL_MARGIN/outIRToICE.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:ns4="http://www.lbp.fr/xml/report/common" xmlns:ns3="http://www.lbp.fr/xml/report/destination" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns5="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns13="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:ns12="http://www.labanquepostale.fr/xml/output" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns14="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:lbp="java://LbpCustomClass">
+    <xsd:import namespace="http://www.lbp.fr/xml/report/message" schemaLocation="/Resources/Xsd/Internal/lbp-report-message.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/InputFromICE.xsd" schemaLocation="/Resources/Xsd/INITIAL_MARGIN/InputFromICE.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/INITIAL_MARGIN/outIRToICE.xsd" schemaLocation="/Resources/Xsd/INITIAL_MARGIN/Out_IR_SWAP_VANILLA_To_ICE.xsd"/>
+    <pd:name>Process/Starters/ACADIA/Prepare File for ACADIA.process</pd:name>
+    <pd:startName>File Poller - CSO Report File</pd:startName>
+    <pd:startX>0</pd:startX>
+    <pd:startY>0</pd:startY>
+    <pd:returnBindings/>
+    <pd:starter name="File Poller - CSO Report File">
+        <pd:type>com.tibco.plugin.file.FileEventSource</pd:type>
+        <pd:resourceType>ae.activities.FileEventSourceResource</pd:resourceType>
+        <pd:x>56</pd:x>
+        <pd:y>99</pd:y>
+        <config>
+            <pollInterval>%%EAIparams/REPORTS/ACADIA/PollingIntervalInSecond%%</pollInterval>
+            <createEvent>true</createEvent>
+            <modifyEvent>false</modifyEvent>
+            <deleteEvent>false</deleteEvent>
+            <mode>only-files</mode>
+            <encoding>text</encoding>
+            <sortby>File Name</sortby>
+            <sortorder>descending</sortorder>
+            <fileName>%%EAIparams/REPORTS/ACADIA/PollingDirectory%%%%EAIparams/REPORTS/ACADIA/inputCSOTradeIDReport/FileNamePattern%%</fileName>
+            <excludeContent>false</excludeContent>
+            <includeCurrent>true</includeCurrent>
+            <encodingUsed>%%EAIparams/REPORTS/ACADIA/inputCSOTradeIDReport/FileEncoding%%</encodingUsed>
+        </config>
+        <pd:inputBindings/>
+    </pd:starter>
+    <pd:endName>End</pd:endName>
+    <pd:endX>1965</pd:endX>
+    <pd:endY>336</pd:endY>
+    <pd:errorSchemas/>
+    <pd:processVariables/>
+    <pd:targetNamespace>http://xmlns.example.com/1412341085963</pd:targetNamespace>
+    <pd:group name="For Each ACADIA File">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>624</pd:x>
+        <pd:y>1</pd:y>
+        <pd:width>1077</pd:width>
+        <pd:height>233</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>inputLoop</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:over>$List-Files-For-ACADIA/ns1:ListFilesActivityOutput/files/fileInfo</pd:over>
+            <pd:iterationElementSlot>currentACADIAFile</pd:iterationElementSlot>
+            <pd:indexSlot>i</pd:indexSlot>
+            <pd:activityOutputName/>
+            <pd:accumulateOutput>false</pd:accumulateOutput>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>TraceStart - ACADIA File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Archiving ACADIA File OnError</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>TraceEnd - ACADIA File</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Write processed file</pd:from>
+            <pd:to>Archiving ACADIA File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Archiving ACADIA File</pd:from>
+            <pd:to>sendAuditInfoEnd Ready for ACADIA</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Parse Acadia Data</pd:from>
+            <pd:to>Render Acadia Data</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Render Acadia Data</pd:from>
+            <pd:to>Write processed file</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>TraceStart - ACADIA File</pd:from>
+            <pd:to>Read ACADIA File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Read ACADIA File</pd:from>
+            <pd:to>sendAuditInfo ICE to ACADIA</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Handle ACADIA File Error</pd:from>
+            <pd:to>Archiving ACADIA File OnError</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>Catch ACADIA File Error</pd:from>
+            <pd:to>Handle ACADIA File Error</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>sendAuditInfoEnd Ready for ACADIA</pd:from>
+            <pd:to>TraceEnd - ACADIA File</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>sendAuditInfo ICE to ACADIA</pd:from>
+            <pd:to>Parse Acadia Data</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="Archiving ACADIA File">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1372</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+            </config>
+            <pd:inputBindings>
+                <parameters>
+                    <sourceName>
+                        <xsl:value-of select="$currentACADIAFile/fileInfo/fullName"/>
+                    </sourceName>
+                    <targetName>
+                        <xsl:value-of select="concat($currentACADIAFile/fileInfo/location,&#xA;&quot;/archive/&quot;,$currentACADIAFile/fileInfo/fileName,'_',&#xA;tib:format-dateTime('yyyyMMddHHmmss', current-dateTime()))"/>
+                    </targetName>
+                </parameters>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Parse Acadia Data">
+            <pd:type>com.tibco.plugin.parse.ParseActivity</pd:type>
+            <pd:resourceType>ae.activities.ParseActivity</pd:resourceType>
+            <pd:x>1026</pd:x>
+            <pd:y>72</pd:y>
+            <config>
+                <InputType>String</InputType>
+                <Encoding>ASCII</Encoding>
+                <ParseSharedConfig>/Resources/Xsd/ACADIA/inputICEToACADIA.sharedparse</ParseSharedConfig>
+                <SkipBlankLines>true</SkipBlankLines>
+                <SpecifyStartRecord>true</SpecifyStartRecord>
+            </config>
+            <pd:inputBindings>
+                <Input>
+                    <text>
+                        <xsl:value-of select="$Read-ACADIA-File/ns1:ReadActivityOutputTextClass/fileContent/textContent"/>
+                    </text>
+                    <startRecord>
+                        <xsl:value-of select="2"/>
+                    </startRecord>
+                    <noOfRecords>
+                        <xsl:value-of select="-1"/>
+                    </noOfRecords>
+                </Input>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Render Acadia Data">
+            <pd:type>com.tibco.plugin.parse.RenderActivity</pd:type>
+            <pd:resourceType>ae.activities.RenderActivity</pd:resourceType>
+            <pd:x>1148</pd:x>
+            <pd:y>72</pd:y>
+            <config>
+                <ParseSharedConfig>/Resources/Xsd/ACADIA/inputICEToACADIA.sharedparse</ParseSharedConfig>
+            </config>
+            <pd:inputBindings>
+                <Rows>
+                    <xsl:for-each select="$Parse-Acadia-Data/Output/Rows/Line">
+                        <Line>
+                            <ValuationDate>
+                                <xsl:value-of select="ValuationDate"/>
+                            </ValuationDate>
+                            <PortfolioID>
+                                <xsl:value-of select="tib:substring-before-last($currentACADIAFile/fileInfo/fileName, '_')"/>
+                            </PortfolioID>
+                            <xsl:variable name="ICETradeID" select="current()/TradeID"/>
+                            <xsl:variable name="ExternalTradeID" select="$Parse-CSO-Report-File/Output/Rows/Line[TradeID=substring(current()/TradeID, 1, string-length(current()/TradeID)-3)]/ExternalTradeID"/>
+                            <xsl:choose>
+                                <xsl:when test="string-length($ExternalTradeID)>0">
+                                    <TradeID>
+                                        <xsl:value-of select="$ExternalTradeID"/>
+                                    </TradeID>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <TradeID>
+                                        <xsl:value-of select="TradeID"/>
+                                    </TradeID>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:if test="EndDate">
+                                <EndDate>
+                                    <xsl:value-of select="EndDate"/>
+                                </EndDate>
+                            </xsl:if>
+                            <xsl:if test="IMModel">
+                                <IMModel>
+                                    <xsl:value-of select="IMModel"/>
+                                </IMModel>
+                            </xsl:if>
+                            <xsl:if test="PostRegulations">
+                                <PostRegulations>
+                                    <xsl:value-of select="PostRegulations"/>
+                                </PostRegulations>
+                            </xsl:if>
+                            <xsl:if test="CollectRegulations">
+                                <CollectRegulations>
+                                    <xsl:value-of select="CollectRegulations"/>
+                                </CollectRegulations>
+                            </xsl:if>
+                            <xsl:if test="ProductClass">
+                                <ProductClass>
+                                    <xsl:value-of select="ProductClass"/>
+                                </ProductClass>
+                            </xsl:if>
+                            <xsl:if test="Sensitivity_Id">
+                                <Sensitivity_Id>
+                                    <xsl:value-of select="Sensitivity_Id"/>
+                                </Sensitivity_Id>
+                            </xsl:if>
+                            <xsl:if test="RiskType">
+                                <RiskType>
+                                    <xsl:value-of select="RiskType"/>
+                                </RiskType>
+                            </xsl:if>
+                            <xsl:if test="Qualifier">
+                                <Qualifier>
+                                    <xsl:value-of select="Qualifier"/>
+                                </Qualifier>
+                            </xsl:if>
+                            <xsl:if test="Bucket">
+                                <Bucket>
+                                    <xsl:value-of select="Bucket"/>
+                                </Bucket>
+                            </xsl:if>
+                            <xsl:if test="Label1">
+                                <Label1>
+                                    <xsl:value-of select="Label1"/>
+                                </Label1>
+                            </xsl:if>
+                            <xsl:if test="Label2">
+                                <Label2>
+                                    <xsl:value-of select="Label2"/>
+                                </Label2>
+                            </xsl:if>
+                            <xsl:if test="Amount">
+                                <Amount>
+                                    <xsl:value-of select="Amount"/>
+                                </Amount>
+                            </xsl:if>
+                            <xsl:if test="AmountCurrency">
+                                <AmountCurrency>
+                                    <xsl:value-of select="AmountCurrency"/>
+                                </AmountCurrency>
+                            </xsl:if>
+                            <xsl:if test="AmountUSD">
+                                <AmountUSD>
+                                    <xsl:value-of select="AmountUSD"/>
+                                </AmountUSD>
+                            </xsl:if>
+                        </Line>
+                    </xsl:for-each>
+                </Rows>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Write processed file">
+            <pd:type>com.tibco.plugin.file.FileWriteActivity</pd:type>
+            <pd:resourceType>ae.activities.FileWriteActivity</pd:resourceType>
+            <pd:x>1263</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <encoding>text</encoding>
+                <compressFile>None</compressFile>
+                <append>true</append>
+                <createMissingDirectories>true</createMissingDirectories>
+            </config>
+            <pd:inputBindings>
+                <ns1:WriteActivityInputTextClass>
+                    <fileName>
+                        <xsl:value-of select="concat($_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/outputToACADIADirectory&#xA;,substring-before($currentACADIAFile/fileInfo/fileName, $_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/intputToACADIAFileNameExtension),&#xA;$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/outputToACADIAFileNameExtension)"/>
+                    </fileName>
+                    <textContent>
+                        <xsl:value-of select="concat('ValuationDate&#x9;PortfolioID&#x9;TradeID&#x9;EndDate&#x9;ImModel&#x9;PostRegulations&#x9;CollectRegulations&#x9;ProductClass&#x9;Sensitivity_Id&#x9;RiskType&#x9;Qualifier&#x9;Bucket&#x9;Label1&#x9;Label2&#x9;Amount&#x9;AmountCurrency&#x9;AmountUSD','&#xA;',$Render-Acadia-Data/Text)"/>
+                    </textContent>
+                    <encoding>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/outputToACADIAEncodingFile"/>
+                    </encoding>
+                </ns1:WriteActivityInputTextClass>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="TraceStart - ACADIA File">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>683</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <processName>/framework/process/logHandling/Trace.process</processName>
+            </config>
+            <pd:inputBindings>
+                <trace>
+                    <code>
+                        <xsl:value-of select="'REPORT-ACADIA-023'"/>
+                    </code>
+                    <msg>
+                        <xsl:value-of select="$currentACADIAFile/fileInfo/fileName"/>
+                    </msg>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext">
+                        <processContext>
+                            <ProcessId>
+                                <xsl:value-of select="ProcessId"/>
+                            </ProcessId>
+                            <ProjectName>
+                                <xsl:value-of select="ProjectName"/>
+                            </ProjectName>
+                            <EngineName>
+                                <xsl:value-of select="EngineName"/>
+                            </EngineName>
+                            <RestartedFromCheckpoint>
+                                <xsl:value-of select="RestartedFromCheckpoint"/>
+                            </RestartedFromCheckpoint>
+                            <xsl:for-each select="TrackingInfo">
+                                <TrackingInfo>
+                                    <xsl:value-of select="."/>
+                                </TrackingInfo>
+                            </xsl:for-each>
+                            <xsl:if test="CustomId">
+                                <CustomId>
+                                    <xsl:value-of select="CustomId"/>
+                                </CustomId>
+                            </xsl:if>
+                        </processContext>
+                    </xsl:for-each>
+                </trace>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="TraceEnd - ACADIA File">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1600</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <processName>/framework/process/logHandling/Trace.process</processName>
+            </config>
+            <pd:inputBindings>
+                <trace>
+                    <code>
+                        <xsl:value-of select="'REPORT-ACADIA-024'"/>
+                    </code>
+                    <msg>
+                        <xsl:value-of select="$currentACADIAFile/fileInfo/fileName"/>
+                    </msg>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext">
+                        <processContext>
+                            <ProcessId>
+                                <xsl:value-of select="ProcessId"/>
+                            </ProcessId>
+                            <ProjectName>
+                                <xsl:value-of select="ProjectName"/>
+                            </ProjectName>
+                            <EngineName>
+                                <xsl:value-of select="EngineName"/>
+                            </EngineName>
+                            <RestartedFromCheckpoint>
+                                <xsl:value-of select="RestartedFromCheckpoint"/>
+                            </RestartedFromCheckpoint>
+                            <xsl:for-each select="TrackingInfo">
+                                <TrackingInfo>
+                                    <xsl:value-of select="."/>
+                                </TrackingInfo>
+                            </xsl:for-each>
+                            <xsl:if test="CustomId">
+                                <CustomId>
+                                    <xsl:value-of select="CustomId"/>
+                                </CustomId>
+                            </xsl:if>
+                        </processContext>
+                    </xsl:for-each>
+                </trace>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Read ACADIA File">
+            <pd:type>com.tibco.plugin.file.FileReadActivity</pd:type>
+            <pd:resourceType>ae.activities.FileReadActivity</pd:resourceType>
+            <pd:x>791</pd:x>
+            <pd:y>72</pd:y>
+            <config>
+                <encoding>text</encoding>
+            </config>
+            <pd:inputBindings>
+                <ns5:ReadActivityInputClass>
+                    <fileName>
+                        <xsl:value-of select="$currentACADIAFile/fileInfo/fullName"/>
+                    </fileName>
+                    <encoding>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/intputToACADIAEncodingFile"/>
+                    </encoding>
+                </ns5:ReadActivityInputClass>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Catch ACADIA File Error">
+            <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+            <pd:resourceType>ae.activities.catch</pd:resourceType>
+            <pd:x>1392</pd:x>
+            <pd:y>171</pd:y>
+            <pd:handler>true</pd:handler>
+            <config>
+                <catchAll>true</catchAll>
+            </config>
+            <pd:inputBindings/>
+        </pd:activity>
+        <pd:activity name="Handle ACADIA File Error">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1513</pd:x>
+            <pd:y>171</pd:y>
+            <config>
+                <processName>/framework/process/errorHandling/Handle Error.process</processName>
+            </config>
+            <pd:inputBindings>
+                <error>
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </processContext>
+                    <errorReport>
+                        <xsl:copy-of select="$_error/ns:ErrorReport/ancestor-or-self::*/namespace::node()"/>
+                        <xsl:copy-of select="$_error/ns:ErrorReport/@*"/>
+                        <xsl:copy-of select="$_error/ns:ErrorReport/node()"/>
+                    </errorReport>
+                    <data>
+                        <xsl:copy-of select="$Catch-ACADIA-File-Error/exceptiondata"/>
+                    </data>
+                    <reference>
+                        <code>
+                            <xsl:value-of select="$currentACADIAFile/fileInfo/fileName"/>
+                        </code>
+                        <codifier>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                        </codifier>
+                    </reference>
+                    <ns14:metadatas>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                    </ns14:metadatas>
+                </error>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Archiving ACADIA File OnError">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1637</pd:x>
+            <pd:y>171</pd:y>
+            <config>
+                <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+            </config>
+            <pd:inputBindings>
+                <parameters>
+                    <sourceName>
+                        <xsl:value-of select="$currentACADIAFile/fileInfo/fullName"/>
+                    </sourceName>
+                    <targetName>
+                        <xsl:value-of select="concat($currentACADIAFile/fileInfo/location,&#xA;&quot;/error/&quot;,$currentACADIAFile/fileInfo/fileName,'_',&#xA;tib:format-dateTime('yyyyMMddHHmmss', current-dateTime()))"/>
+                    </targetName>
+                </parameters>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="sendAuditInfo ICE to ACADIA">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>905</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+            </config>
+            <pd:inputBindings>
+                <audit>
+                    <ns14:auditInfo>
+                        <ns14:timestamp>
+                            <xsl:value-of select="current-dateTime()"/>
+                        </ns14:timestamp>
+                        <ns14:reference>
+                            <ns14:code>
+                                <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:code>
+                            <ns14:codifier>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:codifier>
+                        </ns14:reference>
+                        <ns14:metadatas>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="'ICE TO ACADIA'"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="'PROCESS_NAME'"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                        </ns14:metadatas>
+                        <ns14:description>
+                            <xsl:value-of select="'Fichier ICE pour ACADIA reçu'"/>
+                        </ns14:description>
+                        <ns14:data>
+                            <xsl:value-of select="$Read-ACADIA-File/ns1:ReadActivityOutputTextClass/fileContent/textContent"/>
+                        </ns14:data>
+                        <ns14:statut>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Info"/>
+                        </ns14:statut>
+                    </ns14:auditInfo>
+                    <ns:ProcessContext>
+                        <ProcessId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                            <CustomId>
+                                <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </ns:ProcessContext>
+                </audit>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="sendAuditInfoEnd Ready for ACADIA">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>1484</pd:x>
+            <pd:y>80</pd:y>
+            <config>
+                <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+            </config>
+            <pd:inputBindings>
+                <audit>
+                    <ns14:auditInfo>
+                        <ns14:timestamp>
+                            <xsl:value-of select="current-dateTime()"/>
+                        </ns14:timestamp>
+                        <ns14:reference>
+                            <ns14:code>
+                                <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:code>
+                            <ns14:codifier>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:codifier>
+                        </ns14:reference>
+                        <ns14:metadatas>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="'ICE TO ACADIA'"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                            <ns14:metadata>
+                                <ns14:key>
+                                    <xsl:value-of select="'PROCESS_NAME'"/>
+                                </ns14:key>
+                                <ns14:value>
+                                    <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                                </ns14:value>
+                            </ns14:metadata>
+                        </ns14:metadatas>
+                        <ns14:description>
+                            <xsl:value-of select="'Fichier ICE pour ACADIA traité'"/>
+                        </ns14:description>
+                        <ns14:data>
+                            <xsl:value-of select="concat('ValuationDate&#x9;PortfolioID&#x9;TradeID&#x9;EndDate&#x9;ImModel&#x9;PostRegulations&#x9;CollectRegulations&#x9;ProductClass&#x9;Sensitivity_Id&#x9;RiskType&#x9;Qualifier&#x9;Bucket&#x9;Label1&#x9;Label2&#x9;Amount&#x9;AmountCurrency&#x9;AmountUSD','&#xA;',$Render-Acadia-Data/Text)"/>
+                        </ns14:data>
+                        <ns14:statut>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Info"/>
+                        </ns14:statut>
+                    </ns14:auditInfo>
+                    <ns:ProcessContext>
+                        <ProcessId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                            <CustomId>
+                                <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </ns:ProcessContext>
+                </audit>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:activity name="Archiving CSO Report File">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1965</pd:x>
+        <pd:y>126</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <sourceName>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </sourceName>
+                <targetName>
+                    <xsl:value-of select="concat($File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/location,&#xA;&quot;/archive/&quot;,$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName)"/>
+                </targetName>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Archiving CSO Report File On Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1759</pd:x>
+        <pd:y>351</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <sourceName>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </sourceName>
+                <targetName>
+                    <xsl:value-of select="concat($File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/location,&#xA;&quot;/error/&quot;,$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName)"/>
+                </targetName>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Catch">
+        <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+        <pd:resourceType>ae.activities.catch</pd:resourceType>
+        <pd:x>1552</pd:x>
+        <pd:y>336</pd:y>
+        <pd:handler>true</pd:handler>
+        <config>
+            <catchAll>true</catchAll>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Check activateNewACADIAProcess Flag">
+        <pd:type>com.tibco.plugin.timer.NullActivity</pd:type>
+        <pd:resourceType>ae.activities.null</pd:resourceType>
+        <pd:x>167</pd:x>
+        <pd:y>285</pd:y>
+        <config/>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Do Nothing">
+        <pd:type>com.tibco.plugin.timer.NullActivity</pd:type>
+        <pd:resourceType>ae.activities.null</pd:resourceType>
+        <pd:x>1158</pd:x>
+        <pd:y>277</pd:y>
+        <config/>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="EnsureFileIntegrity">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>167</pd:x>
+        <pd:y>91</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/EnsureFileIntegrity.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <fileName>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </fileName>
+                <directoryPath>
+                    <xsl:value-of select="concat($File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/location,&quot;/&quot;)"/>
+                </directoryPath>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Force a GC on Error">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>1869</pd:x>
+        <pd:y>344</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ACADIA.PrepareFileforACADIA;
+import java.util.*;
+import java.io.*;
+public class PrepareFileforACADIAForceaGConError{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public PrepareFileforACADIAForceaGConError() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>PrepareFileforACADIAForceaGConError</fileName>
+            <packageName>Process.Starters.ACADIA.PrepareFileforACADIA</packageName>
+            <byteCode>
+                <class>
+                    <name>PrepareFileforACADIAForceaGConError</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBAChQcmVwYXJlRmlsZWZvckFDQURJQUZvcmNlYUdDb25FcnJvci5qYXZhDAAFAAYHABQMABUABgEAUFByb2Nlc3MvU3RhcnRlcnMvQUNBRElBL1ByZXBhcmVGaWxlZm9yQUNBRElBL1ByZXBhcmVGaWxlZm9yQUNBRElBRm9yY2VhR0NvbkVycm9yAQAQamF2YS9sYW5nL09iamVjdAEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQACZ2MAIQADAAQAAAAAAAIAAQAFAAYAAQAHAAAAIQABAAEAAAAFKrcAAbEAAAABAAgAAAAKAAIAAAAHAAQACAABAAkABgACAAcAAAAgAAAAAQAAAAS4AAKxAAAAAQAIAAAACgACAAAADAADAA4ACgAAAAQAAQALAAEADAAAAAIADQ==</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Handle Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1643</pd:x>
+        <pd:y>336</pd:y>
+        <config>
+            <processName>/framework/process/errorHandling/Handle Error.process</processName>
+        </config>
+        <pd:inputBindings>
+            <error>
+                <processContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <CustomId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                    </CustomId>
+                </processContext>
+                <errorReport>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/ancestor-or-self::*/namespace::node()"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/@*"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/node()"/>
+                </errorReport>
+                <data>
+                    <xsl:copy-of select="$Catch/exceptiondata"/>
+                </data>
+                <reference>
+                    <code>
+                        <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                    </code>
+                    <codifier>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                    </codifier>
+                </reference>
+                <ns14:metadatas>
+                    <ns14:metadata>
+                        <ns14:key>
+                            <xsl:value-of select="'PROCESS_NAME'"/>
+                        </ns14:key>
+                        <ns14:value>
+                            <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                        </ns14:value>
+                    </ns14:metadata>
+                </ns14:metadatas>
+            </error>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="List Files For ACADIA">
+        <pd:type>com.tibco.plugin.file.ListFilesActivity</pd:type>
+        <pd:resourceType>ae.activities.ListFilesActivity</pd:resourceType>
+        <pd:x>561</pd:x>
+        <pd:y>99</pd:y>
+        <config>
+            <mode>only-files</mode>
+        </config>
+        <pd:inputBindings>
+            <ns1:ListFilesActivityConfig>
+                <fileName>
+                    <xsl:value-of select="concat($_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/PollingDirectory,$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/intputToACADIAPrefixFileName,$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/intputToACADIAFileNameExtension)"/>
+                </fileName>
+            </ns1:ListFilesActivityConfig>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Parse CSO Report File">
+        <pd:type>com.tibco.plugin.parse.ParseActivity</pd:type>
+        <pd:resourceType>ae.activities.ParseActivity</pd:resourceType>
+        <pd:x>463</pd:x>
+        <pd:y>99</pd:y>
+        <config>
+            <InputType>String</InputType>
+            <Encoding>ASCII</Encoding>
+            <ParseSharedConfig>/Resources/Xsd/ACADIA/inputCSOReportToACADIA.sharedparse</ParseSharedConfig>
+            <SkipBlankLines>true</SkipBlankLines>
+            <SpecifyStartRecord>true</SpecifyStartRecord>
+        </config>
+        <pd:inputBindings>
+            <Input>
+                <text>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileContent/textContent"/>
+                </text>
+                <startRecord>
+                    <xsl:value-of select="2"/>
+                </startRecord>
+                <noOfRecords>
+                    <xsl:value-of select="-1"/>
+                </noOfRecords>
+            </Input>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfo">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>271</pd:x>
+        <pd:y>91</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns14:auditInfo>
+                    <ns14:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns14:timestamp>
+                    <ns14:reference>
+                        <ns14:code>
+                            <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                        </ns14:code>
+                        <ns14:codifier>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                        </ns14:codifier>
+                    </ns14:reference>
+                    <ns14:metadatas>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ICE TO ACADIA'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                    </ns14:metadatas>
+                    <ns14:description>
+                        <xsl:value-of select="'CSO Report pour ACADIA reçu'"/>
+                    </ns14:description>
+                    <ns14:data>
+                        <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileContent/textContent"/>
+                    </ns14:data>
+                    <ns14:statut>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Info"/>
+                    </ns14:statut>
+                </ns14:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfoEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1844</pd:x>
+        <pd:y>117</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns14:auditInfo>
+                    <ns14:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns14:timestamp>
+                    <ns14:reference>
+                        <ns14:code>
+                            <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                        </ns14:code>
+                        <ns14:codifier>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                        </ns14:codifier>
+                    </ns14:reference>
+                    <ns14:metadatas>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ICE TO ACADIA'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                    </ns14:metadatas>
+                    <ns14:description>
+                        <xsl:value-of select="'CSO Report pour ACADIA traité'"/>
+                    </ns14:description>
+                    <ns14:data>
+                        <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileContent/textContent"/>
+                    </ns14:data>
+                    <ns14:statut>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Success"/>
+                    </ns14:statut>
+                </ns14:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="System GC">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>1754</pd:x>
+        <pd:y>118</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ACADIA.PrepareFileforACADIA;
+import java.util.*;
+import java.io.*;
+public class PrepareFileforACADIASystemGC{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public PrepareFileforACADIASystemGC() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>PrepareFileforACADIASystemGC</fileName>
+            <packageName>Process.Starters.ACADIA.PrepareFileforACADIA</packageName>
+            <byteCode>
+                <class>
+                    <name>PrepareFileforACADIASystemGC</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBACFQcmVwYXJlRmlsZWZvckFDQURJQVN5c3RlbUdDLmphdmEMAAUABgcAFAwAFQAGAQBJUHJvY2Vzcy9TdGFydGVycy9BQ0FESUEvUHJlcGFyZUZpbGVmb3JBQ0FESUEvUHJlcGFyZUZpbGVmb3JBQ0FESUFTeXN0ZW1HQwEAEGphdmEvbGFuZy9PYmplY3QBABNqYXZhL2xhbmcvRXhjZXB0aW9uAQAQamF2YS9sYW5nL1N5c3RlbQEAAmdjACEAAwAEAAAAAAACAAEABQAGAAEABwAAACEAAQABAAAABSq3AAGxAAAAAQAIAAAACgACAAAABwAEAAgAAQAJAAYAAgAHAAAAIAAAAAEAAAAEuAACsQAAAAEACAAAAAoAAgAAAAwAAwAOAAoAAAAEAAEACwABAAwAAAACAA0=</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="TraceEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>1965</pd:x>
+        <pd:y>238</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ACADIA-025'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </msg>
+                <xsl:for-each select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="TraceStart">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>363</pd:x>
+        <pd:y>91</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ACADIA-022'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller---CSO-Report-File/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </msg>
+                <xsl:for-each select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:transition>
+        <pd:from>Catch</pd:from>
+        <pd:to>Handle Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>File Poller - CSO Report File</pd:from>
+        <pd:to>Check activateNewACADIAProcess Flag</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>EnsureFileIntegrity</pd:from>
+        <pd:to>sendAuditInfo</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfoEnd</pd:from>
+        <pd:to>Archiving CSO Report File</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfo</pd:from>
+        <pd:to>TraceStart</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Handle Error</pd:from>
+        <pd:to>Archiving CSO Report File On Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceEnd</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>System GC</pd:from>
+        <pd:to>sendAuditInfoEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Force a GC on Error</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>List Files For ACADIA</pd:from>
+        <pd:to>For Each ACADIA File</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>For Each ACADIA File</pd:from>
+        <pd:to>System GC</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceStart</pd:from>
+        <pd:to>Parse CSO Report File</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Parse CSO Report File</pd:from>
+        <pd:to>List Files For ACADIA</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Archiving CSO Report File</pd:from>
+        <pd:to>TraceEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Archiving CSO Report File On Error</pd:from>
+        <pd:to>Force a GC on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Check activateNewACADIAProcess Flag</pd:from>
+        <pd:to>EnsureFileIntegrity</pd:to>
+        <pd:xpathDescription>New Process - ActivateNewACADIAProcess</pd:xpathDescription>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>otherwise</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Check activateNewACADIAProcess Flag</pd:from>
+        <pd:to>Do Nothing</pd:to>
+        <pd:xpathDescription>Old Process</pd:xpathDescription>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>xpath</pd:conditionType>
+        <pd:xpath>$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/ActivateNewACADIAProcess = 'false'</pd:xpath>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Do Nothing</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+</pd:ProcessDefinition>
