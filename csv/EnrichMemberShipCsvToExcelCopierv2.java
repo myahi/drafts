@@ -1,4 +1,3 @@
-package Process.TargetToEai.Data.Balancecollaterals.EnrichMemberShip;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -138,10 +137,26 @@ public class EnrichMemberShipCsvToExcelCopier {
         * Available Variables: DO NOT MODIFY *****/
         if (csvFilePath.contains("_REP00036")) {
             copyCsvToNewSheet(csvFilePath, startDataRowNumber, targetExcelFilePath, "\t", "IM Swapclear Titres LCH LTD");
-        } else if (csvFilePath.contains("_REP00031")) {
-            copyCsvToNewSheet(csvFilePath, startDataRowNumber, targetExcelFilePath, "\t", "IM Swapclear Expo LCH LTD");
-        } else {
+        } 
+        else if (csvFilePath.contains("_REP00031")) {
+            copyCsvToNewSheet(csvFilePath, startDataRowNumber, targetExcelFilePath, "\t", "IM VM Swapclear Expo LCH LTD");
+        }
+        else if (csvFilePath.contains("_REP00032")) {
+            copyCsvToNewSheet(csvFilePath, startDataRowNumber, targetExcelFilePath, "\t", "Default Fund SwapClear OTC LCH");
+        }else {
             copyCsvToNewSheet(csvFilePath, startDataRowNumber, targetExcelFilePath, "\t", "IM Swapclear Expo LCH LTD");
         }
     }
+    
+    public static void main(String[] args) throws Exception {
+    	EnrichMemberShipCsvToExcelCopier tester = new EnrichMemberShipCsvToExcelCopier();
+    	tester.csvFilePath = "C:/downloads/fred/P-MBNK-POS-20260323-000000_REP00031 - Collateral and Exposure Summary.TXT";
+    	tester.startDataRowNumber = 1;
+    	tester.targetExcelFilePath = "C:/downloads/fred/Report_Collateral_Titres_CCP_20260323.xlsx";
+		tester.invoke();
+		tester.csvFilePath = "C:/downloads/fred/P-MBNK-POS-20260323-000000_REP00022 - Yesterday's Cover Account Postings_ 1.TXT";
+		tester.invoke();
+		tester.csvFilePath = "C:/downloads/fred/P-MBNK-POS-20250825-000000_REP00036a - SOD Non Cash Collateral Holdings_ 1.TXT";
+		tester.invoke();
+	}
 }
