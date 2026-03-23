@@ -1,0 +1,5 @@
+keytool -importkeystore \
+  -srckeystore mon_certificat.p12 \
+  -srcstoretype PKCS12 \
+  -destkeystore mon_certificat.jks \
+  -deststoretype JKS
