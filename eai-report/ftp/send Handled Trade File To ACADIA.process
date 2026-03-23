@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:ProcessDefinition xmlns:pfx="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/input.xsd" xmlns:pfx2="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/InputFromICE.xsd" xmlns:ns="http://www.tibco.com/pe/EngineTypes" xmlns:pfx3="http://www.lbp.fr/xml/report/message" xmlns:pfx4="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/INITIAL_MARGIN/outIRToICE.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns0="http://www.labanquepostale.fr/xml/trade/sfdh" xmlns:ns2="http://www.tibco.com/pe/DeployedVarsType" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/namespaces/tnt/plugins/file" xmlns:ns4="http://www.lbp.fr/xml/report/common" xmlns:ns3="http://www.lbp.fr/xml/report/destination" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/file/v2" xmlns:ns5="http://www.tibco.com/schemas/BW2/Schema.xsd" xmlns:ns8="www.tibco.com/plugin/Sleep" xmlns:ns7="http://www.tibco.com/schemas/bw-framework-eai/framework/resources/XSD/mailInfo.xsd" xmlns:ns13="http://www.labanquepostale.fr/xml/dollarUniverse" xmlns:ns12="http://www.labanquepostale.fr/xml/output" xmlns:BW="java://com.tibco.pe.core.JavaCustomXPATHFunctions" xmlns:ns11="http://www.labanquepostale.fr/xml/trade/calypso" xmlns:ns10="http://www.labanquepostale.fr/xml/gateway/output" xmlns:ns14="http://www.tibco.com/schemas/EAIFramework/framework/resources/XSD/auditInfo.xsd" xmlns:pfx1="http://www.lbp.fr/xml" xmlns:pfx21="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:bwCustomMethods="java://BWCustomMethods" xmlns:pfx41="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Data/PNL_EXPLAIN/CSO_PNL_EXPLAIN_DETAILS_OUT.sharedparse" xmlns:ns111="http://www.calypso.com/xml" xmlns:ns41="http://www.tibco.com/pe/GenerateErrorActivity/InputSchema" xmlns:pd="http://xmlns.tibco.com/bw/process/2003" xmlns:lbp="java://LbpCustomClass">
+    <xsd:import namespace="http://www.lbp.fr/xml/report/message" schemaLocation="/Resources/Xsd/Internal/lbp-report-message.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/ICE/InputFromICE.xsd" schemaLocation="/Resources/Xsd/INITIAL_MARGIN/InputFromICE.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/ns/no_namespace_schema_location/Resources/Xsd/INITIAL_MARGIN/outIRToICE.xsd" schemaLocation="/Resources/Xsd/INITIAL_MARGIN/Out_IR_SWAP_VANILLA_To_ICE.xsd"/>
+    <pd:name>Process/Starters/ACADIA/send Handled Trade File To ACADIA.process</pd:name>
+    <pd:startName>File Poller</pd:startName>
+    <pd:startX>0</pd:startX>
+    <pd:startY>0</pd:startY>
+    <pd:returnBindings/>
+    <pd:starter name="File Poller">
+        <pd:type>com.tibco.plugin.file.FileEventSource</pd:type>
+        <pd:resourceType>ae.activities.FileEventSourceResource</pd:resourceType>
+        <pd:x>37</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <pollInterval>5</pollInterval>
+            <createEvent>true</createEvent>
+            <modifyEvent>false</modifyEvent>
+            <deleteEvent>false</deleteEvent>
+            <mode>only-files</mode>
+            <encoding>text</encoding>
+            <sortby>File Name</sortby>
+            <sortorder>descending</sortorder>
+            <fileName>%%EAIparams/REPORTS/ACADIA/outputToACADIADirectory%%*%%EAIparams/REPORTS/ACADIA/outputToACADIAFileNameExtension%%</fileName>
+            <excludeContent>false</excludeContent>
+            <includeCurrent>true</includeCurrent>
+            <encodingUsed>%%EAIparams/REPORTS/ACADIA/outputToACADIAEncodingFile%%</encodingUsed>
+        </config>
+        <pd:inputBindings/>
+    </pd:starter>
+    <pd:endName>End</pd:endName>
+    <pd:endX>1109</pd:endX>
+    <pd:endY>111</pd:endY>
+    <pd:errorSchemas/>
+    <pd:processVariables/>
+    <pd:targetNamespace>http://xmlns.example.com/1412341085963</pd:targetNamespace>
+    <pd:activity name="Archiving-file-OnError">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>900</pd:x>
+        <pd:y>271</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/Rename File If Available.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <sourceName>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fullName"/>
+                </sourceName>
+                <targetName>
+                    <xsl:value-of select="concat($File-Poller/ns1:EventSourceOuputTextClass/fileInfo/location,&#xA;&quot;/error/&quot;,$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName,'_',&#xA;tib:format-dateTime('yyyyMMddHHmmss', current-dateTime()))"/>
+                </targetName>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Catch">
+        <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+        <pd:resourceType>ae.activities.catch</pd:resourceType>
+        <pd:x>581</pd:x>
+        <pd:y>271</pd:y>
+        <pd:handler>true</pd:handler>
+        <config>
+            <catchAll>true</catchAll>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="EnsureFileIntegrity">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>132</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/framework/process/FileHandling/EnsureFileIntegrity.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <fileName>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </fileName>
+                <directoryPath>
+                    <xsl:value-of select="concat($File-Poller/ns1:EventSourceOuputTextClass/fileInfo/location,&quot;/&quot;)"/>
+                </directoryPath>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Force a GC on Error">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>1051</pd:x>
+        <pd:y>279</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ACADIA.sendHandledTradeFileToACADIA;
+import java.util.*;
+import java.io.*;
+public class sendHandledTradeFileToACADIAForceaGConError{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public sendHandledTradeFileToACADIAForceaGConError() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>sendHandledTradeFileToACADIAForceaGConError</fileName>
+            <packageName>Process.Starters.ACADIA.sendHandledTradeFileToACADIA</packageName>
+            <byteCode>
+                <class>
+                    <name>sendHandledTradeFileToACADIAForceaGConError</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBADBzZW5kSGFuZGxlZFRyYWRlRmlsZVRvQUNBRElBRm9yY2VhR0NvbkVycm9yLmphdmEMAAUABgcAFAwAFQAGAQBgUHJvY2Vzcy9TdGFydGVycy9BQ0FESUEvc2VuZEhhbmRsZWRUcmFkZUZpbGVUb0FDQURJQS9zZW5kSGFuZGxlZFRyYWRlRmlsZVRvQUNBRElBRm9yY2VhR0NvbkVycm9yAQAQamF2YS9sYW5nL09iamVjdAEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQACZ2MAIQADAAQAAAAAAAIAAQAFAAYAAQAHAAAAIQABAAEAAAAFKrcAAbEAAAABAAgAAAAKAAIAAAAHAAQACAABAAkABgACAAcAAAAgAAAAAQAAAAS4AAKxAAAAAQAIAAAACgACAAAADAADAA4ACgAAAAQAAQALAAEADAAAAAIADQ==</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="FTP Gateway">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>491</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/Process/Gateways/FTP Gateway Exchanges.process</processName>
+        </config>
+        <pd:inputBindings>
+            <parameters>
+                <fileLocation>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/location"/>
+                </fileLocation>
+                <fileName>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </fileName>
+                <connectionName>
+                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/FTPConnectionName"/>
+                </connectionName>
+                <remoteLocation>
+                    <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/EAIparams/REPORTS/ACADIA/FTPRemoteDirectory"/>
+                </remoteLocation>
+                <format>
+                    <xsl:value-of select="'XML'"/>
+                </format>
+            </parameters>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Handle Error">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>740</pd:x>
+        <pd:y>271</pd:y>
+        <config>
+            <processName>/framework/process/errorHandling/Handle Error.process</processName>
+        </config>
+        <pd:inputBindings>
+            <error>
+                <processContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each xmlns:xsl="http://www.w3.org/1999/XSL/Transform" select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <CustomId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                    </CustomId>
+                </processContext>
+                <errorReport>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/ancestor-or-self::*/namespace::node()"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/@*"/>
+                    <xsl:copy-of select="$_error/ns:ErrorReport/node()"/>
+                </errorReport>
+                <reference>
+                    <code>
+                        <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                    </code>
+                    <codifier>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                    </codifier>
+                </reference>
+                <ns14:metadatas>
+                    <ns14:metadata>
+                        <ns14:key>
+                            <xsl:value-of select="'PROCESS_NAME'"/>
+                        </ns14:key>
+                        <ns14:value>
+                            <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                        </ns14:value>
+                    </ns14:metadata>
+                </ns14:metadatas>
+            </error>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfo">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>249</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns14:auditInfo>
+                    <ns14:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns14:timestamp>
+                    <ns14:reference>
+                        <ns14:code>
+                            <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                        </ns14:code>
+                        <ns14:codifier>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                        </ns14:codifier>
+                    </ns14:reference>
+                    <ns14:metadatas>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'CALYSPO TO ACADAIA'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                    </ns14:metadatas>
+                    <ns14:description>
+                        <xsl:value-of select="&quot;Début d'envoi de fichier vers ACADIA&quot;"/>
+                    </ns14:description>
+                    <ns14:data>
+                        <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileContent/textContent"/>
+                    </ns14:data>
+                    <ns14:statut>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Info"/>
+                    </ns14:statut>
+                </ns14:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="sendAuditInfoEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>636</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/framework/process/audit/sendAuditInfoWithCatchException.process</processName>
+        </config>
+        <pd:inputBindings>
+            <audit>
+                <ns14:auditInfo>
+                    <ns14:timestamp>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </ns14:timestamp>
+                    <ns14:reference>
+                        <ns14:code>
+                            <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                        </ns14:code>
+                        <ns14:codifier>
+                            <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                        </ns14:codifier>
+                    </ns14:reference>
+                    <ns14:metadatas>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Audit/Codifiers/FILE_NAME"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/FLOW_TYPE"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'ACADIA-INITIAL MARGIN'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Metadatas/Direction/Direction"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="'CALYPSO TO ACADIA'"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                        <ns14:metadata>
+                            <ns14:key>
+                                <xsl:value-of select="'PROCESS_NAME'"/>
+                            </ns14:key>
+                            <ns14:value>
+                                <xsl:value-of select="BW:getCurrentProcessName($_processContext/ns:ProcessContext/ProcessId)"/>
+                            </ns14:value>
+                        </ns14:metadata>
+                    </ns14:metadatas>
+                    <ns14:description>
+                        <xsl:value-of select="&quot;Fin d'envoi du fichier IM à ACADIA&quot;"/>
+                    </ns14:description>
+                    <ns14:data>
+                        <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileContent/textContent"/>
+                    </ns14:data>
+                    <ns14:statut>
+                        <xsl:value-of select="$_globalVariables/ns2:GlobalVariables/Framework/Status/Success"/>
+                    </ns14:statut>
+                </ns14:auditInfo>
+                <ns:ProcessContext>
+                    <ProcessId>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProcessId"/>
+                    </ProcessId>
+                    <ProjectName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/ProjectName"/>
+                    </ProjectName>
+                    <EngineName>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/EngineName"/>
+                    </EngineName>
+                    <RestartedFromCheckpoint>
+                        <xsl:value-of select="$_processContext/ns:ProcessContext/RestartedFromCheckpoint"/>
+                    </RestartedFromCheckpoint>
+                    <xsl:for-each select="$_processContext/ns:ProcessContext/TrackingInfo">
+                        <TrackingInfo>
+                            <xsl:value-of select="."/>
+                        </TrackingInfo>
+                    </xsl:for-each>
+                    <xsl:if test="$_processContext/ns:ProcessContext/CustomId">
+                        <CustomId>
+                            <xsl:value-of select="$_processContext/ns:ProcessContext/CustomId"/>
+                        </CustomId>
+                    </xsl:if>
+                </ns:ProcessContext>
+            </audit>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="System GC">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.javapalette.javaActivity</pd:resourceType>
+        <pd:x>936</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <fullsource>package Process.Starters.ACADIA.sendHandledTradeFileToACADIA;
+import java.util.*;
+import java.io.*;
+public class sendHandledTradeFileToACADIASystemGC{
+/****** START SET/GET METHOD, DO NOT MODIFY *****/
+/****** END SET/GET METHOD, DO NOT MODIFY *****/
+	public sendHandledTradeFileToACADIASystemGC() {
+	}
+	public void invoke() throws Exception {
+/* Available Variables: DO NOT MODIFY
+* Available Variables: DO NOT MODIFY *****/
+System.gc();
+
+}
+}
+</fullsource>
+            <fileName>sendHandledTradeFileToACADIASystemGC</fileName>
+            <packageName>Process.Starters.ACADIA.sendHandledTradeFileToACADIA</packageName>
+            <byteCode>
+                <class>
+                    <name>sendHandledTradeFileToACADIASystemGC</name>
+                    <byteCode>yv66vgAAADQAFgoABAAOCgAPABAHABEHABIBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAGaW52b2tlAQAKRXhjZXB0aW9ucwcAEwEAClNvdXJjZUZpbGUBAClzZW5kSGFuZGxlZFRyYWRlRmlsZVRvQUNBRElBU3lzdGVtR0MuamF2YQwABQAGBwAUDAAVAAYBAFlQcm9jZXNzL1N0YXJ0ZXJzL0FDQURJQS9zZW5kSGFuZGxlZFRyYWRlRmlsZVRvQUNBRElBL3NlbmRIYW5kbGVkVHJhZGVGaWxlVG9BQ0FESUFTeXN0ZW1HQwEAEGphdmEvbGFuZy9PYmplY3QBABNqYXZhL2xhbmcvRXhjZXB0aW9uAQAQamF2YS9sYW5nL1N5c3RlbQEAAmdjACEAAwAEAAAAAAACAAEABQAGAAEABwAAACEAAQABAAAABSq3AAGxAAAAAQAIAAAACgACAAAABwAEAAgAAQAJAAYAAgAHAAAAIAAAAAEAAAAEuAACsQAAAAEACAAAAAoAAgAAAAwAAwAOAAoAAAAEAAEACwABAAwAAAACAA0=</byteCode>
+                </class>
+            </byteCode>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="TraceEndSendToICE">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>791</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ACADIA-012'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </msg>
+                <xsl:for-each select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="TraceStartSendToICE">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>365</pd:x>
+        <pd:y>111</pd:y>
+        <config>
+            <processName>/framework/process/logHandling/Trace.process</processName>
+        </config>
+        <pd:inputBindings>
+            <trace>
+                <code>
+                    <xsl:value-of select="'REPORT-ACADIA-011'"/>
+                </code>
+                <msg>
+                    <xsl:value-of select="$File-Poller/ns1:EventSourceOuputTextClass/fileInfo/fileName"/>
+                </msg>
+                <xsl:for-each select="$_processContext/ns:ProcessContext">
+                    <processContext>
+                        <ProcessId>
+                            <xsl:value-of select="ProcessId"/>
+                        </ProcessId>
+                        <ProjectName>
+                            <xsl:value-of select="ProjectName"/>
+                        </ProjectName>
+                        <EngineName>
+                            <xsl:value-of select="EngineName"/>
+                        </EngineName>
+                        <RestartedFromCheckpoint>
+                            <xsl:value-of select="RestartedFromCheckpoint"/>
+                        </RestartedFromCheckpoint>
+                        <xsl:for-each select="TrackingInfo">
+                            <TrackingInfo>
+                                <xsl:value-of select="."/>
+                            </TrackingInfo>
+                        </xsl:for-each>
+                        <xsl:if test="CustomId">
+                            <CustomId>
+                                <xsl:value-of select="CustomId"/>
+                            </CustomId>
+                        </xsl:if>
+                    </processContext>
+                </xsl:for-each>
+            </trace>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:transition>
+        <pd:from>Catch</pd:from>
+        <pd:to>Handle Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>File Poller</pd:from>
+        <pd:to>EnsureFileIntegrity</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Archiving-file-OnError</pd:from>
+        <pd:to>Force a GC on Error</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>EnsureFileIntegrity</pd:from>
+        <pd:to>sendAuditInfo</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfoEnd</pd:from>
+        <pd:to>TraceEndSendToICE</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>sendAuditInfo</pd:from>
+        <pd:to>TraceStartSendToICE</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Handle Error</pd:from>
+        <pd:to>Archiving-file-OnError</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>FTP Gateway</pd:from>
+        <pd:to>sendAuditInfoEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceStartSendToICE</pd:from>
+        <pd:to>FTP Gateway</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>TraceEndSendToICE</pd:from>
+        <pd:to>System GC</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>System GC</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Force a GC on Error</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+</pd:ProcessDefinition>
