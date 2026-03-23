@@ -1,0 +1,135 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+
+<!--Created by TIBCO WSDL-->
+<wsdl:definitions name = "Untitled" targetNamespace = "http://www.labanquepostale.fr/dmf/FtpRequest" xmlns:ns0 = "http://www.labanquepostale.fr/dmf/FtpRequest/request" xmlns:ns1 = "http://www.labanquepostale.fr/dmf/FtpRequest/result" xmlns:soap = "http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns = "http://www.labanquepostale.fr/dmf/FtpRequest" xmlns:wsdl = "http://schemas.xmlsoap.org/wsdl/">
+	<wsdl:types>
+		<xs:schema attributeFormDefault = "unqualified" elementFormDefault = "qualified" targetNamespace = "http://www.labanquepostale.fr/dmf/FtpRequest/result" xmlns = "http://www.labanquepostale.fr/dmf/FtpRequest/result" xmlns:xs = "http://www.w3.org/2001/XMLSchema">
+			<xs:complexType name = "FtpRequestResult">
+				<xs:sequence>
+					<xs:element ref = "ns1:status"/>
+					<xs:element minOccurs = "0" ref = "ns1:errorCode"/>
+					<xs:element minOccurs = "0" ref = "ns1:errorMessage"/>
+					<xs:element minOccurs = "0" ref = "ns1:outputMessage"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:element name = "errorCode" type = "xs:string"/>
+			<xs:element name = "errorMessage" type = "xs:string"/>
+			<xs:element name = "ftpRequestResult" type = "ns1:FtpRequestResult"/>
+			<xs:element name = "outputMessage" type = "xs:string"/>
+			<xs:element name = "status" type = "xs:string"/>
+		</xs:schema>
+		<xs:schema attributeFormDefault = "unqualified" elementFormDefault = "qualified" targetNamespace = "http://www.labanquepostale.fr/dmf/FtpRequest/request" xmlns = "http://www.labanquepostale.fr/dmf/FtpRequest/request" xmlns:xs = "http://www.w3.org/2001/XMLSchema">
+			<xs:complexType name = "FtpMessage">
+				<xs:sequence>
+					<xs:element ref = "ns0:EAIftpMessage"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:simpleType name = "Action">
+				<xs:restriction base = "xs:token">
+					<xs:enumeration value = "send"/>
+					<xs:enumeration value = "get"/>
+					<xs:enumeration value = "list"/>
+					<xs:enumeration value = "sendandget"/>
+					<xs:enumeration value = "sendwithack"/>
+				</xs:restriction>
+			</xs:simpleType>
+			<xs:element name = "EAIftpMessage">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element ref = "ns0:Header"/>
+						<xs:element ref = "ns0:File"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name = "File">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs = "0" name = "Content" type = "xs:string"/>
+					</xs:sequence>
+					<xs:attribute name = "Location" type = "xs:string"/>
+					<xs:attribute name = "Name" type = "xs:string" use = "required"/>
+					<xs:attribute name = "RemoteLocation" type = "xs:string"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name = "Header">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs = "0" ref = "ns0:nbMaxRetry"/>
+						<xs:element minOccurs = "0" ref = "ns0:waitForRetry"/>
+						<xs:element minOccurs = "0" ref = "ns0:batchSchedulerInfo"/>
+						<xs:element minOccurs = "0" name = "batchSchedulerChain" type = "xs:string"/>
+					</xs:sequence>
+					<xs:attribute name = "Action" type = "ns0:Action" use = "required"/>
+					<xs:attribute name = "ConnectionName" type = "xs:string" use = "required"/>
+					<xs:attribute name = "IntervalBeforeGet" type = "xs:int"/>
+					<xs:attribute name = "Timeout" type = "xs:int"/>
+					<xs:attribute name = "doNotMailOnError" type = "xs:string"/>
+					<xs:attribute name = "requestURI" type = "xs:string"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name = "batchSchedulerInfo" type = "xs:boolean"/>
+			<xs:element name = "countRetry" type = "xs:string"/>
+			<xs:element name = "nbMaxRetry" type = "xs:string"/>
+			<xs:element name = "sshKey" type = "xs:string"/>
+			<xs:element name = "waitForRetry" type = "xs:string"/>
+		</xs:schema>
+	</wsdl:types>
+	<wsdl:service name = "FtpService">
+		<wsdl:port binding = "tns:OperationsEndpoint1Binding" name = "OperationsEndpoint1">
+			<soap:address location = "http://localhost:7000"/>
+		</wsdl:port>
+	</wsdl:service>
+	<wsdl:portType name = "Operations">
+		<wsdl:operation name = "GET_FILE">
+			<wsdl:documentation>Récupération d'un fichier sur un serveur FTP ou SFTP</wsdl:documentation>
+			<wsdl:input message = "tns:FtpRequestInput"/>
+			<wsdl:output message = "tns:FtpRequestOutput"/>
+		</wsdl:operation>
+		<wsdl:operation name = "SEND_FILE">
+			<wsdl:documentation>Envoi d'un fichier sur un serveur FTP ou SFTP</wsdl:documentation>
+			<wsdl:input message = "tns:FtpRequestInput"/>
+			<wsdl:output message = "tns:FtpRequestOutput"/>
+		</wsdl:operation>
+		<wsdl:operation name = "LIST_FILE">
+			<wsdl:documentation>Liste le contenu d'un répertoire distant (FTP ou SFTP)</wsdl:documentation>
+			<wsdl:input message = "tns:FtpRequestInput"/>
+			<wsdl:output message = "tns:FtpRequestOutput"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name = "OperationsEndpoint1Binding" type = "tns:Operations">
+		<soap:binding style = "document" transport = "http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name = "GET_FILE">
+			<soap:operation soapAction = "/Process/SourceToEAI/WebService/FtpService.serviceagent/OperationsEndpoint1/GET_FILE" style = "document"/>
+			<wsdl:input>
+				<soap:body parts = "ftpRequest" use = "literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts = "ftpResponse" use = "literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name = "SEND_FILE">
+			<soap:operation soapAction = "/Process/SourceToEAI/WebService/FtpService.serviceagent/OperationsEndpoint1/SEND_FILE" style = "document"/>
+			<wsdl:input>
+				<soap:body parts = "ftpRequest" use = "literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts = "ftpResponse" use = "literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name = "LIST_FILE">
+			<soap:operation soapAction = "/Process/SourceToEAI/WebService/FtpService.serviceagent/OperationsEndpoint1/LIST_FILE" style = "document"/>
+			<wsdl:input>
+				<soap:body parts = "ftpRequest" use = "literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body parts = "ftpResponse" use = "literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:message name = "FtpRequestInput">
+		<wsdl:part name = "ftpRequest" type = "ns0:FtpMessage"/>
+	</wsdl:message>
+	<wsdl:message name = "FtpRequestOutput">
+		<wsdl:part name = "ftpResponse" type = "ns1:FtpRequestResult"/>
+	</wsdl:message>
+</wsdl:definitions>
