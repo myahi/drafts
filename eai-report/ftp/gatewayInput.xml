@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:element xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="parameters">
+    <xsd:complexType>
+        <xsd:sequence>
+            <xsd:element name="fileLocation" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="fileName" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="connectionName" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="remoteLocation" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="format" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:element>
