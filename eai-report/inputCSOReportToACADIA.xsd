@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:element xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="Line">
+    <xsd:complexType>
+        <xsd:sequence>
+            <xsd:element name="ExternalTradeID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="TradeID" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:element>
