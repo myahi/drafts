@@ -1,0 +1,197 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://www.m...aven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>fr.labanquepostale.marches.eai</groupId>
+    <artifactId>eai-camel-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>eai-camel-parent</name>
+
+    <!-- ========================================================= -->
+    <!-- Versions -->
+    <!-- ========================================================= -->
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- ✅ Version compatible Red Hat -->
+        <spring.boot.version>3.2.5</spring.boot.version>
+
+        <!-- Autres libs -->
+        <jolokia.version>2.1.2</jolokia.version>
+        <ojdbc.version>19.3</ojdbc.version>
+        <tibco.ems.version>10.0.0</tibco.ems.version>
+        <micrometer-registry-prometheus.version>1.13.3</micrometer-registry-prometheus.version>
+    </properties>
+
+    <!-- ========================================================= -->
+    <!-- Dependency Management -->
+    <!-- ========================================================= -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Spring Boot -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- ✅ Camel Red Hat BOM -->
+            <dependency>
+                <groupId>org.apache.camel.springboot</groupId>
+                <artifactId>camel-spring-boot-bom</artifactId>
+                <version>4.14.4.redhat-00008</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Libs hors BOM -->
+            <dependency>
+                <groupId>org.jolokia</groupId>
+                <artifactId>jolokia-support-spring</artifactId>
+                <version>${jolokia.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${ojdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.tibco.ems</groupId>
+                <artifactId>tibjms-jakarta</artifactId>
+                <version>${tibco.ems.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.21.0</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- ========================================================= -->
+    <!-- Dépendances communes -->
+    <!-- ========================================================= -->
+    <dependencies>
+
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- Camel -->
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-management-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jms-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-micrometer-starter</artifactId>
+        </dependency>
+
+        <!-- JMS / EMS -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-jms</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.messaginghub</groupId>
+            <artifactId>pooled-jms</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tibco.ems</groupId>
+            <artifactId>tibjms-jakarta</artifactId>
+        </dependency>
+
+        <!-- Monitoring -->
+        <dependency>
+            <groupId>org.jolokia</groupId>
+            <artifactId>jolokia-support-spring</artifactId>
+        </dependency>
+
+        <!-- Utils -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Oracle -->
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc8</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ========================================================= -->
+    <!-- Build -->
+    <!-- ========================================================= -->
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.version}</version>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <!-- ========================================================= -->
+    <!-- Distribution -->
+    <!-- ========================================================= -->
+    <distributionManagement>
+        <repository>
+            <id>ArtifactoryEaiMavenRepository</id>
+            <url>https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/</url>
+        </repository>
+        <snapshotRepository>
+            <id>ArtifactoryEaiMavenRepository</id>
+            <url>https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>
