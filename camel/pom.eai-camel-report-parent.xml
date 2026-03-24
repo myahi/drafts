@@ -1,0 +1,72 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://www.m...aven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Héritage parent -->
+    <parent>
+        <groupId>fr.labanquepostale.marches.eai</groupId>
+        <artifactId>eai-camel-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>eai-camel-report</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>eai-camel-report</name>
+
+    <!-- ========================================================= -->
+    <!-- Modules -->
+    <!-- ========================================================= -->
+    <modules>
+        <module>eai-camel-report-base</module>
+        <module>eai-camel-report-cashflows</module>
+    </modules>
+
+    <!-- ========================================================= -->
+    <!-- Properties -->
+    <!-- ========================================================= -->
+    <properties>
+        <eai.core.version>1.0.0-SNAPSHOT</eai.core.version>
+    </properties>
+
+    <!-- ========================================================= -->
+    <!-- Dependency Management (UNIQUEMENT métier) -->
+    <!-- ========================================================= -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- TON core -->
+            <dependency>
+                <groupId>fr.labanquepostale.marches.eai</groupId>
+                <artifactId>eai-camel-core</artifactId>
+                <version>${eai.core.version}</version>
+            </dependency>
+
+            <!-- Lib externe spécifique -->
+            <dependency>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-spring-boot-starter</artifactId>
+                <version>3.0.5</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- ========================================================= -->
+    <!-- Build -->
+    <!-- ========================================================= -->
+    <build>
+        <finalName>eai-camel-report</finalName>
+
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
