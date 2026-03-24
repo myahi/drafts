@@ -1,1 +1,0 @@
-java.lang.ClassNotFoundException: fr.lbp.markit.application.MarkitApplication
