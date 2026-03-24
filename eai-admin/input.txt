@@ -1,4 +1,0 @@
-voici les fichiers php
-j'ai des soucis de mis à jour des données (parfois la requete me retourne des données et parfois non) je pense que c'estt d'une accès concurent entre AuditLoader.php et AuditLoaderForSearch.php
-je veux n'avoir qu'un fichier seul AuditController.php qui remplacera les 3 fichiers: AuditLoader.php, AuditLoaderForSearch.php et AuditParameter.php
-merci de tenir compte des nom de variables et ne pas en deviner car cela risquerai de casser des choses et de ne supprimer aucune fonctionnalités
