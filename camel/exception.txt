@@ -1,1 +1,6 @@
+<dependency>
+    <groupId>com.tibco.ems</groupId>
+    <artifactId>tibjms-jakarta</artifactId>
+</dependency>
+
 package jakarta.jms does not exist
