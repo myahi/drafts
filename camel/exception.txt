@@ -1,43 +1,32 @@
-coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r http://maven.repository.redhat.com/ga/ --cache C:/Tools/coursier/coursier-cache
- 
-
-coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r http://maven.repository.redhat.com/ga/ -J-Dcom.sun.net.ssl.checkRevocation=false -J-Dssl.trustAll=true --cache C:/Tools/coursier/coursier-cache
-
-
-coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r https://maven.repository.redhat.com/ga/ -J-Djavax.net.ssl.trustStoreType=Windows-ROOT -J-Dcom.sun.net.ssl.checkRevocation=false --cache C:/Tools/coursier/coursier-cache
-
-
-https://maven.repository.redhat.com/ga/
-
-C:/Tools/repo_maven/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/
-
 C:\Tools\apache-maven-3.8.8\bin\mvn.cmd -Didea.version=2025.3.2 -Dmaven.ext.class.path=C:\Tools\IntelliJ\plugins\maven\lib\maven-event-listener.jar -Djansi.passthrough=true -Dstyle.color=always -DskipTests=true -Dmaven.repo.local=C:\Tools\repo_maven clean install
 Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=IBM850
 [INFO] Scanning for projects...
-Downloading from ArtifactoryMavenCacheRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom
-Downloading from ArtifactoryEaiMavenRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom
-Downloading from ArtifactoryGenericLocalSasRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-generic-local-sas/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom
-Downloading from ArtifactoryMavenLocalSasRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom
+Downloading from ArtifactoryEaiMavenRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml
+Downloading from ArtifactoryMavenCacheRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml
+Downloading from ArtifactoryMavenLocalSasRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml
+Downloading from ArtifactoryGenericLocalSasRepository: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-generic-local-sas/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml
+[WARNING] Could not transfer metadata fr.labanquepostale.marches.eai:eai-camel-parent:1.0.0-SNAPSHOT/maven-metadata.xml from/to ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'}
+[WARNING] Could not transfer metadata fr.labanquepostale.marches.eai:eai-camel-parent:1.0.0-SNAPSHOT/maven-metadata.xml from/to ArtifactoryEaiMavenRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'}
+[WARNING] Could not transfer metadata fr.labanquepostale.marches.eai:eai-camel-parent:1.0.0-SNAPSHOT/maven-metadata.xml from/to ArtifactoryGenericLocalSasRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-generic-local-sas/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-generic-local-sas/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'}
+[WARNING] Could not transfer metadata fr.labanquepostale.marches.eai:eai-camel-parent:1.0.0-SNAPSHOT/maven-metadata.xml from/to ArtifactoryMavenLocalSasRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/fr/labanquepostale/marches/eai/eai-camel-parent/1.0.0-SNAPSHOT/maven-metadata.xml, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'}
 [ERROR] [ERROR] Some problems were encountered while processing the POMs:
-[ERROR] Non-resolvable import POM: Could not transfer artifact org.apache.camel.springboot:camel-spring-boot-bom:pom:4.14.4.redhat-00008 from/to ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'} @ line 45, column 16
-[ERROR] 'dependencies.dependency.version' for org.apache.camel.springboot:camel-management-starter:jar is missing. @ line 98, column 15
-[ERROR] 'dependencies.dependency.version' for org.apache.camel.springboot:camel-jms-starter:jar is missing. @ line 103, column 15
-[ERROR] 'dependencies.dependency.version' for org.apache.camel.springboot:camel-micrometer-starter:jar is missing. @ line 108, column 15
-[ERROR] 'dependencies.dependency.version' for org.apache.camel:camel-jms:jar is missing. @ line 114, column 15
+[ERROR] 'dependencies.dependency.version' for org.apache.camel:camel-bindy:jar is missing. @ line 31, column 15
+[ERROR] 'dependencies.dependency.version' for org.apache.camel:camel-xml-jaxp:jar is missing. @ line 36, column 15
+[ERROR] 'dependencies.dependency.version' for org.apache.camel:camel-exec:jar is missing. @ line 41, column 15
+[ERROR] 'dependencies.dependency.version' for org.apache.commons:commons-csv:jar is missing. @ line 53, column 15
+[ERROR] 'dependencies.dependency.version' for com.github.ulisesbocchio:jasypt-spring-boot-starter:jar is missing. @ line 59, column 15
  @ 
 [ERROR] The build could not read 1 project -> [Help 1]
 [ERROR]   
-[ERROR]   The project fr.labanquepostale.marches.eai:eai-camel-parent:1.0.0-SNAPSHOT (C:\serveur_apps\intellij_workspace\eai-camel-parent\pom.xml) has 5 errors
-[ERROR]     Non-resolvable import POM: Could not transfer artifact org.apache.camel.springboot:camel-spring-boot-bom:pom:4.14.4.redhat-00008 from/to ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/camel-spring-boot-bom-4.14.4.redhat-00008.pom, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'} @ line 45, column 16: Hôte inconnu (http://surf-lbr.pasi.log.intra.laposte.fr:8080/) -> [Help 2]
-[ERROR]     'dependencies.dependency.version' for org.apache.camel.springboot:camel-management-starter:jar is missing. @ line 98, column 15
-[ERROR]     'dependencies.dependency.version' for org.apache.camel.springboot:camel-jms-starter:jar is missing. @ line 103, column 15
-[ERROR]     'dependencies.dependency.version' for org.apache.camel.springboot:camel-micrometer-starter:jar is missing. @ line 108, column 15
-[ERROR]     'dependencies.dependency.version' for org.apache.camel:camel-jms:jar is missing. @ line 114, column 15
+[ERROR]   The project fr.labanquepostale.marches.eai:eai-camel-core:1.0.0-SNAPSHOT (C:\serveur_apps\intellij_workspace\eai-camel-core\pom.xml) has 5 errors
+[ERROR]     'dependencies.dependency.version' for org.apache.camel:camel-bindy:jar is missing. @ line 31, column 15
+[ERROR]     'dependencies.dependency.version' for org.apache.camel:camel-xml-jaxp:jar is missing. @ line 36, column 15
+[ERROR]     'dependencies.dependency.version' for org.apache.camel:camel-exec:jar is missing. @ line 41, column 15
+[ERROR]     'dependencies.dependency.version' for org.apache.commons:commons-csv:jar is missing. @ line 53, column 15
+[ERROR]     'dependencies.dependency.version' for com.github.ulisesbocchio:jasypt-spring-boot-starter:jar is missing. @ line 59, column 15
 [ERROR] 
 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
 [ERROR] 
 [ERROR] For more information about the errors and possible solutions, please read the following articles:
 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/ProjectBuildingException
-[ERROR] [Help 2] http://cwiki.apache.org/confluence/display/MAVEN/UnresolvableModelException
