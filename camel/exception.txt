@@ -1,3 +1,6 @@
+coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r http://maven.repository.redhat.com/ga/ -J-Dcom.sun.net.ssl.checkRevocation=false -J-Dssl.trustAll=true --cache C:/Tools/coursier/coursier-cache
+
+
 coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r https://maven.repository.redhat.com/ga/ -J-Djavax.net.ssl.trustStoreType=Windows-ROOT -J-Dcom.sun.net.ssl.checkRevocation=false --cache C:/Tools/coursier/coursier-cache
 
 
