@@ -1,3 +1,5 @@
+mvn dependency:tree -Dincludes=com.tibco.ems:tibjms-jakarta
+
 <dependency>
     <groupId>com.tibco.ems</groupId>
     <artifactId>tibjms-jakarta</artifactId>
