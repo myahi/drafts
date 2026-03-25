@@ -1,1 +1,9 @@
+
+coursier fetch org.apache.camel:camel-exec:4.14.4.redhat-00008 ^
+  -r central ^
+  -r https://maven.repository.redhat.com/ga/ ^
+  -J-Dcom.sun.net.ssl.checkRevocation=false ^
+  -J-Dssl.trustAll=true ^
+  --intransitive
+
 Could not resolve dependencies for project fr.labanquepostale.marches.eai:eai-camel-core:jar:1.0.0-SNAPSHOT: Failed to collect dependencies at org.apache.camel:camel-exec:jar:4.14.4.redhat-00008: Failed to read artifact descriptor for org.apache.camel:camel-exec:jar:4.14.4.redhat-00008: Could not transfer artifact org.apache.camel:camel-exec:pom:4.14.4.redhat-00008 from/to ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/): transfer failed for https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/org/apache/camel/camel-exec/4.14.4.redhat-00008/camel-exec-4.14.4.redhat-00008.pom, proxy: ProxyInfo{host='http://surf-lbr.pasi.log.intra.laposte.fr:8080/', userName='null', port=8080, type='http', nonProxyHosts='null'}: Hôte inconnu (http://surf-lbr.pasi.log.intra.laposte.fr:8080/) -> [Help 1]
