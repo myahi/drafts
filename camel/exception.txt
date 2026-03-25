@@ -1,1 +1,4 @@
+mvn dependency:tree "-Dincludes=com.tibco.ems:tibjms-jakarta,jakarta.jms:jakarta.jms-api"
+
+
 No plugin found for prefix '.tibco.ems' in the current project and in the plugin groups
