@@ -1,8 +1,1 @@
-mvn dependency:tree -Dincludes=com.tibco.ems:tibjms-jakarta
-
-<dependency>
-    <groupId>com.tibco.ems</groupId>
-    <artifactId>tibjms-jakarta</artifactId>
-</dependency>
-
-package jakarta.jms does not exist
+No plugin found for prefix '.tibco.ems' in the current project and in the plugin groups
