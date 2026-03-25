@@ -1,3 +1,8 @@
+coursier fetch org.springframework.boot:spring-boot-dependencies:3.5.11 -r central -r https://maven.repository.redhat.com/ga/ -J-Djavax.net.ssl.trustStoreType=Windows-ROOT -J-Dcom.sun.net.ssl.checkRevocation=false --cache C:/Tools/coursier/coursier-cache
+
+
+https://maven.repository.redhat.com/ga/
+
 C:/Tools/repo_maven/org/apache/camel/springboot/camel-spring-boot-bom/4.14.4.redhat-00008/
 
 C:\Tools\apache-maven-3.8.8\bin\mvn.cmd -Didea.version=2025.3.2 -Dmaven.ext.class.path=C:\Tools\IntelliJ\plugins\maven\lib\maven-event-listener.jar -Djansi.passthrough=true -Dstyle.color=always -DskipTests=true -Dmaven.repo.local=C:\Tools\repo_maven clean install
