@@ -1,1 +1,1 @@
-Could not resolve dependencies for project fr.labanquepostale.marches.eai:eai-camel-core:jar:1.0.0-SNAPSHOT: Failed to collect dependencies at org.apache.camel.springboot:camel-spring-boot-starter:jar:4.10.7.redhat-00013 -> org.apache.camel.springboot:camel-validator-starter:jar:4.10.7.redhat-00013 -> org.apache.camel:camel-validator:jar:4.10.7.redhat-00009 -> org.apache.camel:camel-xml-jaxp:jar:4.10.7.redhat-00013
+package jakarta.jms does not exist
