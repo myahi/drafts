@@ -1,3 +1,9 @@
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+</dependency>
+
+
 mvn dependency:tree "-Dincludes=com.tibco.ems:tibjms-jakarta,jakarta.jms:jakarta.jms-api"
 [INFO] Scanning for projects...
 Downloading from ArtifactoryMavenLocalSasPlugins: https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/org/springframework/boot/spring-boot-maven-plugin/3.4.10/spring-boot-maven-plugin-3.4.10.pom
