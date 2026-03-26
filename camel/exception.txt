@@ -1,1 +1,7 @@
+<dependency>
+    <groupId>org.apache.camel.springboot</groupId>
+    <artifactId>camel-mail-starter</artifactId>
+</dependency>
+
+
 org.apache.camel.FailedToCreateRouteException: Failed to create route MailRoute at: >>> To[smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}] <<< in route: Route(MailRoute)[From[direct:MailRoute] -> [process[Processo... because of No endpoint could be found for: smtp://relais-mail-qualif.f1nom0a.local:xxxxxx@rf.labanquepostale.fr, please check your classpath contains the needed Camel component jar.
