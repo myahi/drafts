@@ -1,0 +1,62 @@
+# --- CONFIGURATION ---
+# Chemin vers tes projets (ex: C:\serveur_apps\intellij_workspace)
+$projectsRoot = "C:\serveur_apps\intellij_workspace"
+
+# Ton repo source actuel (ex: C:\Tools\repo_maven)
+$sourceRepo = "C:\Tools\repo_maven"
+
+# Dossier où tu veux créer ton kit offline
+$destinationRepo = "C:\Tools\repo_offline_final"
+
+$tempLog = "temp_deps.txt"
+
+Write-Host "--- Lancement de l'extraction 100% Locale ---" -ForegroundColor Cyan
+
+# 1. Recherche récursive des pom.xml (en excluant les dossiers 'target')
+$pomFiles = Get-ChildItem -Path $projectsRoot -Filter "pom.xml" -Recurse | Where-Object { $_.FullName -notmatch "\\target\\" }
+
+Write-Host "$($pomFiles.Count) projets trouvés."
+
+foreach ($pom in $pomFiles) {
+    $projectDir = $pom.DirectoryName
+    Write-Host "`nAnalyse de : $($pom.FullName)" -ForegroundColor Yellow
+    
+    Push-Location $projectDir
+    
+    # Exécution de Maven en mode offline (-o) pointant sur ton repo local
+    # On utilise --batch-mode pour éviter les logs inutiles
+    & mvn dependency:build-classpath -o "-Dmaven.repo.local=$sourceRepo" "-Dmdep.outputFile=$tempLog" --batch-mode -q
+    
+    if (Test-Path $tempLog) {
+        $content = Get-Content $tempLog
+        if ($content) {
+            $paths = $content -split ";"
+            foreach ($jarPath in $paths) {
+                if ($jarPath -and (Test-Path $jarPath)) {
+                    # Récupération du dossier parent (celui qui contient le JAR et le POM)
+                    $parentFolder = Split-Path $jarPath -Parent
+                    
+                    # Calcul du chemin relatif pour recréer l'arborescence
+                    $relativePath = $parentFolder.Replace($sourceRepo, "").TrimStart("\")
+                    $targetPath = Join-Path $destinationRepo $relativePath
+
+                    if (-not (Test-Path $targetPath)) {
+                        New-Item -ItemType Directory -Force -Path $targetPath | Out-Null
+                    }
+
+                    # Copie de TOUS les fichiers du dossier (Important pour avoir les .pom)
+                    Copy-Item -Path "$parentFolder\*" -Destination $targetPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        Remove-Item $tempLog
+    }
+    Pop-Location
+}
+
+# 2. Nettoyage des fichiers de cache Maven corrompus dans la destination
+Write-Host "`nNettoyage final..." -ForegroundColor Cyan
+Get-ChildItem -Path $destinationRepo -Filter "*.lastUpdated" -Recurse | Remove-Item -Force
+
+Write-Host "`nExtraction terminée avec succès !" -ForegroundColor Green
+Write-Host "Ton repo offline est ici : $destinationRepo"
