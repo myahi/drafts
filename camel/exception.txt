@@ -1,6 +1,23 @@
 @echo off
 setlocal
 
+:: --- CONFIGURATION ---
+set PROJECT_ROOT=C:\Chemin\Vers\Tes\Sources
+set SOURCE_REPO=C:\Tools\repo_maven
+set DEST_REPO=C:\Tools\repo_offline_final
+
+echo Analyse des projets en cours...
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$projectsRoot='%PROJECT_ROOT%'; $sourceRepo='%SOURCE_REPO%'; $destinationRepo='%DEST_REPO%'; $pomFiles = Get-ChildItem -Path $projectsRoot -Filter 'pom.xml' -Recurse | Where-Object { $_.FullName -notmatch '\\target\\' }; foreach ($pom in $pomFiles) { Write-Host 'Analyse de : ' $pom.FullName; Push-Location $pom.DirectoryName; mvn dependency:build-classpath -o -Dmdep.outputFile='temp_deps.txt' -Dmaven.repo.local=$sourceRepo -q; if (Test-Path 'temp_deps.txt') { $paths = (Get-Content 'temp_deps.txt') -split ';'; foreach ($jarPath in $paths) { if ($jarPath -and (Test-Path $jarPath)) { $parent = Split-Path $jarPath -Parent; $rel = $parent.Replace($sourceRepo, '').TrimStart('\'); $target = Join-Path $destinationRepo $rel; if (-not (Test-Path $target)) { New-Item -ItemType Directory -Force -Path $target | Out-Null }; Copy-Item -Path \"$parent\*\" -Destination $target -Force -ErrorAction SilentlyContinue } }; Remove-Item 'temp_deps.txt' }; Pop-Location }; Get-ChildItem -Path $destinationRepo -Filter '*.lastUpdated' -Recurse | Remove-Item -Force; Write-Host 'Extraction terminee !' -ForegroundColor Green"
+
+pause
+
+
+
+
+@echo off
+setlocal
+
 :: Définition des chemins (Modifie-les ici si besoin)
 set PROJECT_ROOT=C:\Chemin\Vers\Tes\Sources
 set SOURCE_REPO=C:\Tools\repo_maven
