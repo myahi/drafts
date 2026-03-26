@@ -1,3 +1,55 @@
+package fr.labanquepostale.report.base;
+
+import javax.sql.DataSource;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.context.annotation.ComponentScan;
+
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@SpringBootApplication
+@ComponentScan(basePackages = "fr.labanquepostale")
+@EnableEncryptableProperties
+public class EAIReportBaseApplication {
+
+    public static void main(String[] args) {
+        log.info("Starting the EAI Report Base application");
+        SpringApplication.run(EAIReportBaseApplication.class, args);
+    }
+
+    @Bean
+    public DataSource dataSource(Environment env) {
+        DriverManagerDataSource ds = new DriverManagerDataSource();
+
+        String url = env.getProperty("spring.datasource.url");
+        String username = env.getProperty("spring.datasource.username");
+        String password = env.getProperty("spring.datasource.password");
+        String driver = env.getProperty("spring.datasource.driver-class-name");
+
+        log.info("=== DATASOURCE TEST CONFIG ===");
+        log.info("URL = {}", url);
+        log.info("USERNAME = {}", username);
+        log.info("DRIVER = {}", driver);
+        log.info("PASSWORD PRESENT = {}", password != null);
+        log.info("==============================");
+
+        ds.setDriverClassName(driver);
+        ds.setUrl(url);
+        ds.setUsername(username);
+        ds.setPassword(password);
+
+        return ds;
+    }
+}
+
+
 @Bean
 public DataSource dataSource(Environment env) {
     DriverManagerDataSource ds = new DriverManagerDataSource();
