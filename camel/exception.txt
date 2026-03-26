@@ -1,3 +1,13 @@
+@Bean
+public CommandLineRunner printProps(Environment env) {
+    return args -> {
+        System.out.println("URL = " + env.getProperty("spring.datasource.url"));
+        System.out.println("USER = " + env.getProperty("spring.datasource.username"));
+    };
+}
+
+
+
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter</artifactId>
