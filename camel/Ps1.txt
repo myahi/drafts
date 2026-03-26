@@ -1,2 +1,65 @@
-[ERROR] Non-resolvable import POM: Cannot access ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/) in offline mode and the artifact org.springframework.boot:spring-boot-dependencies:pom:3.4.10 has not been downloaded from it before. @ line 35, column 16
-[ERROR] Non-resolvable import POM: Cannot access ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/) in offline mode and the artifact org.apache.camel.springboot:camel-spring-boot-bom:pom:4.10.7.redhat-00013 has not been downloaded from it before. @ line 43, column 16
+# --- CONFIGURATION ---
+$projectsRoot = "C:\serveur_apps\intellij_workspace"
+$sourceRepo = "C:\Tools\repo_maven"
+$destinationRepo = "C:\Tools\repo_offline_final"
+
+Write-Host "--- ASPIRATEUR TOTAL : AUCUN OUBLI ---" -ForegroundColor Cyan
+
+# 1. Préparer la destination
+if (!(Test-Path $destinationRepo)) { New-Item -ItemType Directory -Path $destinationRepo | Out-Null }
+
+# 2. Trouver tous les POMs pour l'analyse
+$pomFiles = Get-ChildItem -Path $projectsRoot -Filter "pom.xml" -Recurse | Where-Object { $_.FullName -notmatch "\\target\\" }
+
+foreach ($pom in $pomFiles) {
+    Write-Host "`n>>> ANALYSE COMPLÈTE : $($pom.FullName)" -ForegroundColor Yellow
+    Push-Location $pom.DirectoryName
+
+    # On demande à Maven de lister TOUT ce qu'il utilise (Dépendances + Plugins + Parents)
+    # On utilise 'list' du plugin dependency qui est plus bavard que 'build-classpath'
+    $tempLog = "full_artifacts.txt"
+    & mvn dependency:list -o "-Dmaven.repo.local=$sourceRepo" "-DoutputFile=$tempLog" -q
+
+    if (Test-Path $tempLog) {
+        # On lit chaque ligne du rapport Maven
+        foreach ($line in Get-Content $tempLog) {
+            # Format Maven : groupId:artifactId:type:version:scope
+            if ($line -match ".*:.*:.*:.*:.*") {
+                $parts = $line.Trim() -split ":"
+                if ($parts.Count -ge 4) {
+                    $groupId = $parts[0].Replace(".", "\")
+                    $artifactId = $parts[1]
+                    $version = $parts[3]
+                    
+                    # Construction du chemin relatif dans le repo
+                    $relPath = Join-Path $groupId $artifactId | Join-Path -ChildPath $version
+                    
+                    # COPIE PHYSIQUE DU DOSSIER COMPLET
+                    $srcDir = Join-Path $sourceRepo $relPath
+                    $destDir = Join-Path $destinationRepo $relPath
+                    
+                    if (Test-Path $srcDir) {
+                        if (!(Test-Path $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
+                        Write-Host "   -> Copie : $relPath" -ForegroundColor Gray
+                        Copy-Item -Path "$srcDir\*" -Destination $destDir -Force -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+        }
+        Remove-Item $tempLog
+    }
+    Pop-Location
+}
+
+# 3. ÉTAPE DE SÉCURITÉ : On prend TOUS les plugins présents dans le source
+# Pour être sûr que Maven a ses propres outils (clean, install, compiler, jar...)
+Write-Host "`n>>> Sécurisation des outils de build (Plugins)..." -ForegroundColor Cyan
+Copy-Item -Path "$sourceRepo\org\apache\maven\plugins" -Destination "$destinationRepo\org\apache\maven\plugins" -Recurse -Force -ErrorAction SilentlyContinue
+
+# 4. NETTOYAGE DES TRACEURS RÉSEAU (Crucial pour le mode offline)
+Write-Host "Suppression des fichiers de blocage réseau..." -ForegroundColor Gray
+Get-ChildItem -Path $destinationRepo -Include "*.lastUpdated", "_remote.repositories" -Recurse | Remove-Item -Force
+
+Write-Host "`n--- TERMINÉ : TOUT EST COPIÉ ---" -ForegroundColor Green
+Write-Host "Le dossier $destinationRepo contient maintenant l'intégralité de tes besoins."
+ 
