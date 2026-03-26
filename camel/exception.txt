@@ -1,3 +1,53 @@
+# --- CONFIGURATION ---
+$projectsRoot = "C:\Chemin\Vers\Tes\Sources"  # Tes dossiers de projets
+$sourceRepo = "C:\Tools\repo_maven"           # TON REPO SOURCE (celui qui contient tout)
+$destinationRepo = "C:\Tools\repo_offline_final"
+$tempLog = "temp_deps.txt"
+
+Write-Host "--- Extraction Locale Uniquement (Mode Offline) ---" -ForegroundColor Cyan
+
+# 1. Trouver tous les pom.xml (hors dossiers target)
+$pomFiles = Get-ChildItem -Path $projectsRoot -Filter "pom.xml" -Recurse | Where-Object { $_.FullName -notmatch "\\target\\" }
+
+foreach ($pom in $pomFiles) {
+    $projectDir = $pom.DirectoryName
+    Write-Host "Analyse locale de : $($pom.FullName)" -ForegroundColor Gray
+    
+    Push-Location $projectDir
+    
+    # L'option -o force Maven à ne PAS utiliser le réseau
+    # L'option -Dmaven.repo.local définit où chercher les fichiers sources
+    mvn dependency:build-classpath -o -Dmdep.outputFile=$tempLog -Dmaven.repo.local=$sourceRepo -q
+    
+    if (Test-Path $tempLog) {
+        $paths = (Get-Content $tempLog) -split ";"
+        foreach ($jarPath in $paths) {
+            if ($jarPath -and (Test-Path $jarPath)) {
+                $parentFolder = Split-Path $jarPath -Parent
+                
+                # On recrée la structure de dossiers dans la destination
+                $relativePath = $parentFolder.Replace($sourceRepo, "").TrimStart("\")
+                $targetPath = Join-Path $destinationRepo $relativePath
+
+                if (-not (Test-Path $targetPath)) {
+                    New-Item -ItemType Directory -Force -Path $targetPath | Out-Null
+                }
+
+                # COPIE intégrale (JAR + POM + Metadata)
+                Copy-Item -Path "$parentFolder\*" -Destination $targetPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Remove-Item $tempLog
+    }
+    Pop-Location
+}
+
+Write-Host "`nExtraction terminée sans accès réseau." -ForegroundColor Green
+Write-Host "Destination : $destinationRepo"
+
+
+
+
 <dependency>
     <groupId>org.apache.camel.springboot</groupId>
     <artifactId>camel-mail-starter</artifactId>
