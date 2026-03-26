@@ -1,3 +1,5 @@
+org.apache.maven.plugins:maven-dependency-plugin:2.8:resolve-plugins (resolve-plugins) on project eai-camel-core: Nested: Cannot access ArtifactoryMavenCacheRepository (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/repo-maven-apache-org-maven-remote-cache/) in offline mode and the artifact org.apache.maven.wagon:wagon-provider-api:jar:1.0 has not been downloaded from it before.
+
 # --- CONFIGURATION ---
 $projectsRoot = "C:\serveur_apps\intellij_workspace"
 $sourceRepo = "C:\Tools\repo_maven"
