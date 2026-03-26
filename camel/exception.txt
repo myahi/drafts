@@ -1,3 +1,6 @@
+logging.level.org.springframework.boot.autoconfigure=DEBUG
+logging.level.org.springframework.boot.context.config=DEBUG
+
 package fr.labanquepostale.report.base;
 
 import java.util.Arrays;
