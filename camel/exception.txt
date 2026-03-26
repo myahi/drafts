@@ -1,3 +1,14 @@
+@Bean
+public DataSource dataSource(Environment env) {
+    DriverManagerDataSource ds = new DriverManagerDataSource();
+    ds.setDriverClassName(env.getProperty("spring.datasource.driver-class-name"));
+    ds.setUrl(env.getProperty("spring.datasource.url"));
+    ds.setUsername(env.getProperty("spring.datasource.username"));
+    ds.setPassword(env.getProperty("spring.datasource.password"));
+    return ds;
+}
+
+
 [INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ eai-camel-report-base ---
 [INFO] fr.labanquepostale.marches.eai:eai-camel-report-base:jar:1.0.0-SNAPSHOT
 [INFO] +- org.springframework.boot:spring-boot-starter:jar:3.4.10:compile
