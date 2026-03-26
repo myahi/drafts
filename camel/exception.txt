@@ -1,3 +1,10 @@
+Failed to bind properties under 'spring.datasource.type' to java.lang.Class<javax.sql.DataSource>:
+
+    Property: spring.datasource.type
+    Value: "com.zaxxer.hikari.HikariDataSource"
+    Origin: URL [file:../eai-camel-report-config/config/eai-camel-report-base/application.properties] - 52:24
+    Reason: failed to convert java.lang.String to java.lang.Class<javax.sql.DataSource> (caused by java.lang.ClassNotFoundException: com.zaxxer.hikari.HikariDataSource)
+
 <dependency>
     <groupId>com.zaxxer</groupId>
     <artifactId>HikariCP</artifactId>
