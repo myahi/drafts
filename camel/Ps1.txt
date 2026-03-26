@@ -1,4 +1,12 @@
-# --- CONFIGURATION ---
+Ouvre un terminal PowerShell.
+​Déplace-toi dans le dossier où se trouve le script.
+​Lance la commande suivante :
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+​Puis lance le script :
+.\extract_offline.ps1 
+
+
+. # --- CONFIGURATION ---
 # Chemin vers tes projets (ex: C:\serveur_apps\intellij_workspace)
 $projectsRoot = "C:\serveur_apps\intellij_workspace"
 
