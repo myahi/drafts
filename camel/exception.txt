@@ -1,3 +1,47 @@
+package fr.labanquepostale.report.base;
+
+import java.util.Arrays;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.env.ConfigurableEnvironment;
+
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@SpringBootApplication
+@ComponentScan(basePackages = "fr.labanquepostale")
+@EnableEncryptableProperties
+public class EAIReportBaseApplication {
+
+    public static void main(String[] args) {
+        log.info("Starting the EAI Report Base application");
+
+        SpringApplication app = new SpringApplication(EAIReportBaseApplication.class);
+
+        app.addListeners((ApplicationListener<ApplicationEnvironmentPreparedEvent>) event -> {
+            ConfigurableEnvironment env = event.getEnvironment();
+
+            System.out.println("========================================");
+            System.out.println("ACTIVE PROFILES = " + Arrays.toString(env.getActiveProfiles()));
+            System.out.println("spring.datasource.url = " + env.getProperty("spring.datasource.url"));
+            System.out.println("spring.datasource.username = " + env.getProperty("spring.datasource.username"));
+            System.out.println("spring.datasource.driver-class-name = " + env.getProperty("spring.datasource.driver-class-name"));
+            System.out.println("spring.datasource.password present = "
+                    + (env.getProperty("spring.datasource.password") != null));
+            System.out.println("========================================");
+        });
+
+        app.run(args);
+    }
+}
+
+
 14:24:53.213  [main] c.u.j.encryptor.DefaultLazyEncryptor -  - String Encryptor custom Bean not found with name 'jasyptStringEncryptor'. Initializing Default String Encryptor
 14:24:53.272  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.algorithm, using default value: PBEWITHHMACSHA512ANDAES_256
 14:24:53.276  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.key-obtention-iterations, using default value: 1000
