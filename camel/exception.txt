@@ -1,1 +1,7 @@
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+</dependency>
+
+
 package lombok.extern.slf4j does not exist
