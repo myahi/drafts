@@ -1,3 +1,62 @@
+# --- CONFIGURATION ---
+$projectsRoot = "C:\serveur_apps\intellij_workspace"
+$sourceRepo = "C:\Tools\repo_maven"
+$destinationRepo = "C:\Tools\repo_offline_final"
+
+$tempLog = "temp_deps.txt"
+
+Write-Host "--- EXTRACTION TOTALE (Compile + Build + Runtime) ---" -ForegroundColor Cyan
+
+# Trouver tous les pom.xml
+$pomFiles = Get-ChildItem -Path $projectsRoot -Filter "pom.xml" -Recurse | Where-Object { $_.FullName -notmatch "\\target\\" }
+
+foreach ($pom in $pomFiles) {
+    Write-Host "`n>>> Traitement : $($pom.FullName)" -ForegroundColor Yellow
+    Push-Location $pom.DirectoryName
+    
+    # 1. RÉCUPÉRATION DES PLUGINS ET PARENTS (Build/Compile)
+    # go-offline télécharge tout ce qui est nécessaire au cycle de vie Maven
+    Write-Host "   -> Extraction des Plugins et Parents..."
+    & mvn dependency:go-offline -o "-Dmaven.repo.local=$sourceRepo" --batch-mode -q
+
+    # 2. RÉCUPÉRATION DES DÉPENDANCES (Runtime/Compile)
+    # build-classpath nous donne les chemins précis pour la copie physique
+    Write-Host "   -> Identification des JARs..."
+    & mvn dependency:build-classpath -o "-Dmaven.repo.local=$sourceRepo" "-Dmdep.outputFile=$tempLog" --batch-mode -q
+    
+    if (Test-Path $tempLog) {
+        $paths = (Get-Content $tempLog) -split ";"
+        foreach ($jarPath in $paths) {
+            if ($jarPath -and (Test-Path $jarPath)) {
+                $parentFolder = Split-Path $jarPath -Parent
+                $relativePath = $parentFolder.Replace($sourceRepo, "").TrimStart("\")
+                $targetPath = Join-Path $destinationRepo $relativePath
+
+                if (-not (Test-Path $targetPath)) {
+                    New-Item -ItemType Directory -Force -Path $targetPath | Out-Null
+                }
+                # Copie tout le dossier (JAR + POM + Metadata)
+                Copy-Item -Path "$parentFolder\*" -Destination $targetPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Remove-Item $tempLog
+    }
+
+    # 3. COPIE MANUELLE DES PLUGINS (Sécurité supplémentaire)
+    # On force la copie du dossier 'org/apache/maven/plugins' et 'org/springframework/boot' du source vers destination
+    # car go-offline les a validés dans le sourceRepo.
+    Pop-Location
+}
+
+# Nettoyage des fichiers de verrouillage
+Write-Host "`nNettoyage final..." -ForegroundColor Cyan
+Get-ChildItem -Path $destinationRepo -Filter "*.lastUpdated" -Recurse | Remove-Item -Force
+
+Write-Host "`nExtraction terminée ! Tout est dans : $destinationRepo" -ForegroundColor Green
+
+
+
+
 Ouvre un terminal PowerShell.
 ​Déplace-toi dans le dossier où se trouve le script.
 ​Lance la commande suivante :
