@@ -1,1 +1,7 @@
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+
+
 Parameter 0 of constructor in fr.labanquepostale.marches.eai.core.db.DataBaseService required a bean of type 'javax.sql.DataSource' that could not be found.
