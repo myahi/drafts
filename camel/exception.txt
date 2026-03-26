@@ -1,3 +1,5 @@
+No plugin found for prefix '.repo.local=C' in the current project 
+
 @echo off
 setlocal
 
