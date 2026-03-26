@@ -1,57 +1,18 @@
-Failed to bind properties under 'spring.datasource.type' to java.lang.Class<javax.sql.DataSource>:
-
-    Property: spring.datasource.type
-    Value: "com.zaxxer.hikari.HikariDataSource"
-    Origin: URL [file:../eai-camel-report-config/config/eai-camel-report-base/application.properties] - 52:24
-    Reason: failed to convert java.lang.String to java.lang.Class<javax.sql.DataSource> (caused by java.lang.ClassNotFoundException: com.zaxxer.hikari.HikariDataSource)
-
-<dependency>
-    <groupId>com.zaxxer</groupId>
-    <artifactId>HikariCP</artifactId>
-</dependency>
-spring.datasource.type=com.zaxxer.hikari.HikariDataSource
-
-DataSourceAutoConfiguration matched:
-      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
-      - @ConditionalOnMissingBean (types: io.r2dbc.spi.ConnectionFactory; SearchStrategy: all) did not find any beans (OnBeanCondition)
-
-DataSourceAutoConfiguration.EmbeddedDatabaseConfiguration:
-      Did not match:
-         - EmbeddedDataSource spring.datasource.url is set (DataSourceAutoConfiguration.EmbeddedDatabaseCondition)
-
-DataSourceAutoConfiguration.PooledDataSourceConfiguration:
-      Did not match:
-         - AnyNestedCondition 0 matched 2 did not; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.PooledDataSourceAvailable PooledDataSource did not find supported DataSource; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.ExplicitType @ConditionalOnProperty (spring.datasource.type) did not find property 'type' (DataSourceAutoConfiguration.PooledDataSourceCondition)
-		 
-JndiDataSourceAutoConfiguration:
-      Did not match:
-         - @ConditionalOnProperty (spring.datasource.jndi-name) did not find property 'jndi-name' (OnPropertyCondition)
-      Matched:
-         - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
-		 
-XADataSourceAutoConfiguration:
-      Did not match:
-         - @ConditionalOnClass did not find required class 'jakarta.transaction.TransactionManager' (OnClassCondition)
-		 
-		 DataSourceAutoConfiguration matched:
-      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
-      - @ConditionalOnMissingBean (types: io.r2dbc.spi.ConnectionFactory; SearchStrategy: all) did not find any beans (OnBeanCondition)
-	  
-	  
-DataSourceAutoConfiguration.EmbeddedDatabaseConfiguration:
-      Did not match:
-         - EmbeddedDataSource spring.datasource.url is set (DataSourceAutoConfiguration.EmbeddedDatabaseCondition)
-
-DataSourceAutoConfiguration.PooledDataSourceConfiguration:
-      Did not match:
-         - AnyNestedCondition 0 matched 2 did not; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.PooledDataSourceAvailable PooledDataSource did not find supported DataSource; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.ExplicitType @ConditionalOnProperty (spring.datasource.type) did not find property 'type' (DataSourceAutoConfiguration.PooledDataSourceCondition)
-		 
-JndiDataSourceAutoConfiguration:
-      Did not match:
-         - @ConditionalOnProperty (spring.datasource.jndi-name) did not find property 'jndi-name' (OnPropertyCondition)
-      Matched:
-         - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
-		 
-XADataSourceAutoConfiguration:
-      Did not match:
-         - @ConditionalOnClass did not find required class 'jakarta.transaction.TransactionManager' (OnClassCondition)
+PS C:\serveur_apps\intellij_workspace\eai-camel-report\eai-camel-report-base> mvn -o dependency:tree "-Dincludes=com.zaxxer:HikariCP"
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------< fr.labanquepostale.marches.eai:eai-camel-report-base >--------
+[INFO] Building eai-camel-report-base 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ eai-camel-report-base ---
+[INFO] fr.labanquepostale.marches.eai:eai-camel-report-base:jar:1.0.0-SNAPSHOT
+[INFO] \- com.zaxxer:HikariCP:jar:5.1.0:compile
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.096 s
+[INFO] Finished at: 2026-03-26T15:21:23+01:00
+[INFO] ------------------------------------------------------------------------
