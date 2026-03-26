@@ -1,60 +1,10 @@
-package fr.labanquepostale.report.base;
-
-import java.util.Arrays;
-
-import javax.sql.DataSource;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.core.env.Environment;
-
-import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
-
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
-@SpringBootApplication
-@ComponentScan(basePackages = "fr.labanquepostale")
-@EnableEncryptableProperties
-public class EAIReportBaseApplication {
-
-    public static void main(String[] args) {
-        log.info("Starting the EAI Report Base application");
-        SpringApplication.run(EAIReportBaseApplication.class, args);
-    }
-
-    @Bean
-    public CommandLineRunner printDatasourceProperties(Environment env) {
-        return args -> {
-            System.out.println("========================================");
-            System.out.println("ACTIVE PROFILES = " + Arrays.toString(env.getActiveProfiles()));
-            System.out.println("spring.datasource.url = " + env.getProperty("spring.datasource.url"));
-            System.out.println("spring.datasource.username = " + env.getProperty("spring.datasource.username"));
-            System.out.println("spring.datasource.driver-class-name = " + env.getProperty("spring.datasource.driver-class-name"));
-            System.out.println("spring.datasource.password = " + env.getProperty("spring.datasource.password"));
-            System.out.println("========================================");
-        };
-    }
-}
-
-@Bean
-public CommandLineRunner printProps(Environment env) {
-    return args -> {
-        System.out.println("URL = " + env.getProperty("spring.datasource.url"));
-        System.out.println("USER = " + env.getProperty("spring.datasource.username"));
-    };
-}
-
-
-
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter</artifactId>
-</dependency>
-
-
-Parameter 0 of constructor in fr.labanquepostale.marches.eai.core.db.DataBaseService required a bean of type 'javax.sql.DataSource' that could not be found.
+14:24:53.213  [main] c.u.j.encryptor.DefaultLazyEncryptor -  - String Encryptor custom Bean not found with name 'jasyptStringEncryptor'. Initializing Default String Encryptor
+14:24:53.272  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.algorithm, using default value: PBEWITHHMACSHA512ANDAES_256
+14:24:53.276  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.key-obtention-iterations, using default value: 1000
+14:24:53.278  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.pool-size, using default value: 1
+14:24:53.281  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.provider-name, using default value: null
+14:24:53.284  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.provider-class-name, using default value: null
+14:24:53.287  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.salt-generator-classname, using default value: org.jasypt.salt.RandomSaltGenerator
+14:24:53.296  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.iv-generator-classname, using default value: org.jasypt.iv.RandomIvGenerator
+14:24:53.301  [main] c.u.j.c.StringEncryptorBuilder -  - Encryptor config not found for property jasypt.encryptor.string-output-type, using default value: base64
+14:24:53.512  [main] o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext -  - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'dataBaseService' defined in file [C:\serveur_apps\intellij_workspace\eai-camel-core\target\classes\fr\labanquepostale\marches\eai\core\db\DataBaseService.class]: Unsatisfied dependency expressed through constructor parameter 0: No qualifying bean of type 'javax.sql.DataSource' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
