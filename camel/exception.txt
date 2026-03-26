@@ -1,3 +1,46 @@
+package fr.labanquepostale.report.base;
+
+import java.util.Arrays;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.env.Environment;
+
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@SpringBootApplication
+@ComponentScan(basePackages = "fr.labanquepostale")
+@EnableEncryptableProperties
+public class EAIReportBaseApplication {
+
+    public static void main(String[] args) {
+        log.info("Starting the EAI Report Base application");
+        SpringApplication.run(EAIReportBaseApplication.class, args);
+    }
+
+    @Bean
+    public CommandLineRunner printDatasourceProperties(Environment env) {
+        return args -> {
+            System.out.println("========================================");
+            System.out.println("ACTIVE PROFILES = " + Arrays.toString(env.getActiveProfiles()));
+            System.out.println("spring.datasource.url = " + env.getProperty("spring.datasource.url"));
+            System.out.println("spring.datasource.username = " + env.getProperty("spring.datasource.username"));
+            System.out.println("spring.datasource.driver-class-name = " + env.getProperty("spring.datasource.driver-class-name"));
+            System.out.println("spring.datasource.password = " + env.getProperty("spring.datasource.password"));
+            System.out.println("========================================");
+        };
+    }
+}
+
 @Bean
 public CommandLineRunner printProps(Environment env) {
     return args -> {
