@@ -1,3 +1,6 @@
+mvn dependency:tree "-Dincludes=org.springframework.boot:spring-boot-starter-jdbc,org.springframework.boot:spring-boot-autoconfigure,com.zaxxer:HikariCP,com.oracle:ojdbc8"
+
+
 logging.level.org.springframework.boot.autoconfigure=DEBUG
 logging.level.org.springframework.boot.context.config=DEBUG
 
