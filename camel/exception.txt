@@ -1,18 +1,1 @@
-PS C:\serveur_apps\intellij_workspace\eai-camel-report\eai-camel-report-base> mvn -o dependency:tree "-Dincludes=com.zaxxer:HikariCP"
-Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
-[INFO] Scanning for projects...
-[INFO] 
-[INFO] --------< fr.labanquepostale.marches.eai:eai-camel-report-base >--------
-[INFO] Building eai-camel-report-base 1.0.0-SNAPSHOT
-[INFO]   from pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ eai-camel-report-base ---
-[INFO] fr.labanquepostale.marches.eai:eai-camel-report-base:jar:1.0.0-SNAPSHOT
-[INFO] \- com.zaxxer:HikariCP:jar:5.1.0:compile
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  4.096 s
-[INFO] Finished at: 2026-03-26T15:21:23+01:00
-[INFO] ------------------------------------------------------------------------
+org.apache.camel.FailedToCreateRouteException: Failed to create route MailRoute at: >>> To[smtp://{{core.mail.smtp.host}}:{{core.mail.smtp.port}}?from={{core.mail.from}}] <<< in route: Route(MailRoute)[From[direct:MailRoute] -> [process[Processo... because of No endpoint could be found for: smtp://relais-mail-qualif.f1nom0a.local:xxxxxx@rf.labanquepostale.fr, please check your classpath contains the needed Camel component jar.
