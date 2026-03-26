@@ -37,36 +37,19 @@
 	<!-- ========================================================= -->
 	<dependencyManagement>
 		<dependencies>
-
-			<!-- TON core -->
+			<!-- Core technique -->
 			<dependency>
 				<groupId>fr.labanquepostale.marches.eai</groupId>
 				<artifactId>eai-camel-core</artifactId>
 				<version>${eai.core.version}</version>
 			</dependency>
-
 			<!-- Lib externe spécifique -->
 			<dependency>
 				<groupId>com.github.ulisesbocchio</groupId>
 				<artifactId>jasypt-spring-boot-starter</artifactId>
-				<version>3.0.5</version>
 			</dependency>
 
 		</dependencies>
 	</dependencyManagement>
-
-	<!-- ========================================================= -->
-	<!-- Build -->
-	<!-- ========================================================= -->
-	<build>
-		<finalName>eai-camel-report</finalName>
-
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>
