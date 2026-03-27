@@ -1,9 +1,1 @@
-org.springframework.boot:spring-boot-buildpack-platform:3.5.11
-org.springframework.boot:spring-boot-loader-tools:3.5.11
-org.apache.maven.plugins:maven-shade-plugin:3.6.0
-org.vafer:jdependency:2.10
-org.ow2.asm:asm-commons:9.7
-org.ow2.asm:asm-tree:9.7
-
-
-Cannot access ArtifactoryMavenLocalSasPlugins (https://dlu.pop.sf.intra.laposte.fr:443/artifactory/eai-marches-0002775-maven-local-sas/) in offline mode
+java: package com.fasterxml.jackson.annotation does not exist
