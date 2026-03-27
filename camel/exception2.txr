@@ -1,1 +1,8 @@
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-annotations</artifactId>
+</dependency>
+
+
+
 java: package com.fasterxml.jackson.annotation does not exist
